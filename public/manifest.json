@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Ultimate Tab Manager",
+  "version": "0.1.0",
+  "description": "A powerful Chrome extension for managing your tabs efficiently",
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": ["tabs", "storage"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,4 +1,10 @@
 @import "tailwindcss";
+/* @import "tailwindcss/typography";
+@import "tailwindcss/forms";
+@import "tailwindcss/line-clamp";
+@import "tailwindcss/aspect-ratio";
+@import "tailwindcss utilities"; */
+
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -68,3 +74,7 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+ 
+
+ 

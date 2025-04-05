@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:watch": "tsc -b && vite build --watch",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -16,6 +17,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@types/chrome": "^0.0.313",
+    "@types/node": "^22.14.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",

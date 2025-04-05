@@ -8,13 +8,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export default function Button({
   variant = "primary",
-  size = "md",
+  size = "lg",
   children,
   className = "",
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
+    "font-semibold rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
 
   const variantClasses = {
     primary: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500",
@@ -25,8 +25,8 @@ export default function Button({
 
   const sizeClasses = {
     sm: "text-xs py-1 px-2",
-    md: "text-sm py-2 px-4",
-    lg: "text-base py-2 px-6",
+    md: "text-xs py-2 px-3",
+    lg: "text-sm py-2 px-4",
   };
 
   const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;

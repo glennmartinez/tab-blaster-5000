@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
-import "./App.css";
-import { Tab, SavedTab } from "./interfaces/TabInterface";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
-import PopupView from "./components/PopupView";
+import React, { useState, useEffect } from "react";
+import { Tab, SavedTab } from "../interfaces/TabInterface";
+import PopupView from "./PopupView";
+import Header from "./Header";
+import Sidebar from "./Sidebar";
 
-function App() {
+const PopupViewContainer: React.FC = () => {
   const [activeTabs, setActiveTabs] = useState<Tab[]>([]);
   const [savedTabs, setSavedTabs] = useState<SavedTab[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +70,12 @@ function App() {
     }
   };
 
+  const switchToTab = (tabId: number) => {
+    if (chrome?.tabs) {
+      chrome.tabs.update(tabId, { active: true });
+    }
+  };
+
   const closeTab = (tabId: number) => {
     if (chrome?.tabs) {
       chrome.tabs.remove(tabId, () => {
@@ -78,12 +83,6 @@ function App() {
       });
     } else {
       setActiveTabs(activeTabs.filter((tab) => tab.id !== tabId));
-    }
-  };
-
-  const switchToTab = (tabId: number) => {
-    if (chrome?.tabs) {
-      chrome.tabs.update(tabId, { active: true });
     }
   };
 
@@ -135,7 +134,7 @@ function App() {
               savedTabs: updatedSavedTabs,
             },
             () => {
-              // Close tabs that were saved - fix the TypeScript error by filtering out undefined values
+              // Close tabs that were saved
               const tabIds = currentTabs
                 .map((tab) => tab.id)
                 .filter((id): id is number => id !== undefined);
@@ -216,15 +215,18 @@ function App() {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+  // Create a compact layout for popup view
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div
+      className="flex h-full bg-gray-900 text-white"
+      style={{ width: "400px", height: "500px" }}
+    >
       {/* Sidebar Component */}
       <Sidebar
         open={sidebarOpen}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
       />
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Component */}
@@ -240,7 +242,6 @@ function App() {
           onGroupTabs={groupTabs}
           onSaveAllTabs={saveAllTabs}
         />
-
         {/* PopupView Component */}
         <PopupView
           loading={loading}
@@ -252,10 +253,9 @@ function App() {
           onRestoreTab={restoreSavedTab}
           onRemoveSavedTab={removeSavedTab}
         />
-
         {/* Footer */}
-        <footer className="bg-gray-800 border-t border-gray-700 p-3 text-center">
-          <p className="text-sm text-gray-400">
+        <footer className="bg-gray-800 border-t border-gray-700 p-2 text-center">
+          <p className="text-xs text-gray-400">
             {activeView === "active"
               ? `${filteredTabs.length} active tabs`
               : `${filteredTabs.length} saved tabs`}
@@ -264,6 +264,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
-export default App;
+export default PopupViewContainer;

@@ -64,7 +64,7 @@ const ExtensionPopup: React.FC = () => {
   }, []);
 
   const saveCurrentSession = () => {
-    if (!chrome?.tabs || !chrome?.storage) {
+    if (!chrome?.tabs || !chrome?.storage || !chrome?.runtime) {
       console.warn("Chrome APIs not available, cannot save session");
       alert("Cannot save session: Extension APIs unavailable");
       return;
@@ -72,91 +72,107 @@ const ExtensionPopup: React.FC = () => {
 
     console.log("Starting to save current session...");
 
-    // Get current tabs using Promise API
-    chrome.tabs
-      .query({})
-      .then((currentTabs) => {
-        console.log(`Found ${currentTabs.length} tabs to save`);
+    // Get tabs from current window
+    chrome.tabs.query({ currentWindow: true }, (currentTabs) => {
+      console.log(`Found ${currentTabs.length} tabs to save in current window`);
 
-        // Create session object with metadata - ensuring all fields are serializable
-        const newSession = {
-          id: `session_${Date.now()}`,
-          name: `Session ${new Date().toLocaleString()}`,
-          createdAt: new Date().toISOString(),
-          tabs: currentTabs.map((tab) => {
-            // Extract only serializable properties from tab objects
-            return {
-              id: tab.id ? tab.id : null,
-              title: tab.title || "Untitled Tab",
-              url: tab.url || "",
-              favIconUrl: tab.favIconUrl || "",
-            };
-          }),
-        };
+      // Create session object with metadata
+      const newSession = {
+        id: `session_${Date.now()}`,
+        name: `Session ${new Date().toLocaleString()}`,
+        createdAt: new Date().toISOString(),
+        tabs: currentTabs.map((tab) => {
+          return {
+            id: tab.id ? tab.id : null,
+            title: tab.title || "Untitled Tab",
+            url: tab.url || "",
+            favIconUrl: tab.favIconUrl || "",
+          };
+        }),
+      };
 
-        console.log("Created new session object:", newSession);
+      console.log("Created new session object:", newSession);
 
-        // Get existing sessions
-        return chrome.storage.local
-          .get(["savedSessions"])
-          .then((result) => {
-            const existingSessions = result.savedSessions || [];
+      // Get existing sessions
+      chrome.storage.local.get(["savedSessions"], (result) => {
+        const existingSessions = result.savedSessions || [];
+        console.log(
+          `Retrieved ${existingSessions.length} existing sessions:`,
+          existingSessions
+        );
+
+        // Add new session to the beginning of the array
+        const updatedSessions = [newSession, ...existingSessions];
+
+        // Add backup to localStorage as well (for redundancy)
+        try {
+          localStorage.setItem(
+            "backup_savedSessions",
+            JSON.stringify(updatedSessions)
+          );
+          console.log("Backup saved to localStorage");
+        } catch (e) {
+          console.warn("Could not save backup to localStorage:", e);
+        }
+
+        // Save updated sessions
+        chrome.storage.local.set({ savedSessions: updatedSessions }, () => {
+          console.log("Successfully saved session to chrome.storage.local");
+
+          // Immediately verify the save worked
+          chrome.storage.local.get(["savedSessions"], (verifyResult) => {
             console.log(
-              `Retrieved ${existingSessions.length} existing sessions`
-            );
-
-            // Add new session to the beginning of the array
-            const updatedSessions = [newSession, ...existingSessions];
-
-            console.log(
-              "About to save sessions:",
-              JSON.stringify(updatedSessions).slice(0, 100) + "..."
-            );
-
-            // Save updated sessions
-            localStorage.setItem(
-              "LocalStorageKey",
-              JSON.stringify(updatedSessions)
-            );
-
-            return chrome.storage.local
-              .set({
-                savedSessions: updatedSessions,
-              })
-              .then(() => {
-                console.log(
-                  "Successfully saved session to chrome.storage.local"
-                );
-
-                // Update the session count
-                setSessionCount((prev) => prev + 1);
-
-                // Try to verify it was saved
-                return chrome.storage.local.get(["savedSessions"]);
-              });
-          })
-          .then(() => {
-            console.log("Successfully saved session to chrome.storage.local");
-
-            // Update the session count
-            setSessionCount((prev) => prev + 1);
-
-            // Try to verify it was saved
-            return chrome.storage.local.get(["savedSessions"]);
-          })
-          .then((result) => {
-            console.log(
-              "Verification read:",
-              result.savedSessions
-                ? `${result.savedSessions.length} sessions`
-                : "No sessions found"
+              "Verification - saved sessions count:",
+              verifyResult.savedSessions?.length || 0
             );
           });
-      })
-      .catch((error) => {
-        console.error("Error saving session:", error);
-        alert(`Failed to save session: ${error.message}`);
+
+          // Update the session count
+          setSessionCount(updatedSessions.length);
+
+          // Get tab IDs that are in the current window
+          const tabIdsInWindow = currentTabs
+            .map((tab) => tab.id)
+            .filter(
+              (id): id is number =>
+                id !== undefined && id !== chrome.tabs.TAB_ID_NONE
+            );
+
+          console.log("Tab IDs in current window:", tabIdsInWindow);
+
+          try {
+            // Send message to background script to handle tab operations
+            // Use a try-catch block to handle potential errors with message sending
+            chrome.runtime.sendMessage(
+              {
+                action: "saveAndCloseTabs",
+                tabIds: tabIdsInWindow,
+                tabManagerUrl: chrome.runtime.getURL(
+                  "index.html?view=fullpage"
+                ),
+              },
+              (response) => {
+                // We may not get this response if popup closes, and that's OK
+                if (response) {
+                  console.log("Background script response:", response);
+                }
+              }
+            );
+
+            // Show success message to user
+            const statusEl = document.getElementById("status");
+            if (statusEl) {
+              statusEl.textContent = "Session saved successfully!";
+              setTimeout(() => {
+                statusEl.textContent = "";
+              }, 3000);
+            }
+          } catch (error) {
+            console.error("Error sending message to background script:", error);
+          }
+        });
       });
+    });
   };
 
   const launchTabManager = () => {

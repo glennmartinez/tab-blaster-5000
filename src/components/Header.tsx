@@ -15,6 +15,13 @@ interface HeaderProps {
   onSaveAllTabs?: () => void;
 }
 
+const saveLocal = () => {
+  // Logic to save local data
+  console.log("Saving local data...");
+
+  localStorage.setItem("localData", JSON.stringify({ key: "value" }));
+};
+
 const Header: React.FC<HeaderProps> = ({
   title,
   activeTabs,
@@ -105,6 +112,13 @@ const Header: React.FC<HeaderProps> = ({
             }
           >
             Saved Tabs ({savedTabs})
+          </Button>
+
+          <Button
+            onClick={() => saveLocal()}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            Local
           </Button>
         </div>
       </div>

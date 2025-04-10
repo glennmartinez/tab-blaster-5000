@@ -5,6 +5,47 @@ const ExtensionPopup: React.FC = () => {
   const [tabCount, setTabCount] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
 
+  const saveLocal = () => {
+    console.log("Saving data using Chrome Storage API...");
+
+    // Data to save
+    const data = { key: "popit fool" };
+
+    // Save using Chrome Storage API
+    if (chrome?.storage) {
+      chrome.storage.local
+        .set({ poperino: data })
+        .then(() => {
+          console.log("Data saved successfully");
+
+          // Optional: verify it was saved
+          return chrome.storage.local.get(["poperino"]);
+        })
+        .then((result) => {
+          console.log("Retrieved data:", result.poperino);
+        })
+        .catch((error) => {
+          console.error("Error saving data:", error);
+        });
+    } else {
+      // Fallback for when running in development outside extension context
+      console.warn(
+        "Chrome storage API not available, falling back to localStorage"
+      );
+      localStorage.setItem("poperino", JSON.stringify(data));
+    }
+  };
+
+  const saveToActiveTabLocalStorage = () => {
+    const randomeTime = Math.floor(Math.random() * 1000);
+    console.log("Saving data to active tab's localStorage...");
+    console.log("Random time:", randomeTime);
+    localStorage.setItem("your-key", JSON.stringify(randomeTime));
+
+    // Simple confirmation for the user
+    console.log("Data saved to extension's localStorage");
+  };
+
   useEffect(() => {
     // Count the number of open tabs
     if (chrome?.tabs) {
@@ -15,50 +56,107 @@ const ExtensionPopup: React.FC = () => {
 
     // Count saved sessions
     if (chrome?.storage) {
-      chrome.storage.local.get(["savedTabs"], (result) => {
-        const savedTabs = result.savedTabs || [];
-        setSessionCount(savedTabs.length);
+      chrome.storage.local.get(["savedSessions"], (result) => {
+        const savedSessions = result.savedSessions || [];
+        setSessionCount(savedSessions.length);
       });
     }
   }, []);
 
   const saveCurrentSession = () => {
-    if (chrome?.tabs && chrome?.storage) {
-      // Get current tabs
-      chrome.tabs.query({}, (currentTabs) => {
-        // Save to storage
-        chrome.storage.local.get(["savedTabs"], (result) => {
-          const existingSavedTabs = result.savedTabs || [];
-          const tabsToSave = currentTabs.map((tab) => ({
-            id: tab.id,
-            title: tab.title,
-            url: tab.url,
-            favIconUrl: tab.favIconUrl,
-            savedAt: new Date().toISOString(),
-          }));
-
-          const updatedSavedTabs = [...existingSavedTabs, ...tabsToSave];
-          chrome.storage.local.set(
-            {
-              savedTabs: updatedSavedTabs,
-            },
-            () => {
-              // Show a success message
-              const statusEl = document.getElementById("status");
-              if (statusEl) {
-                statusEl.textContent = "Session saved!";
-                setTimeout(() => {
-                  statusEl.textContent = "";
-                }, 2000);
-              }
-
-              // Update the session count
-              setSessionCount(updatedSavedTabs.length);
-            }
-          );
-        });
-      });
+    if (!chrome?.tabs || !chrome?.storage) {
+      console.warn("Chrome APIs not available, cannot save session");
+      alert("Cannot save session: Extension APIs unavailable");
+      return;
     }
+
+    console.log("Starting to save current session...");
+
+    // Get current tabs using Promise API
+    chrome.tabs
+      .query({})
+      .then((currentTabs) => {
+        console.log(`Found ${currentTabs.length} tabs to save`);
+
+        // Create session object with metadata - ensuring all fields are serializable
+        const newSession = {
+          id: `session_${Date.now()}`,
+          name: `Session ${new Date().toLocaleString()}`,
+          createdAt: new Date().toISOString(),
+          tabs: currentTabs.map((tab) => {
+            // Extract only serializable properties from tab objects
+            return {
+              id: tab.id ? tab.id : null,
+              title: tab.title || "Untitled Tab",
+              url: tab.url || "",
+              favIconUrl: tab.favIconUrl || "",
+            };
+          }),
+        };
+
+        console.log("Created new session object:", newSession);
+
+        // Get existing sessions
+        return chrome.storage.local
+          .get(["savedSessions"])
+          .then((result) => {
+            const existingSessions = result.savedSessions || [];
+            console.log(
+              `Retrieved ${existingSessions.length} existing sessions`
+            );
+
+            // Add new session to the beginning of the array
+            const updatedSessions = [newSession, ...existingSessions];
+
+            console.log(
+              "About to save sessions:",
+              JSON.stringify(updatedSessions).slice(0, 100) + "..."
+            );
+
+            // Save updated sessions
+            localStorage.setItem(
+              "LocalStorageKey",
+              JSON.stringify(updatedSessions)
+            );
+
+            return chrome.storage.local
+              .set({
+                savedSessions: updatedSessions,
+              })
+              .then(() => {
+                console.log(
+                  "Successfully saved session to chrome.storage.local"
+                );
+
+                // Update the session count
+                setSessionCount((prev) => prev + 1);
+
+                // Try to verify it was saved
+                return chrome.storage.local.get(["savedSessions"]);
+              });
+          })
+          .then(() => {
+            console.log("Successfully saved session to chrome.storage.local");
+
+            // Update the session count
+            setSessionCount((prev) => prev + 1);
+
+            // Try to verify it was saved
+            return chrome.storage.local.get(["savedSessions"]);
+          })
+          .then((result) => {
+            console.log(
+              "Verification read:",
+              result.savedSessions
+                ? `${result.savedSessions.length} sessions`
+                : "No sessions found"
+            );
+          });
+      })
+      .catch((error) => {
+        console.error("Error saving session:", error);
+        alert(`Failed to save session: ${error.message}`);
+      });
   };
 
   const launchTabManager = () => {
@@ -130,6 +228,20 @@ const ExtensionPopup: React.FC = () => {
             />
           </svg>
           Launch Tab Manager
+        </Button>
+
+        <Button
+          onClick={() => saveLocal()}
+          className="bg-red-600 hover:bg-red-700 text-white w-full py-3 px-4 rounded-lg flex items-center justify-center text-lg"
+        >
+          test
+        </Button>
+
+        <Button
+          onClick={saveToActiveTabLocalStorage}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white w-full py-3 px-4 rounded-lg flex items-center justify-center text-lg"
+        >
+          Save to Active Tab LocalStorage
         </Button>
       </div>
 

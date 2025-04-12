@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
+import { Tab } from "../interfaces/TabInterface";
+
+// Define a proper interface for sessions
+interface SavedSession {
+  id: string;
+  name: string;
+  createdAt: string;
+  tabs: Tab[]; // Using the Tab interface from TabInterface.ts
+}
 
 const ExtensionPopup: React.FC = () => {
   const [tabCount, setTabCount] = useState(0);
@@ -77,13 +86,13 @@ const ExtensionPopup: React.FC = () => {
       console.log(`Found ${currentTabs.length} tabs to save in current window`);
 
       // Create session object with metadata
-      const newSession = {
+      const newSession: SavedSession = {
         id: `session_${Date.now()}`,
         name: `Session ${new Date().toLocaleString()}`,
         createdAt: new Date().toISOString(),
         tabs: currentTabs.map((tab) => {
           return {
-            id: tab.id ? tab.id : null,
+            id: tab.id || 0, // Ensuring id is a number, defaulting to 0 if undefined
             title: tab.title || "Untitled Tab",
             url: tab.url || "",
             favIconUrl: tab.favIconUrl || "",
@@ -93,39 +102,58 @@ const ExtensionPopup: React.FC = () => {
 
       console.log("Created new session object:", newSession);
 
-      // Get existing sessions
-      chrome.storage.local.get(["savedSessions"], (result) => {
-        const existingSessions = result.savedSessions || [];
-        console.log(
-          `Retrieved ${existingSessions.length} existing sessions:`,
-          existingSessions
+      // Get existing sessions from localStorage first (most reliable)
+      let existingSessions: SavedSession[] = []; // Using proper type
+
+      try {
+        const localData = localStorage.getItem("backup_savedSessions");
+        if (localData) {
+          existingSessions = JSON.parse(localData) as SavedSession[]; // Type assertion
+          console.log(
+            `Loaded ${existingSessions.length} existing sessions from localStorage`
+          );
+        }
+      } catch (e) {
+        console.warn(
+          "Could not load from localStorage, falling back to chrome.storage",
+          e
         );
 
-        // Add new session to the beginning of the array
-        const updatedSessions = [newSession, ...existingSessions];
+        // Fall back to chrome.storage
+        chrome.storage.local.get(["savedSessions"], (result) => {
+          existingSessions = (result.savedSessions || []) as SavedSession[]; // Type assertion
+          console.log(
+            `Loaded ${existingSessions.length} existing sessions from chrome.storage`
+          );
+          continueWithSave();
+        });
+        return; // Exit here since we'll continueWithSave after async chrome.storage call
+      }
 
-        // Add backup to localStorage as well (for redundancy)
+      // If we got here, we successfully loaded from localStorage
+      continueWithSave();
+
+      function continueWithSave() {
+        // Add new session to the beginning of the array
+        const updatedSessions: SavedSession[] = [
+          newSession,
+          ...existingSessions,
+        ];
+
+        // ALWAYS save to localStorage first (most reliable)
         try {
           localStorage.setItem(
             "backup_savedSessions",
             JSON.stringify(updatedSessions)
           );
-          console.log("Backup saved to localStorage");
+          console.log("Saved sessions to localStorage");
         } catch (e) {
-          console.warn("Could not save backup to localStorage:", e);
+          console.warn("Could not save to localStorage:", e);
         }
 
-        // Save updated sessions
+        // Also save to chrome.storage for extension syncing
         chrome.storage.local.set({ savedSessions: updatedSessions }, () => {
           console.log("Successfully saved session to chrome.storage.local");
-
-          // Immediately verify the save worked
-          chrome.storage.local.get(["savedSessions"], (verifyResult) => {
-            console.log(
-              "Verification - saved sessions count:",
-              verifyResult.savedSessions?.length || 0
-            );
-          });
 
           // Update the session count
           setSessionCount(updatedSessions.length);
@@ -142,24 +170,21 @@ const ExtensionPopup: React.FC = () => {
 
           try {
             // Send message to background script to handle tab operations
-            // Use a try-catch block to handle potential errors with message sending
             chrome.runtime.sendMessage(
               {
                 action: "saveAndCloseTabs",
                 tabIds: tabIdsInWindow,
                 tabManagerUrl: chrome.runtime.getURL(
-                  "index.html?view=fullpage"
+                  "index.html?view=fullpage&view=sessions" // Add view=sessions parameter to specifically show sessions
                 ),
               },
               (response) => {
-                // We may not get this response if popup closes, and that's OK
                 if (response) {
                   console.log("Background script response:", response);
                 }
               }
             );
 
-            // Show success message to user
             const statusEl = document.getElementById("status");
             if (statusEl) {
               statusEl.textContent = "Session saved successfully!";
@@ -171,7 +196,7 @@ const ExtensionPopup: React.FC = () => {
             console.error("Error sending message to background script:", error);
           }
         });
-      });
+      }
     });
   };
 

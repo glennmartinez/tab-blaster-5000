@@ -4,12 +4,15 @@ import { Tab, SavedTab } from "./interfaces/TabInterface";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import PopupView from "./components/PopupView";
+import SessionsView from "./components/SessionsView";
 
 function App() {
   const [activeTabs, setActiveTabs] = useState<Tab[]>([]);
   const [savedTabs, setSavedTabs] = useState<SavedTab[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"active" | "saved">("active");
+  const [activeView, setActiveView] = useState<"active" | "saved" | "sessions">(
+    "active"
+  );
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -216,6 +219,30 @@ function App() {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+  // Render the correct view based on activeView state
+  const renderView = () => {
+    switch (activeView) {
+      case "active":
+      case "saved":
+        return (
+          <PopupView
+            loading={loading}
+            activeView={activeView}
+            filteredTabs={filteredTabs}
+            savedTabGroups={savedTabGroups}
+            onSwitchTab={switchToTab}
+            onCloseTab={closeTab}
+            onRestoreTab={restoreSavedTab}
+            onRemoveSavedTab={removeSavedTab}
+          />
+        );
+      case "sessions":
+        return <SessionsView />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Component */}
@@ -223,13 +250,20 @@ function App() {
         open={sidebarOpen}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
+        activeView={activeView}
+        setActiveView={setActiveView}
       />
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Component */}
         <Header
-          title={activeView === "active" ? "Active Tabs" : "Saved Tabs"}
+          title={
+            activeView === "active"
+              ? "Active Tabs"
+              : activeView === "saved"
+              ? "Saved Tabs"
+              : "Sessions"
+          }
           activeTabs={activeTabs.length}
           savedTabs={savedTabs.length}
           activeView={activeView}
@@ -241,24 +275,17 @@ function App() {
           onSaveAllTabs={saveAllTabs}
         />
 
-        {/* PopupView Component */}
-        <PopupView
-          loading={loading}
-          activeView={activeView}
-          filteredTabs={filteredTabs}
-          savedTabGroups={savedTabGroups}
-          onSwitchTab={switchToTab}
-          onCloseTab={closeTab}
-          onRestoreTab={restoreSavedTab}
-          onRemoveSavedTab={removeSavedTab}
-        />
+        {/* Main Content View */}
+        {renderView()}
 
         {/* Footer */}
         <footer className="bg-gray-800 border-t border-gray-700 p-3 text-center">
           <p className="text-sm text-gray-400">
             {activeView === "active"
               ? `${filteredTabs.length} active tabs`
-              : `${filteredTabs.length} saved tabs`}
+              : activeView === "saved"
+              ? `${filteredTabs.length} saved tabs`
+              : "Sessions view"}
           </p>
         </footer>
       </div>

@@ -1,12 +1,14 @@
 import React from "react";
-import { Tab, SavedTab } from "../interfaces/TabInterface";
+import { Tab, SavedTab, WindowInfo } from "../interfaces/TabInterface";
 import TabList from "./TabList";
 import TabGroup from "./TabGroup";
+import WindowGroup from "./WindowGroup";
 
 interface PopupViewProps {
   loading: boolean;
   activeView: "active" | "saved";
   filteredTabs: (Tab | SavedTab)[];
+  windowGroups?: WindowInfo[]; // Add the windowGroups property
   savedTabGroups: Record<string, SavedTab[]>;
   onSwitchTab: (tabId: number) => void;
   onCloseTab: (tabId: number) => void;
@@ -18,6 +20,7 @@ const PopupView: React.FC<PopupViewProps> = ({
   loading,
   activeView,
   filteredTabs,
+  windowGroups = [], // Default to empty array
   savedTabGroups,
   onSwitchTab,
   onCloseTab,
@@ -34,21 +37,35 @@ const PopupView: React.FC<PopupViewProps> = ({
         <div className="space-y-6 max-w-4xl mx-auto">
           {/* Active Tabs View */}
           {activeView === "active" && (
-            <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
-              <div className="p-4 border-b border-gray-700">
-                <h2 className="text-lg font-medium text-blue-400">
-                  Active Tabs
-                </h2>
-              </div>
-              <TabList
-                tabs={filteredTabs as Tab[]}
-                type="active"
-                onSwitchTab={onSwitchTab}
-                onCloseTab={onCloseTab}
-              />
-            </div>
+            <>
+              {windowGroups.length > 0 ? (
+                // Display tabs grouped by windows
+                windowGroups.map((windowInfo) => (
+                  <WindowGroup
+                    key={windowInfo.id}
+                    windowInfo={windowInfo}
+                    onSwitchTab={onSwitchTab}
+                    onCloseTab={onCloseTab}
+                  />
+                ))
+              ) : (
+                // Fallback to original flat list if window grouping isn't available
+                <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+                  <div className="p-4 border-b border-gray-700">
+                    <h2 className="text-lg font-medium text-blue-400">
+                      Active Tabs
+                    </h2>
+                  </div>
+                  <TabList
+                    tabs={filteredTabs as Tab[]}
+                    type="active"
+                    onSwitchTab={onSwitchTab}
+                    onCloseTab={onCloseTab}
+                  />
+                </div>
+              )}
+            </>
           )}
-
           {/* Saved Tabs View */}
           {activeView === "saved" && (
             <>

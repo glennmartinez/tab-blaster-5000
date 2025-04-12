@@ -10,9 +10,7 @@ function App() {
   const [activeTabs, setActiveTabs] = useState<Tab[]>([]);
   const [savedTabs, setSavedTabs] = useState<SavedTab[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"active" | "saved" | "sessions">(
-    "active"
-  );
+  const [activeView, setActiveView] = useState<"active" | "sessions">("active");
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -201,8 +199,6 @@ function App() {
 
   // Group saved tabs by date
   const groupTabsByDate = () => {
-    if (activeView !== "saved") return {};
-
     const groups: { [key: string]: SavedTab[] } = {};
     savedTabs.forEach((tab) => {
       const date = new Date(tab.savedAt).toDateString();
@@ -223,7 +219,6 @@ function App() {
   const renderView = () => {
     switch (activeView) {
       case "active":
-      case "saved":
         return (
           <PopupView
             loading={loading}
@@ -257,13 +252,7 @@ function App() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Component */}
         <Header
-          title={
-            activeView === "active"
-              ? "Active Tabs"
-              : activeView === "saved"
-              ? "Saved Tabs"
-              : "Sessions"
-          }
+          title={activeView === "active" ? "Active Tabs" : "Sessions"}
           activeTabs={activeTabs.length}
           savedTabs={savedTabs.length}
           activeView={activeView}
@@ -283,8 +272,6 @@ function App() {
           <p className="text-sm text-gray-400">
             {activeView === "active"
               ? `${filteredTabs.length} active tabs`
-              : activeView === "saved"
-              ? `${filteredTabs.length} saved tabs`
               : "Sessions view"}
           </p>
         </footer>

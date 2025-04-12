@@ -6,8 +6,8 @@ interface HeaderProps {
   title: string;
   activeTabs: number;
   savedTabs: number;
-  activeView: "active" | "saved" | "sessions";
-  setActiveView: (view: "active" | "saved" | "sessions") => void;
+  activeView: "active" | "sessions";
+  setActiveView: (view: "active" | "sessions") => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSidebarToggle: () => void;
@@ -19,7 +19,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   title,
   activeTabs,
-  savedTabs,
   activeView,
   setActiveView,
   searchQuery,
@@ -27,42 +26,11 @@ const Header: React.FC<HeaderProps> = ({
   onSidebarToggle,
   onGroupTabs,
   onSaveAllTabs,
-  loadSavedSessions,
 }) => {
   // This ensures we load saved sessions when switching to views
-  const handleViewChange = (view: "active" | "saved" | "sessions") => {
+  const handleViewChange = (view: "active" | "sessions") => {
     console.log(`Switching to ${view} view...`);
     setActiveView(view);
-    if (view === "saved" && loadSavedSessions) {
-      console.log("Loading saved tabs...");
-      loadSavedSessions();
-    }
-    // Sessions view loads its own data in its useEffect
-  };
-
-  const debugStorage = () => {
-    console.log("DEBUGGING STORAGE:");
-    // Check localStorage
-    try {
-      console.log("All localStorage keys:", Object.keys(localStorage));
-      const backup = localStorage.getItem("backup_savedSessions");
-      if (backup) {
-        const parsed = JSON.parse(backup);
-        console.log(`Found ${parsed.length} sessions in localStorage`);
-      } else {
-        console.log("No backup_savedSessions found in localStorage");
-      }
-    } catch (e) {
-      console.error("Error accessing localStorage:", e);
-    }
-    // Check chrome.storage
-    if (chrome?.storage) {
-      chrome.storage.local.get(null, (allData) => {
-        console.log("All chrome.storage keys:", Object.keys(allData));
-      });
-    } else {
-      console.log("Chrome storage API not available");
-    }
   };
 
   // Choose whether to show search bar based on view
@@ -136,16 +104,7 @@ const Header: React.FC<HeaderProps> = ({
           >
             Active Tabs ({activeTabs})
           </Button>
-          <Button
-            onClick={() => handleViewChange("saved")}
-            className={
-              activeView === "saved"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-300 hover:bg-gray-600"
-            }
-          >
-            Saved Tabs ({savedTabs})
-          </Button>
+
           <Button
             onClick={() => handleViewChange("sessions")}
             className={
@@ -155,12 +114,6 @@ const Header: React.FC<HeaderProps> = ({
             }
           >
             Sessions
-          </Button>
-          <Button
-            onClick={debugStorage}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            Debug
           </Button>
         </div>
       </div>

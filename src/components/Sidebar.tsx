@@ -5,8 +5,8 @@ interface SidebarProps {
   open: boolean;
   activeFilter: string;
   setActiveFilter: (filter: string) => void;
-  activeView: "active" | "sessions";
-  setActiveView: (view: "active" | "sessions") => void;
+  activeView: "active" | "sessions" | "futuristic";
+  setActiveView: (view: "active" | "sessions" | "futuristic") => void;
   filters?: Array<{ id: string; name: string }>;
 }
 
@@ -59,11 +59,22 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             Sessions
           </button>
+
+          <button
+            className={`w-full text-left px-3 py-2 rounded-md ${
+              activeView === "futuristic"
+                ? "bg-cyan-600 text-white"
+                : "hover:bg-gray-700"
+            }`}
+            onClick={() => setActiveView("futuristic")}
+          >
+            Futuristic View
+          </button>
         </div>
       </div>
 
-      {/* Filters - Only show for active and saved views */}
-      {activeView !== "sessions" && (
+      {/* Filters - Only show for active view */}
+      {activeView === "active" && (
         <div className="p-4">
           <h3 className="text-sm uppercase text-gray-400 mb-2">Filters</h3>
           <div className="space-y-1">
@@ -84,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {activeView !== "sessions" && (
+      {activeView === "active" && (
         <div className="mt-6 p-4 border-t border-gray-700">
           <Button
             onClick={() => setActiveFilter("all")}

@@ -6,8 +6,8 @@ interface HeaderProps {
   title: string;
   activeTabs: number;
   savedTabs: number;
-  activeView: "active" | "sessions";
-  setActiveView: (view: "active" | "sessions") => void;
+  activeView: "active" | "sessions" | "futuristic";
+  setActiveView: (view: "active" | "sessions" | "futuristic") => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSidebarToggle: () => void;
@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({
   onSaveAllTabs,
 }) => {
   // This ensures we load saved sessions when switching to views
-  const handleViewChange = (view: "active" | "sessions") => {
+  const handleViewChange = (view: "active" | "sessions" | "futuristic") => {
     console.log(`Switching to ${view} view...`);
     setActiveView(view);
   };
@@ -104,7 +104,6 @@ const Header: React.FC<HeaderProps> = ({
           >
             Active Tabs ({activeTabs})
           </Button>
-
           <Button
             onClick={() => handleViewChange("sessions")}
             className={
@@ -114,6 +113,16 @@ const Header: React.FC<HeaderProps> = ({
             }
           >
             Sessions
+          </Button>
+          <Button
+            onClick={() => handleViewChange("futuristic")}
+            className={
+              activeView === "futuristic"
+                ? "bg-cyan-600 text-white"
+                : "bg-gray-300 hover:bg-gray-600"
+            }
+          >
+            Futuristic
           </Button>
         </div>
       </div>

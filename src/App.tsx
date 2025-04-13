@@ -5,13 +5,16 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import PopupView from "./components/PopupView";
 import SessionsView from "./components/SessionsView";
+import FuturisticView from "./components/FuturisticView";
 
 function App() {
   const [activeTabs, setActiveTabs] = useState<Tab[]>([]);
   const [windowGroups, setWindowGroups] = useState<WindowInfo[]>([]);
   const [savedTabs, setSavedTabs] = useState<SavedTab[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"active" | "sessions">("active");
+  const [activeView, setActiveView] = useState<
+    "active" | "sessions" | "futuristic"
+  >("active");
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -336,13 +339,25 @@ function App() {
         );
       case "sessions":
         return <SessionsView />;
+      case "futuristic":
+        return (
+          <FuturisticView
+            activeTabs={activeTabs}
+            savedTabs={savedTabs}
+            windowGroups={windowGroups}
+            onSwitchTab={switchToTab}
+            onCloseTab={closeTab}
+            onRestoreTab={restoreSavedTab}
+            onRemoveSavedTab={removeSavedTab}
+          />
+        );
       default:
         return null;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-mint-500 text-white ">
       <Sidebar
         open={sidebarOpen}
         activeFilter={activeFilter}
@@ -352,7 +367,13 @@ function App() {
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
-          title={activeView === "active" ? "Active Tabs" : "Sessions"}
+          title={
+            activeView === "active"
+              ? "Active Tabs"
+              : activeView === "sessions"
+              ? "Sessions"
+              : "Futuristic View"
+          }
           activeTabs={activeTabs.length}
           savedTabs={savedTabs.length}
           activeView={activeView}
@@ -363,16 +384,16 @@ function App() {
           onGroupTabs={groupTabs}
           onSaveAllTabs={saveAllTabs}
         />
-
         {renderView()}
-
-        <footer className="bg-gray-800 border-t border-gray-700 p-3 text-center">
-          <p className="text-sm text-gray-400">
-            {activeView === "active"
-              ? `${filteredTabs.length} active tabs`
-              : "Sessions view"}
-          </p>
-        </footer>
+        {activeView !== "futuristic" && (
+          <footer className="bg-gray-800 border-t border-gray-700 p-3 text-center">
+            <p className="text-sm text-gray-400">
+              {activeView === "active"
+                ? `${filteredTabs.length} active tabs`
+                : "Sessions view"}
+            </p>
+          </footer>
+        )}
       </div>
     </div>
   );

@@ -1,27 +1,224 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
 import { Tab, SavedTab, WindowInfo } from "./interfaces/TabInterface";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
+import { ViewType } from "./interfaces/ViewTypes";
 import PopupView from "./components/PopupView";
 import SessionsView from "./components/SessionsView";
-import FuturisticView from "./components/FuturisticView";
+import {
+  Activity,
+  BarChart3,
+  Command,
+  Cpu,
+  Database,
+  Globe,
+  HardDrive,
+  LineChart,
+  Moon,
+  RefreshCw,
+  Search,
+  Settings,
+  Shield,
+  Sun,
+  Wifi,
+  Bookmark,
+  Clock,
+  ExternalLink,
+  Layers,
+  Plus,
+  Trash2,
+  Tablet,
+} from "lucide-react";
+
+// For particles in the background
+class Particle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+  ctx: CanvasRenderingContext2D;
+  canvas: HTMLCanvasElement;
+
+  constructor(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    this.ctx = ctx;
+    this.canvas = canvas;
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 3 + 1;
+    this.speedX = (Math.random() - 0.5) * 0.5;
+    this.speedY = (Math.random() - 0.5) * 0.5;
+    this.color = `rgba(${Math.floor(Math.random() * 100) + 100}, ${
+      Math.floor(Math.random() * 100) + 150
+    }, ${Math.floor(Math.random() * 55) + 200}, ${Math.random() * 0.5 + 0.2})`;
+  }
+
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+
+    if (this.x > this.canvas.width) this.x = 0;
+    if (this.x < 0) this.x = this.canvas.width;
+    if (this.y > this.canvas.height) this.y = 0;
+    if (this.y < 0) this.y = this.canvas.height;
+  }
+
+  draw() {
+    this.ctx.fillStyle = this.color;
+    this.ctx.beginPath();
+    this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+}
+
+// Helper types for the futuristic UI
+interface SavedSession {
+  id: string;
+  name: string;
+  createdAt: string;
+  tabs: Tab[];
+}
 
 function App() {
   const [activeTabs, setActiveTabs] = useState<Tab[]>([]);
   const [windowGroups, setWindowGroups] = useState<WindowInfo[]>([]);
   const [savedTabs, setSavedTabs] = useState<SavedTab[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<
-    "active" | "sessions" | "futuristic"
-  >("active");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeView, setActiveView] = useState<ViewType>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Futuristic view states
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [systemStatus, setSystemStatus] = useState(85);
+  const [cpuUsage, setCpuUsage] = useState(42);
+  const [memoryUsage, setMemoryUsage] = useState(68);
+  const [networkStatus, setNetworkStatus] = useState(92);
+  const [securityLevel] = useState(75);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     fetchActiveTabs();
     fetchSavedTabs();
+  }, []);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [windowGroups]);
+
+  // Update time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulate changing data for system metrics
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCpuUsage(Math.floor(Math.random() * 30) + 30);
+      setMemoryUsage(Math.floor(Math.random() * 20) + 60);
+      setNetworkStatus(Math.floor(Math.random() * 15) + 80);
+      setSystemStatus(Math.floor(Math.random() * 10) + 80);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load saved sessions
+  const loadSavedSessions = useCallback(() => {
+    setSessionsLoading(true);
+
+    // Convert savedTabs to sessions by grouping by day
+    const groupedByDate: Record<string, SavedTab[]> = {};
+
+    savedTabs.forEach((tab) => {
+      const date = new Date(tab.savedAt).toDateString();
+      if (!groupedByDate[date]) {
+        groupedByDate[date] = [];
+      }
+      groupedByDate[date].push(tab);
+    });
+
+    // Create sessions from the grouped tabs
+    const sessions: SavedSession[] = Object.entries(groupedByDate).map(
+      ([date, tabs], index) => {
+        return {
+          id: `session-${index}`,
+          name: `Session ${new Date(date).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}`,
+          createdAt: new Date(date).toISOString(),
+          tabs: tabs as Tab[],
+        };
+      }
+    );
+
+    setTimeout(() => {
+      setSavedSessions(sessions);
+      setSessionsLoading(false);
+    }, 500);
+  }, [savedTabs]);
+
+  useEffect(() => {
+    loadSavedSessions();
+  }, [savedTabs, loadSavedSessions]);
+
+  // Particle effect
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const particles: Particle[] = [];
+    const particleCount = 100;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle(ctx, canvas));
+    }
+
+    function animate() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const particle of particles) {
+        particle.update();
+        particle.draw();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    const handleResize = () => {
+      if (!canvas) return;
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const fetchActiveTabs = () => {
@@ -205,84 +402,21 @@ function App() {
     }
   };
 
-  const saveAllTabs = () => {
-    if (chrome?.tabs && chrome?.storage) {
-      chrome.tabs.query({}, (currentTabs) => {
-        chrome.storage.local.get(["savedTabs"], (result) => {
-          const existingSavedTabs = result.savedTabs || [];
-          const tabsToSave = currentTabs.map((tab) => ({
-            id: tab.id,
-            title: tab.title,
-            url: tab.url,
-            favIconUrl: tab.favIconUrl,
-            savedAt: new Date().toISOString(),
-          }));
-
-          const updatedSavedTabs = [...existingSavedTabs, ...tabsToSave];
-
-          chrome.storage.local.set(
-            {
-              savedTabs: updatedSavedTabs,
-            },
-            () => {
-              const tabIds = currentTabs
-                .map((tab) => tab.id)
-                .filter((id): id is number => id !== undefined);
-
-              if (tabIds.length > 0) {
-                chrome.tabs.remove(tabIds);
-              }
-
-              setSavedTabs(updatedSavedTabs);
-              setActiveTabs([]);
-            }
-          );
-        });
-      });
-    } else {
-      console.log("Simulating saving all tabs");
-      const tabsToSave = activeTabs.map((tab) => ({
-        ...tab,
-        savedAt: new Date().toISOString(),
-      }));
-
-      setSavedTabs([...savedTabs, ...tabsToSave]);
-      setActiveTabs([]);
-    }
-  };
-
-  const groupTabs = () => {
-    if (!chrome?.tabGroups) {
-      alert("Tab grouping is not supported in this environment");
-      return;
-    }
-    const selectedTabs = activeTabs.slice(0, 3).map((tab) => tab.id);
-    chrome.tabs.group({ tabIds: selectedTabs }, (groupId) => {
-      console.log("Created tab group with ID:", groupId);
-    });
-  };
-
   const getFilteredTabs = () => {
-    const tabsToFilter = activeView === "active" ? activeTabs : savedTabs;
-
-    if (activeFilter === "all" && !searchQuery) return tabsToFilter;
-
-    return tabsToFilter.filter((tab) => {
-      const matchesDomain =
-        activeFilter === "all" || tab.url.includes(activeFilter);
+    return activeTabs.filter((tab) => {
       const matchesSearch =
         !searchQuery ||
         tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tab.url.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesDomain && matchesSearch;
+      return matchesSearch;
     });
   };
 
   const filteredTabs = getFilteredTabs();
 
   const getFilteredWindowGroups = () => {
-    if (!searchQuery && activeFilter === "all") {
+    if (!searchQuery) {
       return windowGroups;
     }
 
@@ -290,13 +424,11 @@ function App() {
       .map((windowGroup) => ({
         ...windowGroup,
         tabs: windowGroup.tabs.filter((tab) => {
-          const matchesDomain =
-            activeFilter === "all" || tab.url.includes(activeFilter);
           const matchesSearch =
             !searchQuery ||
             tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             tab.url.toLowerCase().includes(searchQuery.toLowerCase());
-          return matchesDomain && matchesSearch;
+          return matchesSearch;
         }),
       }))
       .filter((windowGroup) => windowGroup.tabs.length > 0);
@@ -319,15 +451,262 @@ function App() {
 
   const savedTabGroups = groupTabsByDate();
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  // Toggle theme
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
-  const renderView = () => {
+  // Format time
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
+  // Open a tab using the onSwitchTab function if provided, otherwise default to window.open
+  const openTab = (tab: Tab) => {
+    if (tab.id) {
+      switchToTab(tab.id);
+    } else {
+      window.open(tab.url, "_blank");
+    }
+  };
+
+  // Delete a tab
+  const deleteTab = (tab: Tab) => {
+    if (tab.id) {
+      closeTab(tab.id);
+    }
+  };
+
+  // Restore a saved tab
+  const restoreSession = (session: SavedSession) => {
+    session.tabs.forEach((tab) => {
+      if ("savedAt" in tab) {
+        restoreSavedTab(tab as SavedTab);
+      } else {
+        window.open(tab.url, "_blank");
+      }
+    });
+  };
+
+  // Delete a session
+  const deleteSession = (sessionId: string) => {
+    // Find the session
+    const session = savedSessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    // Remove all tabs in this session
+    session.tabs.forEach((tab) => {
+      if ("savedAt" in tab) {
+        removeSavedTab(tab as SavedTab);
+      }
+    });
+
+    // Update the sessions list
+    setSavedSessions(
+      savedSessions.filter((session) => session.id !== sessionId)
+    );
+  };
+
+  // Group sessions by date
+  const groupSessionsByDate = () => {
+    const grouped: { [date: string]: SavedSession[] } = {};
+
+    savedSessions.forEach((session) => {
+      const date = new Date(session.createdAt).toLocaleDateString();
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(session);
+    });
+
+    return grouped;
+  };
+
+  // Add this function to handle saving a session
+  const saveSession = (windowId: number) => {
+    const windowToSave = windowGroups.find((window) => window.id === windowId);
+    if (!windowToSave) return;
+
+    const newSession: SavedSession = {
+      id: `session-${Date.now()}`,
+      name: `Session ${new Date().toLocaleTimeString()}`,
+      createdAt: new Date().toISOString(),
+      tabs: windowToSave.tabs,
+    };
+
+    setSavedSessions((prev) => [newSession, ...prev]);
+  };
+
+  // Filter tabs based on search query
+  const filteredDashboardWindowGroups = searchQuery
+    ? windowGroups
+        .map((window) => ({
+          ...window,
+          tabs: window.tabs.filter(
+            (tab) =>
+              tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              tab.url.toLowerCase().includes(searchQuery.toLowerCase())
+          ),
+        }))
+        .filter((window) => window.tabs.length > 0)
+    : windowGroups;
+
+  // Component for nav items - simplified and more flexible approach
+  type NavItemProps = {
+    icon: React.ElementType;
+    label: string;
+    active?: boolean; // Make active optional with a default
+    onClick?: () => void;
+    view?: ViewType; // Using the existing ViewType
+    activeView?: ViewType; // Using the existing ViewType
+  };
+
+  const NavItem = ({
+    icon: Icon,
+    label,
+    active,
+    onClick,
+    view,
+    activeView,
+  }: NavItemProps) => {
+    // Determine if item is active - either explicit active prop or matching views
+    const isActive =
+      active === true ||
+      (view !== undefined && activeView !== undefined && view === activeView);
+
+    return (
+      <button
+        className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+          isActive
+            ? "bg-slate-800/70 text-cyan-400"
+            : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/30"
+        }`}
+        onClick={onClick}
+      >
+        <Icon className="mr-2 h-4 w-4" />
+        {label}
+      </button>
+    );
+  };
+
+  // Component for status items
+  const StatusItem = ({
+    label,
+    value,
+    color,
+  }: {
+    label: string;
+    value: number;
+    color: string;
+  }) => {
+    const getColor = () => {
+      switch (color) {
+        case "cyan":
+          return "from-cyan-500 to-blue-500";
+        case "green":
+          return "from-green-500 to-emerald-500";
+        case "blue":
+          return "from-blue-500 to-indigo-500";
+        case "purple":
+          return "from-purple-500 to-pink-500";
+        default:
+          return "from-cyan-500 to-blue-500";
+      }
+    };
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-slate-400">{label}</div>
+          <div className="text-xs text-slate-400">{value}%</div>
+        </div>
+        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full bg-gradient-to-r ${getColor()} rounded-full`}
+            style={{ width: `${value}%` }}
+          ></div>
+        </div>
+      </div>
+    );
+  };
+
+  // Component for metric cards
+  const MetricCard = ({
+    title,
+    value,
+    icon: Icon,
+    trend,
+    color,
+    detail,
+  }: {
+    title: string;
+    value: number;
+    icon: React.ElementType;
+    trend: "up" | "down" | "stable";
+    color: string;
+    detail: string;
+  }) => {
+    const getColor = () => {
+      switch (color) {
+        case "cyan":
+          return "from-cyan-500 to-blue-500 border-cyan-500/30";
+        case "green":
+          return "from-green-500 to-emerald-500 border-green-500/30";
+        case "blue":
+          return "from-blue-500 to-indigo-500 border-blue-500/30";
+        case "purple":
+          return "from-purple-500 to-pink-500 border-purple-500/30";
+        default:
+          return "from-cyan-500 to-blue-500 border-cyan-500/30";
+      }
+    };
+
+    const getTrendIcon = () => {
+      switch (trend) {
+        case "up":
+          return <BarChart3 className="h-4 w-4 text-amber-500" />;
+        case "down":
+          return <BarChart3 className="h-4 w-4 rotate-180 text-green-500" />;
+        case "stable":
+          return <LineChart className="h-4 w-4 text-blue-500" />;
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div
+        className={`bg-slate-800/50 rounded-md border ${getColor()} p-3 relative overflow-hidden`}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm text-slate-400">{title}</div>
+          <Icon className="h-4 w-4 text-cyan-500" />
+        </div>
+        <div className="text-xl font-bold mb-1 bg-gradient-to-r bg-clip-text text-transparent from-slate-100 to-slate-300">
+          {value}%
+        </div>
+        <div className="text-xs text-slate-500">{detail}</div>
+        <div className="absolute bottom-2 right-2 flex items-center">
+          {getTrendIcon()}
+        </div>
+        <div className="absolute -bottom-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-r opacity-20 blur-xl from-cyan-500 to-blue-500"></div>
+      </div>
+    );
+  };
+
+  // Render based on active view
+  const renderContent = () => {
     switch (activeView) {
       case "active":
         return (
           <PopupView
             loading={loading}
-            activeView={activeView}
+            activeView="active"
             filteredTabs={filteredTabs}
             windowGroups={filteredWindowGroups}
             savedTabGroups={savedTabGroups}
@@ -339,62 +718,473 @@ function App() {
         );
       case "sessions":
         return <SessionsView />;
-      case "futuristic":
-        return (
-          <FuturisticView
-            activeTabs={activeTabs}
-            savedTabs={savedTabs}
-            windowGroups={windowGroups}
-            onSwitchTab={switchToTab}
-            onCloseTab={closeTab}
-            onRestoreTab={restoreSavedTab}
-            onRemoveSavedTab={removeSavedTab}
-          />
-        );
+      case "dashboard":
       default:
-        return null;
+        return (
+          <div
+            className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative`}
+          >
+            {/* Background particle effect */}
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full opacity-30"
+            />
+
+            {/* Loading overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+                <div className="flex flex-col items-center">
+                  <div className="relative w-24 h-24">
+                    <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-ping"></div>
+                    <div className="absolute inset-2 border-4 border-t-cyan-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-4 border-4 border-r-purple-500 border-t-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-6 border-4 border-b-blue-500 border-t-transparent border-r-transparent border-l-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-8 border-4 border-l-green-500 border-t-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <div className="mt-4 text-cyan-500 font-mono text-sm tracking-wider">
+                    SYSTEM INITIALIZING
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="container mx-auto p-4 relative z-10 h-full flex flex-col">
+              {/* Top control bar */}
+              <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
+                <div className="flex items-center space-x-2">
+                  <Tablet className="h-6 w-6 text-cyan-500" />
+                  <span className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+                    Tab Blaster 5000
+                  </span>
+                </div>
+
+                {/* Navigation buttons */}
+                <div className="flex space-x-2">
+                  <button
+                    className={`px-3 py-1.5 rounded-full text-sm ${
+                      activeView === "dashboard"
+                        ? "bg-purple-600 text-white"
+                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+                    }`}
+                    onClick={() => setActiveView("dashboard")}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 rounded-full text-sm ${
+                      activeView === ("active" as ViewType)
+                        ? "bg-purple-600 text-white"
+                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+                    }`}
+                    onClick={() => setActiveView("active")}
+                  >
+                    Active Tabs
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 rounded-full text-sm ${
+                      activeView === ("sessions" as ViewType)
+                        ? "bg-purple-600 text-white"
+                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+                    }`}
+                    onClick={() => setActiveView("sessions")}
+                  >
+                    Sessions
+                  </button>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1 bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 backdrop-blur-sm">
+                    <Search className="h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search tabs..."
+                      className="bg-transparent border-none focus:outline-none text-sm w-40 placeholder:text-slate-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="text-cyan-500 font-mono text-sm">
+                    {formatTime(currentTime)}
+                  </div>
+
+                  <button
+                    className="p-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-slate-100"
+                    onClick={toggleTheme}
+                  >
+                    {theme === "dark" ? (
+                      <Moon className="h-4 w-4" />
+                    ) : (
+                      <Sun className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Main content */}
+              <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+                {/* Left sidebar */}
+                <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto">
+                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2">
+                    <nav className="space-y-1">
+                      <NavItem
+                        icon={Command}
+                        label="Dashboard"
+                        view="dashboard"
+                        activeView={activeView}
+                        onClick={() => setActiveView("dashboard")}
+                      />
+                      <NavItem
+                        icon={Activity}
+                        label="Tabs"
+                        view="active"
+                        activeView={activeView}
+                        onClick={() => setActiveView("active")}
+                      />
+                      <NavItem
+                        icon={Database}
+                        label="Sessions"
+                        view="sessions"
+                        activeView={activeView}
+                        onClick={() => setActiveView("sessions")}
+                      />
+                      <NavItem icon={Shield} label="Security" active={false} />
+                      <NavItem
+                        icon={Settings}
+                        label="Settings"
+                        active={false}
+                      />
+                    </nav>
+
+                    <div className="mt-4 pt-3 border-t border-slate-700/50">
+                      <div className="text-xs text-slate-500 mb-2 font-mono">
+                        SYSTEM STATUS
+                      </div>
+                      <div className="space-y-2">
+                        <StatusItem
+                          label="Core Systems"
+                          value={systemStatus}
+                          color="cyan"
+                        />
+                        <StatusItem
+                          label="Security"
+                          value={securityLevel}
+                          color="green"
+                        />
+                        <StatusItem
+                          label="Network"
+                          value={networkStatus}
+                          color="blue"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main dashboard */}
+                <div className="col-span-12 md:col-span-9 lg:col-span-7 overflow-y-auto">
+                  {/* System overview */}
+                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
+                    <div className="border-b border-slate-700/50 p-3">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-slate-100 flex items-center font-medium">
+                          <Activity className="mr-2 h-5 w-5 text-cyan-500" />
+                          Active Windows
+                        </h2>
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
+                            LIVE
+                          </span>
+                          <button
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
+                            onClick={fetchActiveTabs}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <MetricCard
+                          title="CPU Usage"
+                          value={cpuUsage}
+                          icon={Cpu}
+                          trend="up"
+                          color="cyan"
+                          detail="System Performance"
+                        />
+                        <MetricCard
+                          title="Memory"
+                          value={memoryUsage}
+                          icon={HardDrive}
+                          trend="stable"
+                          color="purple"
+                          detail="RAM Usage"
+                        />
+                        <MetricCard
+                          title="Network"
+                          value={networkStatus}
+                          icon={Wifi}
+                          trend="down"
+                          color="blue"
+                          detail="Connectivity"
+                        />
+                      </div>
+
+                      <div className="space-y-4">
+                        {filteredDashboardWindowGroups.map((window) => (
+                          <div
+                            key={window.id}
+                            className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                          >
+                            <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div
+                                  className={`h-2 w-2 rounded-full ${
+                                    window.focused
+                                      ? "bg-cyan-500"
+                                      : "bg-slate-500"
+                                  } mr-2`}
+                                ></div>
+                                <span className="text-sm font-medium text-slate-300">
+                                  Window {window.id}
+                                </span>
+                                <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                                  {window.tabs.length} tabs
+                                </span>
+                              </div>
+                              <button
+                                className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                                onClick={() => saveSession(window.id)}
+                              >
+                                <Plus className="h-3 w-3 inline mr-1" /> Save
+                                Session
+                              </button>
+                            </div>
+
+                            <div className="divide-y divide-slate-700/30">
+                              {window.tabs.map((tab) => (
+                                <div
+                                  key={tab.id}
+                                  className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                                  onClick={() => openTab(tab)}
+                                >
+                                  <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                    {tab.favIconUrl ? (
+                                      <img
+                                        src={tab.favIconUrl}
+                                        alt=""
+                                        className="w-4 h-4"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src =
+                                            "https://via.placeholder.com/16";
+                                        }}
+                                      />
+                                    ) : (
+                                      <Globe className="w-4 h-4 text-slate-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 truncate">
+                                    <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                      {tab.title}
+                                    </div>
+                                    <div className="text-xs text-slate-500 truncate">
+                                      {tab.url}
+                                    </div>
+                                  </div>
+                                  <button
+                                    className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteTab(tab);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {filteredDashboardWindowGroups.length === 0 && (
+                          <div className="text-center py-8 text-slate-500">
+                            {searchQuery ? (
+                              <div>No windows or tabs match your search.</div>
+                            ) : (
+                              <div>No active windows or tabs found.</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right sidebar - Sessions */}
+                <div className="col-span-12 lg:col-span-3 overflow-y-auto">
+                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden h-full flex flex-col">
+                    <div className="p-3 border-b border-slate-700/50">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-slate-100 flex items-center font-medium">
+                          <Bookmark className="mr-2 h-5 w-5 text-purple-500" />
+                          Saved Sessions
+                        </h2>
+                        <button
+                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
+                          onClick={loadSavedSessions}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                      {sessionsLoading ? (
+                        <div className="flex flex-col items-center justify-center p-8">
+                          <div className="relative w-12 h-12">
+                            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full animate-ping"></div>
+                            <div className="absolute inset-2 border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                          </div>
+                          <div className="mt-4 text-purple-400 font-mono text-xs">
+                            LOADING SESSIONS
+                          </div>
+                        </div>
+                      ) : savedSessions.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-8">
+                          <div className="text-slate-400 text-sm">
+                            No saved sessions found
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-slate-700/30">
+                          {Object.entries(groupSessionsByDate()).map(
+                            ([date, sessions]) => (
+                              <div key={date} className="py-2">
+                                <div className="px-4 py-2">
+                                  <div className="text-xs font-mono text-slate-500 mb-1">
+                                    {date}
+                                  </div>
+
+                                  {sessions.map((session) => (
+                                    <div
+                                      key={session.id}
+                                      className="mb-3 bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                                    >
+                                      <div className="p-3 bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm border-b border-slate-700/50">
+                                        <div className="flex items-center justify-between">
+                                          <div className="text-sm font-medium text-cyan-400">
+                                            {session.name}
+                                          </div>
+                                          <div className="flex space-x-1">
+                                            <button
+                                              className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
+                                              onClick={() =>
+                                                restoreSession(session)
+                                              }
+                                              title="Restore all tabs"
+                                            >
+                                              <ExternalLink className="h-3 w-3" />
+                                            </button>
+                                            <button
+                                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
+                                              onClick={() =>
+                                                deleteSession(session.id)
+                                              }
+                                              title="Delete session"
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center mt-1 text-xs text-slate-500">
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          {new Date(
+                                            session.createdAt
+                                          ).toLocaleTimeString()}{" "}
+                                          •
+                                          <Layers className="h-3 w-3 mx-1" />
+                                          {session.tabs.length}{" "}
+                                          {session.tabs.length === 1
+                                            ? "tab"
+                                            : "tabs"}
+                                        </div>
+                                      </div>
+
+                                      <div className="p-2 max-h-40 overflow-y-auto">
+                                        {session.tabs
+                                          .slice(0, 3)
+                                          .map((tab, index) => (
+                                            <div
+                                              key={`${session.id}-${index}`}
+                                              className="flex items-center p-2 hover:bg-slate-700/50 rounded-md cursor-pointer group"
+                                              onClick={() => openTab(tab)}
+                                            >
+                                              <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                                {tab.favIconUrl ? (
+                                                  <img
+                                                    src={tab.favIconUrl}
+                                                    alt=""
+                                                    className="w-3 h-3"
+                                                    onError={(e) => {
+                                                      (
+                                                        e.target as HTMLImageElement
+                                                      ).src =
+                                                        "https://via.placeholder.com/12";
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <Globe className="w-3 h-3 text-slate-400" />
+                                                )}
+                                              </div>
+                                              <div className="truncate text-xs text-slate-300 group-hover:text-cyan-300">
+                                                {tab.title}
+                                              </div>
+                                            </div>
+                                          ))}
+
+                                        {session.tabs.length > 3 && (
+                                          <div className="px-2 py-1 text-xs text-slate-500 italic">
+                                            +{session.tabs.length - 3} more tabs
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-3 border-t border-slate-700/50 bg-slate-800/30">
+                      <div className="w-full flex justify-between items-center">
+                        <div className="text-xs text-slate-500">
+                          {savedSessions.length}{" "}
+                          {savedSessions.length === 1 ? "session" : "sessions"}
+                        </div>
+                        <button className="text-xs border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 px-2 py-1 rounded flex items-center">
+                          <Plus className="h-3 w-3 mr-1" /> Create Session
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
     }
   };
 
   return (
-    <div className="flex h-screen bg-mint-500 text-white ">
-      <Sidebar
-        open={sidebarOpen}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
-        activeView={activeView}
-        setActiveView={setActiveView}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          title={
-            activeView === "active"
-              ? "Active Tabs"
-              : activeView === "sessions"
-              ? "Sessions"
-              : "Futuristic View"
-          }
-          activeTabs={activeTabs.length}
-          savedTabs={savedTabs.length}
-          activeView={activeView}
-          setActiveView={setActiveView}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSidebarToggle={toggleSidebar}
-          onGroupTabs={groupTabs}
-          onSaveAllTabs={saveAllTabs}
-        />
-        {renderView()}
-        {activeView !== "futuristic" && (
-          <footer className="bg-gray-800 border-t border-gray-700 p-3 text-center">
-            <p className="text-sm text-gray-400">
-              {activeView === "active"
-                ? `${filteredTabs.length} active tabs`
-                : "Sessions view"}
-            </p>
-          </footer>
-        )}
-      </div>
+    <div className="flex h-screen bg-mint-500 text-white">
+      {renderContent()}
     </div>
   );
 }

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
 import { Tab, SavedTab, WindowInfo } from "./interfaces/TabInterface";
 import { ViewType } from "./interfaces/ViewTypes";
-import PopupView from "./components/PopupView";
 import SessionsView from "./components/SessionsView";
 import {
   Activity,
@@ -26,7 +25,7 @@ import {
   Layers,
   Plus,
   Trash2,
-  Tablet,
+  BookmarkCheck,
 } from "lucide-react";
 
 // For particles in the background
@@ -402,19 +401,6 @@ function App() {
     }
   };
 
-  const getFilteredTabs = () => {
-    return activeTabs.filter((tab) => {
-      const matchesSearch =
-        !searchQuery ||
-        tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tab.url.toLowerCase().includes(searchQuery.toLowerCase());
-
-      return matchesSearch;
-    });
-  };
-
-  const filteredTabs = getFilteredTabs();
-
   const getFilteredWindowGroups = () => {
     if (!searchQuery) {
       return windowGroups;
@@ -435,21 +421,6 @@ function App() {
   };
 
   const filteredWindowGroups = getFilteredWindowGroups();
-
-  const groupTabsByDate = () => {
-    const groups: { [key: string]: SavedTab[] } = {};
-    savedTabs.forEach((tab) => {
-      const date = new Date(tab.savedAt).toDateString();
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(tab);
-    });
-
-    return groups;
-  };
-
-  const savedTabGroups = groupTabsByDate();
 
   // Toggle theme
   const toggleTheme = () => {
@@ -560,10 +531,10 @@ function App() {
   type NavItemProps = {
     icon: React.ElementType;
     label: string;
-    active?: boolean; // Make active optional with a default
+    active?: boolean;
     onClick?: () => void;
-    view?: ViewType; // Using the existing ViewType
-    activeView?: ViewType; // Using the existing ViewType
+    view?: ViewType;
+    activeView?: ViewType;
   };
 
   const NavItem = ({
@@ -699,485 +670,623 @@ function App() {
     );
   };
 
-  // Render based on active view
+  // Making activeView properly compatible with ViewType in all comparisons
   const renderContent = () => {
+    // Shared sidebar component that will be consistent across all views
+    const Sidebar = () => (
+      <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto">
+        <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
+          <div>
+            <nav className="space-y-1">
+              <NavItem
+                icon={Command}
+                label="Dashboard"
+                view="dashboard"
+                activeView={activeView}
+                onClick={() => setActiveView("dashboard")}
+              />
+              <NavItem
+                icon={Activity}
+                label="Tabs"
+                view="active"
+                activeView={activeView}
+                onClick={() => setActiveView("active")}
+              />
+              <NavItem
+                icon={Database}
+                label="Sessions"
+                view="sessions"
+                activeView={activeView}
+                onClick={() => setActiveView("sessions")}
+              />
+              <NavItem icon={Shield} label="Security" active={false} />
+              <NavItem icon={Settings} label="Settings" active={false} />
+            </nav>
+
+            <div className="mt-4 pt-3 border-t border-slate-700/50">
+              <div className="text-xs text-slate-500 mb-2 font-mono">
+                SYSTEM STATUS
+              </div>
+              <div className="space-y-2">
+                <StatusItem
+                  label="Core Systems"
+                  value={systemStatus}
+                  color="cyan"
+                />
+                <StatusItem
+                  label="Security"
+                  value={securityLevel}
+                  color="green"
+                />
+                <StatusItem
+                  label="Network"
+                  value={networkStatus}
+                  color="blue"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-6 border-t border-slate-700/50">
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative">
+                <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-purple-400 bg-clip-text text-transparent cyberpunk-text">
+                  Gmoney <span className="text-xs align-super">™</span>
+                </div>
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Labs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    // Shared header component with navigation buttons
+    const Header = () => (
+      <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
+        <div className="flex items-center space-x-2">
+          <BookmarkCheck className="h-8 w-8 text-cyan-500" />
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+            {activeView === "active" ? "Active Tabs" : "Tab Blaster 5000"}
+          </span>
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex space-x-2">
+          <button
+            className={`px-3 py-1.5 rounded-full text-sm ${
+              (activeView as ViewType) === "dashboard"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+            }`}
+            onClick={() => setActiveView("dashboard")}
+          >
+            Dashboard
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-full text-sm ${
+              (activeView as ViewType) === "active"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+            }`}
+            onClick={() => setActiveView("active")}
+          >
+            Active Tabs
+          </button>
+          <button
+            className={`px-3 py-1.5 rounded-full text-sm ${
+              (activeView as ViewType) === "sessions"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
+            }`}
+            onClick={() => setActiveView("sessions")}
+          >
+            Sessions
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 backdrop-blur-sm">
+            <Search className="h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search tabs..."
+              className="bg-transparent border-none focus:outline-none text-sm w-40 placeholder:text-slate-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="text-cyan-500 font-mono text-sm">
+            {formatTime(currentTime)}
+          </div>
+
+          <button
+            className="p-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-slate-100"
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </div>
+    );
+
+    // Main layout wrapper for all views (except SessionsView which is a separate component)
+    const MainLayout = ({ children }: { children: React.ReactNode }) => (
+      <div
+        className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative`}
+      >
+        {/* Background particle effect */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full opacity-30"
+        />
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div className="flex flex-col items-center">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-ping"></div>
+                <div className="absolute inset-2 border-4 border-t-cyan-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-4 border-4 border-r-purple-500 border-t-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-6 border-4 border-b-blue-500 border-t-transparent border-r-transparent border-l-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-8 border-4 border-l-green-500 border-t-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+              </div>
+              <div className="mt-4 text-cyan-500 font-mono text-sm tracking-wider">
+                SYSTEM INITIALIZING
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="container mx-auto p-4 relative z-10 h-full flex flex-col">
+          <Header />
+
+          <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+            <Sidebar />
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+
     switch (activeView) {
       case "active":
         return (
-          <PopupView
-            loading={loading}
-            activeView="active"
-            filteredTabs={filteredTabs}
-            windowGroups={filteredWindowGroups}
-            savedTabGroups={savedTabGroups}
-            onSwitchTab={switchToTab}
-            onCloseTab={closeTab}
-            onRestoreTab={restoreSavedTab}
-            onRemoveSavedTab={removeSavedTab}
-          />
+          <MainLayout>
+            {/* Main content - Active Tabs */}
+            <div className="col-span-12 md:col-span-9 lg:col-span-10 overflow-y-auto">
+              {/* Active tabs with futuristic style */}
+              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
+                <div className="border-b border-slate-700/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-slate-100 flex items-center font-medium">
+                      <Activity className="mr-2 h-5 w-5 text-cyan-500" />
+                      Active Windows ({filteredWindowGroups.length})
+                    </h2>
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
+                        <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
+                        LIVE
+                      </span>
+                      <button
+                        className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
+                        onClick={fetchActiveTabs}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3">
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <div className="relative w-16 h-16">
+                        <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-ping"></div>
+                        <div className="absolute inset-2 border-4 border-t-cyan-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                      </div>
+                      <div className="mt-4 text-cyan-400 font-mono text-sm">
+                        LOADING TABS
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredWindowGroups.map((window) => (
+                        <div
+                          key={window.id}
+                          className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                        >
+                          <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  window.focused
+                                    ? "bg-cyan-500"
+                                    : "bg-slate-500"
+                                } mr-2`}
+                              ></div>
+                              <span className="text-sm font-medium text-slate-300">
+                                Window {window.id}
+                              </span>
+                              <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                                {window.tabs.length} tabs
+                              </span>
+                            </div>
+                            <button
+                              className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                              onClick={() => saveSession(window.id)}
+                            >
+                              <Plus className="h-3 w-3 inline mr-1" /> Save
+                              Session
+                            </button>
+                          </div>
+
+                          <div className="divide-y divide-slate-700/30">
+                            {window.tabs.map((tab) => (
+                              <div
+                                key={tab.id}
+                                className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                                onClick={() => openTab(tab)}
+                              >
+                                <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                  {tab.favIconUrl ? (
+                                    <img
+                                      src={tab.favIconUrl}
+                                      alt=""
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src =
+                                          "https://via.placeholder.com/16";
+                                      }}
+                                    />
+                                  ) : (
+                                    <Globe className="w-4 h-4 text-slate-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 truncate">
+                                  <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                    {tab.title}
+                                  </div>
+                                  <div className="text-xs text-slate-500 truncate">
+                                    {tab.url}
+                                  </div>
+                                </div>
+                                <button
+                                  className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    closeTab(tab.id);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      {filteredWindowGroups.length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          {searchQuery ? (
+                            <div>No windows or tabs match your search.</div>
+                          ) : (
+                            <div>No active windows or tabs found.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </MainLayout>
         );
       case "sessions":
         return <SessionsView />;
       case "dashboard":
       default:
         return (
-          <div
-            className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative`}
-          >
-            {/* Background particle effect */}
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 w-full h-full opacity-30"
-            />
-
-            {/* Loading overlay */}
-            {isLoading && (
-              <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
-                <div className="flex flex-col items-center">
-                  <div className="relative w-24 h-24">
-                    <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-ping"></div>
-                    <div className="absolute inset-2 border-4 border-t-cyan-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                    <div className="absolute inset-4 border-4 border-r-purple-500 border-t-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                    <div className="absolute inset-6 border-4 border-b-blue-500 border-t-transparent border-r-transparent border-l-transparent rounded-full animate-spin"></div>
-                    <div className="absolute inset-8 border-4 border-l-green-500 border-t-transparent border-r-transparent border-b-transparent rounded-full animate-spin"></div>
+          <MainLayout>
+            {/* Main dashboard */}
+            <div className="col-span-12 md:col-span-9 lg:col-span-7 overflow-y-auto">
+              {/* System overview */}
+              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
+                <div className="border-b border-slate-700/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-slate-100 flex items-center font-medium">
+                      <Activity className="mr-2 h-5 w-5 text-cyan-500" />
+                      Active Windows
+                    </h2>
+                    <div className="flex items-center space-x-2">
+                      <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
+                        <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
+                        LIVE
+                      </span>
+                      <button
+                        className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
+                        onClick={fetchActiveTabs}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-4 text-cyan-500 font-mono text-sm tracking-wider">
-                    SYSTEM INITIALIZING
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="container mx-auto p-4 relative z-10 h-full flex flex-col">
-              {/* Top control bar */}
-              <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
-                <div className="flex items-center space-x-2">
-                  <Tablet className="h-6 w-6 text-cyan-500" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-                    Tab Blaster 5000
-                  </span>
                 </div>
 
-                {/* Navigation buttons */}
-                <div className="flex space-x-2">
-                  <button
-                    className={`px-3 py-1.5 rounded-full text-sm ${
-                      activeView === "dashboard"
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
-                    }`}
-                    onClick={() => setActiveView("dashboard")}
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    className={`px-3 py-1.5 rounded-full text-sm ${
-                      activeView === ("active" as ViewType)
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
-                    }`}
-                    onClick={() => setActiveView("active")}
-                  >
-                    Active Tabs
-                  </button>
-                  <button
-                    className={`px-3 py-1.5 rounded-full text-sm ${
-                      activeView === ("sessions" as ViewType)
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-800/50 text-slate-300 hover:bg-slate-700/50"
-                    }`}
-                    onClick={() => setActiveView("sessions")}
-                  >
-                    Sessions
-                  </button>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1 bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 backdrop-blur-sm">
-                    <Search className="h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search tabs..."
-                      className="bg-transparent border-none focus:outline-none text-sm w-40 placeholder:text-slate-500"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                <div className="p-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <MetricCard
+                      title="CPU Usage"
+                      value={cpuUsage}
+                      icon={Cpu}
+                      trend="up"
+                      color="cyan"
+                      detail="System Performance"
+                    />
+                    <MetricCard
+                      title="Memory"
+                      value={memoryUsage}
+                      icon={HardDrive}
+                      trend="stable"
+                      color="purple"
+                      detail="RAM Usage"
+                    />
+                    <MetricCard
+                      title="Network"
+                      value={networkStatus}
+                      icon={Wifi}
+                      trend="down"
+                      color="blue"
+                      detail="Connectivity"
                     />
                   </div>
 
-                  <div className="text-cyan-500 font-mono text-sm">
-                    {formatTime(currentTime)}
-                  </div>
-
-                  <button
-                    className="p-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-slate-100"
-                    onClick={toggleTheme}
-                  >
-                    {theme === "dark" ? (
-                      <Moon className="h-4 w-4" />
-                    ) : (
-                      <Sun className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Main content */}
-              <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
-                {/* Left sidebar */}
-                <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto">
-                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2">
-                    <nav className="space-y-1">
-                      <NavItem
-                        icon={Command}
-                        label="Dashboard"
-                        view="dashboard"
-                        activeView={activeView}
-                        onClick={() => setActiveView("dashboard")}
-                      />
-                      <NavItem
-                        icon={Activity}
-                        label="Tabs"
-                        view="active"
-                        activeView={activeView}
-                        onClick={() => setActiveView("active")}
-                      />
-                      <NavItem
-                        icon={Database}
-                        label="Sessions"
-                        view="sessions"
-                        activeView={activeView}
-                        onClick={() => setActiveView("sessions")}
-                      />
-                      <NavItem icon={Shield} label="Security" active={false} />
-                      <NavItem
-                        icon={Settings}
-                        label="Settings"
-                        active={false}
-                      />
-                    </nav>
-
-                    <div className="mt-4 pt-3 border-t border-slate-700/50">
-                      <div className="text-xs text-slate-500 mb-2 font-mono">
-                        SYSTEM STATUS
-                      </div>
-                      <div className="space-y-2">
-                        <StatusItem
-                          label="Core Systems"
-                          value={systemStatus}
-                          color="cyan"
-                        />
-                        <StatusItem
-                          label="Security"
-                          value={securityLevel}
-                          color="green"
-                        />
-                        <StatusItem
-                          label="Network"
-                          value={networkStatus}
-                          color="blue"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Main dashboard */}
-                <div className="col-span-12 md:col-span-9 lg:col-span-7 overflow-y-auto">
-                  {/* System overview */}
-                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
-                    <div className="border-b border-slate-700/50 p-3">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-slate-100 flex items-center font-medium">
-                          <Activity className="mr-2 h-5 w-5 text-cyan-500" />
-                          Active Windows
-                        </h2>
-                        <div className="flex items-center space-x-2">
-                          <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
-                            <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
-                            LIVE
-                          </span>
+                  <div className="space-y-4">
+                    {filteredDashboardWindowGroups.map((window) => (
+                      <div
+                        key={window.id}
+                        className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                      >
+                        <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div
+                              className={`h-2 w-2 rounded-full ${
+                                window.focused ? "bg-cyan-500" : "bg-slate-500"
+                              } mr-2`}
+                            ></div>
+                            <span className="text-sm font-medium text-slate-300">
+                              Window {window.id}
+                            </span>
+                            <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                              {window.tabs.length} tabs
+                            </span>
+                          </div>
                           <button
-                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
-                            onClick={fetchActiveTabs}
+                            className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                            onClick={() => saveSession(window.id)}
                           >
-                            <RefreshCw className="h-4 w-4" />
+                            <Plus className="h-3 w-3 inline mr-1" /> Save
+                            Session
                           </button>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="p-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <MetricCard
-                          title="CPU Usage"
-                          value={cpuUsage}
-                          icon={Cpu}
-                          trend="up"
-                          color="cyan"
-                          detail="System Performance"
-                        />
-                        <MetricCard
-                          title="Memory"
-                          value={memoryUsage}
-                          icon={HardDrive}
-                          trend="stable"
-                          color="purple"
-                          detail="RAM Usage"
-                        />
-                        <MetricCard
-                          title="Network"
-                          value={networkStatus}
-                          icon={Wifi}
-                          trend="down"
-                          color="blue"
-                          detail="Connectivity"
-                        />
-                      </div>
-
-                      <div className="space-y-4">
-                        {filteredDashboardWindowGroups.map((window) => (
-                          <div
-                            key={window.id}
-                            className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
-                          >
-                            <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
-                              <div className="flex items-center">
-                                <div
-                                  className={`h-2 w-2 rounded-full ${
-                                    window.focused
-                                      ? "bg-cyan-500"
-                                      : "bg-slate-500"
-                                  } mr-2`}
-                                ></div>
-                                <span className="text-sm font-medium text-slate-300">
-                                  Window {window.id}
-                                </span>
-                                <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
-                                  {window.tabs.length} tabs
-                                </span>
+                        <div className="divide-y divide-slate-700/30">
+                          {window.tabs.map((tab) => (
+                            <div
+                              key={tab.id}
+                              className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                              onClick={() => openTab(tab)}
+                            >
+                              <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                {tab.favIconUrl ? (
+                                  <img
+                                    src={tab.favIconUrl}
+                                    alt=""
+                                    className="w-4 h-4"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src =
+                                        "https://via.placeholder.com/16";
+                                    }}
+                                  />
+                                ) : (
+                                  <Globe className="w-4 h-4 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 truncate">
+                                <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                  {tab.title}
+                                </div>
+                                <div className="text-xs text-slate-500 truncate">
+                                  {tab.url}
+                                </div>
                               </div>
                               <button
-                                className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                                onClick={() => saveSession(window.id)}
+                                className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteTab(tab);
+                                }}
                               >
-                                <Plus className="h-3 w-3 inline mr-1" /> Save
-                                Session
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
 
-                            <div className="divide-y divide-slate-700/30">
-                              {window.tabs.map((tab) => (
-                                <div
-                                  key={tab.id}
-                                  className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
-                                  onClick={() => openTab(tab)}
-                                >
-                                  <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                    {tab.favIconUrl ? (
-                                      <img
-                                        src={tab.favIconUrl}
-                                        alt=""
-                                        className="w-4 h-4"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).src =
-                                            "https://via.placeholder.com/16";
-                                        }}
-                                      />
-                                    ) : (
-                                      <Globe className="w-4 h-4 text-slate-400" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1 truncate">
-                                    <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
-                                      {tab.title}
-                                    </div>
-                                    <div className="text-xs text-slate-500 truncate">
-                                      {tab.url}
-                                    </div>
-                                  </div>
-                                  <button
-                                    className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteTab(tab);
-                                    }}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-
-                        {filteredDashboardWindowGroups.length === 0 && (
-                          <div className="text-center py-8 text-slate-500">
-                            {searchQuery ? (
-                              <div>No windows or tabs match your search.</div>
-                            ) : (
-                              <div>No active windows or tabs found.</div>
-                            )}
-                          </div>
+                    {filteredDashboardWindowGroups.length === 0 && (
+                      <div className="text-center py-8 text-slate-500">
+                        {searchQuery ? (
+                          <div>No windows or tabs match your search.</div>
+                        ) : (
+                          <div>No active windows or tabs found.</div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right sidebar - Sessions */}
-                <div className="col-span-12 lg:col-span-3 overflow-y-auto">
-                  <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden h-full flex flex-col">
-                    <div className="p-3 border-b border-slate-700/50">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-slate-100 flex items-center font-medium">
-                          <Bookmark className="mr-2 h-5 w-5 text-purple-500" />
-                          Saved Sessions
-                        </h2>
-                        <button
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
-                          onClick={loadSavedSessions}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto">
-                      {sessionsLoading ? (
-                        <div className="flex flex-col items-center justify-center p-8">
-                          <div className="relative w-12 h-12">
-                            <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full animate-ping"></div>
-                            <div className="absolute inset-2 border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-                          </div>
-                          <div className="mt-4 text-purple-400 font-mono text-xs">
-                            LOADING SESSIONS
-                          </div>
-                        </div>
-                      ) : savedSessions.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-8">
-                          <div className="text-slate-400 text-sm">
-                            No saved sessions found
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-slate-700/30">
-                          {Object.entries(groupSessionsByDate()).map(
-                            ([date, sessions]) => (
-                              <div key={date} className="py-2">
-                                <div className="px-4 py-2">
-                                  <div className="text-xs font-mono text-slate-500 mb-1">
-                                    {date}
-                                  </div>
-
-                                  {sessions.map((session) => (
-                                    <div
-                                      key={session.id}
-                                      className="mb-3 bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
-                                    >
-                                      <div className="p-3 bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm border-b border-slate-700/50">
-                                        <div className="flex items-center justify-between">
-                                          <div className="text-sm font-medium text-cyan-400">
-                                            {session.name}
-                                          </div>
-                                          <div className="flex space-x-1">
-                                            <button
-                                              className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
-                                              onClick={() =>
-                                                restoreSession(session)
-                                              }
-                                              title="Restore all tabs"
-                                            >
-                                              <ExternalLink className="h-3 w-3" />
-                                            </button>
-                                            <button
-                                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
-                                              onClick={() =>
-                                                deleteSession(session.id)
-                                              }
-                                              title="Delete session"
-                                            >
-                                              <Trash2 className="h-3 w-3" />
-                                            </button>
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center mt-1 text-xs text-slate-500">
-                                          <Clock className="h-3 w-3 mr-1" />
-                                          {new Date(
-                                            session.createdAt
-                                          ).toLocaleTimeString()}{" "}
-                                          •
-                                          <Layers className="h-3 w-3 mx-1" />
-                                          {session.tabs.length}{" "}
-                                          {session.tabs.length === 1
-                                            ? "tab"
-                                            : "tabs"}
-                                        </div>
-                                      </div>
-
-                                      <div className="p-2 max-h-40 overflow-y-auto">
-                                        {session.tabs
-                                          .slice(0, 3)
-                                          .map((tab, index) => (
-                                            <div
-                                              key={`${session.id}-${index}`}
-                                              className="flex items-center p-2 hover:bg-slate-700/50 rounded-md cursor-pointer group"
-                                              onClick={() => openTab(tab)}
-                                            >
-                                              <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                                {tab.favIconUrl ? (
-                                                  <img
-                                                    src={tab.favIconUrl}
-                                                    alt=""
-                                                    className="w-3 h-3"
-                                                    onError={(e) => {
-                                                      (
-                                                        e.target as HTMLImageElement
-                                                      ).src =
-                                                        "https://via.placeholder.com/12";
-                                                    }}
-                                                  />
-                                                ) : (
-                                                  <Globe className="w-3 h-3 text-slate-400" />
-                                                )}
-                                              </div>
-                                              <div className="truncate text-xs text-slate-300 group-hover:text-cyan-300">
-                                                {tab.title}
-                                              </div>
-                                            </div>
-                                          ))}
-
-                                        {session.tabs.length > 3 && (
-                                          <div className="px-2 py-1 text-xs text-slate-500 italic">
-                                            +{session.tabs.length - 3} more tabs
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-3 border-t border-slate-700/50 bg-slate-800/30">
-                      <div className="w-full flex justify-between items-center">
-                        <div className="text-xs text-slate-500">
-                          {savedSessions.length}{" "}
-                          {savedSessions.length === 1 ? "session" : "sessions"}
-                        </div>
-                        <button className="text-xs border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 px-2 py-1 rounded flex items-center">
-                          <Plus className="h-3 w-3 mr-1" /> Create Session
-                        </button>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Right sidebar - Sessions */}
+            <div className="col-span-12 lg:col-span-3 overflow-y-auto">
+              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden h-full flex flex-col">
+                <div className="p-3 border-b border-slate-700/50">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-slate-100 flex items-center font-medium">
+                      <Bookmark className="mr-2 h-5 w-5 text-purple-500" />
+                      Saved Sessions
+                    </h2>
+                    <button
+                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
+                      onClick={loadSavedSessions}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  {sessionsLoading ? (
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <div className="relative w-12 h-12">
+                        <div className="absolute inset-0 border-4 border-purple-500/30 rounded-full animate-ping"></div>
+                        <div className="absolute inset-2 border-4 border-t-purple-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+                      </div>
+                      <div className="mt-4 text-purple-400 font-mono text-xs">
+                        LOADING SESSIONS
+                      </div>
+                    </div>
+                  ) : savedSessions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-8">
+                      <div className="text-slate-400 text-sm">
+                        No saved sessions found
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-700/30">
+                      {Object.entries(groupSessionsByDate()).map(
+                        ([date, sessions]) => (
+                          <div key={date} className="py-2">
+                            <div className="px-4 py-2">
+                              <div className="text-xs font-mono text-slate-500 mb-1">
+                                {date}
+                              </div>
+
+                              {sessions.map((session) => (
+                                <div
+                                  key={session.id}
+                                  className="mb-3 bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                                >
+                                  <div className="p-3 bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm border-b border-slate-700/50">
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-sm font-medium text-cyan-400">
+                                        {session.name}
+                                      </div>
+                                      <div className="flex space-x-1">
+                                        <button
+                                          className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
+                                          onClick={() =>
+                                            restoreSession(session)
+                                          }
+                                          title="Restore all tabs"
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
+                                          onClick={() =>
+                                            deleteSession(session.id)
+                                          }
+                                          title="Delete session"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center mt-1 text-xs text-slate-500">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {new Date(
+                                        session.createdAt
+                                      ).toLocaleTimeString()}{" "}
+                                      •
+                                      <Layers className="h-3 w-3 mx-1" />
+                                      {session.tabs.length}{" "}
+                                      {session.tabs.length === 1
+                                        ? "tab"
+                                        : "tabs"}
+                                    </div>
+                                  </div>
+
+                                  <div className="p-2 max-h-40 overflow-y-auto">
+                                    {session.tabs
+                                      .slice(0, 3)
+                                      .map((tab, index) => (
+                                        <div
+                                          key={`${session.id}-${index}`}
+                                          className="flex items-center p-2 hover:bg-slate-700/50 rounded-md cursor-pointer group"
+                                          onClick={() => openTab(tab)}
+                                        >
+                                          <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                            {tab.favIconUrl ? (
+                                              <img
+                                                src={tab.favIconUrl}
+                                                alt=""
+                                                className="w-3 h-3"
+                                                onError={(e) => {
+                                                  (
+                                                    e.target as HTMLImageElement
+                                                  ).src =
+                                                    "https://via.placeholder.com/12";
+                                                }}
+                                              />
+                                            ) : (
+                                              <Globe className="w-3 h-3 text-slate-400" />
+                                            )}
+                                          </div>
+                                          <div className="truncate text-xs text-slate-300 group-hover:text-cyan-300">
+                                            {tab.title}
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                    {session.tabs.length > 3 && (
+                                      <div className="px-2 py-1 text-xs text-slate-500 italic">
+                                        +{session.tabs.length - 3} more tabs
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 border-t border-slate-700/50 bg-slate-800/30">
+                  <div className="w-full flex justify-between items-center">
+                    <div className="text-xs text-slate-500">
+                      {savedSessions.length}{" "}
+                      {savedSessions.length === 1 ? "session" : "sessions"}
+                    </div>
+                    <button className="text-xs border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 px-2 py-1 rounded flex items-center">
+                      <Plus className="h-3 w-3 mr-1" /> Create Session
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </MainLayout>
         );
     }
   };

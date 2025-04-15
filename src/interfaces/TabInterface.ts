@@ -4,6 +4,7 @@ export interface Tab {
   url: string;
   favIconUrl?: string;
   windowId?: number; // Add windowId to track which window a tab belongs to
+  index?: number; // Add index to track the tab's position in a window
 }
 
 export interface SavedTab extends Tab {

@@ -3,22 +3,17 @@ import "./App.css";
 import { Tab, SavedTab, WindowInfo } from "./interfaces/TabInterface";
 import { ViewType } from "./interfaces/ViewTypes";
 import SessionsView from "./components/SessionsView";
+import FallbackIcon from "./components/FallbackIcon";
+import SystemMetrics from "./components/SystemMetrics";
 import {
   Activity,
-  BarChart3,
   Command,
-  Cpu,
   Database,
-  Globe,
-  HardDrive,
-  LineChart,
   Moon,
   RefreshCw,
   Search,
   Settings,
   Shield,
-  Sun,
-  Wifi,
   Bookmark,
   Clock,
   ExternalLink,
@@ -86,19 +81,11 @@ function App() {
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Futuristic view states
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [systemStatus, setSystemStatus] = useState(85);
-  const [cpuUsage, setCpuUsage] = useState(42);
-  const [memoryUsage, setMemoryUsage] = useState(68);
-  const [networkStatus, setNetworkStatus] = useState(92);
-  const [securityLevel] = useState(75);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(true);
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const timeDisplayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchActiveTabs();
@@ -108,29 +95,27 @@ function App() {
   // Simulate data loading
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      setLoading(false);
     }, 2000);
 
     return () => clearTimeout(timer);
   }, [windowGroups]);
 
-  // Update time
+  // Update time using ref
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date());
+      if (timeDisplayRef.current) {
+        timeDisplayRef.current.textContent = new Date().toLocaleTimeString(
+          "en-US",
+          {
+            hour12: false,
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }
+        );
+      }
     }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Simulate changing data for system metrics
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCpuUsage(Math.floor(Math.random() * 30) + 30);
-      setMemoryUsage(Math.floor(Math.random() * 20) + 60);
-      setNetworkStatus(Math.floor(Math.random() * 15) + 80);
-      setSystemStatus(Math.floor(Math.random() * 10) + 80);
-    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -424,17 +409,7 @@ function App() {
 
   // Toggle theme
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
-  // Format time
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    // Theme toggling logic can be added here if needed
   };
 
   // Open a tab using the onSwitchTab function if provided, otherwise default to window.open
@@ -606,75 +581,11 @@ function App() {
     );
   };
 
-  // Component for metric cards
-  const MetricCard = ({
-    title,
-    value,
-    icon: Icon,
-    trend,
-    color,
-    detail,
-  }: {
-    title: string;
-    value: number;
-    icon: React.ElementType;
-    trend: "up" | "down" | "stable";
-    color: string;
-    detail: string;
-  }) => {
-    const getColor = () => {
-      switch (color) {
-        case "cyan":
-          return "from-cyan-500 to-blue-500 border-cyan-500/30";
-        case "green":
-          return "from-green-500 to-emerald-500 border-green-500/30";
-        case "blue":
-          return "from-blue-500 to-indigo-500 border-blue-500/30";
-        case "purple":
-          return "from-purple-500 to-pink-500 border-purple-500/30";
-        default:
-          return "from-cyan-500 to-blue-500 border-cyan-500/30";
-      }
-    };
-
-    const getTrendIcon = () => {
-      switch (trend) {
-        case "up":
-          return <BarChart3 className="h-4 w-4 text-amber-500" />;
-        case "down":
-          return <BarChart3 className="h-4 w-4 rotate-180 text-green-500" />;
-        case "stable":
-          return <LineChart className="h-4 w-4 text-blue-500" />;
-        default:
-          return null;
-      }
-    };
-
-    return (
-      <div
-        className={`bg-slate-800/50 rounded-md border ${getColor()} p-3 relative overflow-hidden`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-sm text-slate-400">{title}</div>
-          <Icon className="h-4 w-4 text-cyan-500" />
-        </div>
-        <div className="text-xl font-bold mb-1 bg-gradient-to-r bg-clip-text text-transparent from-slate-100 to-slate-300">
-          {value}%
-        </div>
-        <div className="text-xs text-slate-500">{detail}</div>
-        <div className="absolute bottom-2 right-2 flex items-center">
-          {getTrendIcon()}
-        </div>
-        <div className="absolute -bottom-6 -right-6 h-16 w-16 rounded-full bg-gradient-to-r opacity-20 blur-xl from-cyan-500 to-blue-500"></div>
-      </div>
-    );
-  };
-
   // Making activeView properly compatible with ViewType in all comparisons
   const renderContent = () => {
     // Shared sidebar component that will be consistent across all views
     const Sidebar = () => (
-      <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto">
+      <div className="col-span-12 md:col-span-3 lg:col-span-2 no-scroll-capture">
         <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
           <div>
             <nav className="space-y-1">
@@ -708,21 +619,9 @@ function App() {
                 SYSTEM STATUS
               </div>
               <div className="space-y-2">
-                <StatusItem
-                  label="Core Systems"
-                  value={systemStatus}
-                  color="cyan"
-                />
-                <StatusItem
-                  label="Security"
-                  value={securityLevel}
-                  color="green"
-                />
-                <StatusItem
-                  label="Network"
-                  value={networkStatus}
-                  color="blue"
-                />
+                <StatusItem label="Core Systems" value={85} color="cyan" />
+                <StatusItem label="Security" value={75} color="green" />
+                <StatusItem label="Network" value={92} color="blue" />
               </div>
             </div>
           </div>
@@ -797,19 +696,20 @@ function App() {
             />
           </div>
 
-          <div className="text-cyan-500 font-mono text-sm">
-            {formatTime(currentTime)}
+          <div ref={timeDisplayRef} className="text-cyan-500 font-mono text-sm">
+            {new Date().toLocaleTimeString("en-US", {
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
           </div>
 
           <button
             className="p-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-slate-100"
             onClick={toggleTheme}
           >
-            {theme === "dark" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4" />
-            )}
+            <Moon className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -818,7 +718,7 @@ function App() {
     // Main layout wrapper for all views (except SessionsView which is a separate component)
     const MainLayout = ({ children }: { children: React.ReactNode }) => (
       <div
-        className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative`}
+        className={`flex-1 bg-gradient-to-br from-black to-slate-900 text-slate-100 relative h-screen flex flex-col overflow-hidden`}
       >
         {/* Background particle effect */}
         <canvas
@@ -827,7 +727,7 @@ function App() {
         />
 
         {/* Loading overlay */}
-        {isLoading && (
+        {loading && (
           <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
             <div className="flex flex-col items-center">
               <div className="relative w-24 h-24">
@@ -844,10 +744,9 @@ function App() {
           </div>
         )}
 
-        <div className="container mx-auto p-4 relative z-10 h-full flex flex-col">
+        <div className="container mx-auto p-4 relative z-10 flex flex-col h-full max-h-screen overflow-hidden">
           <Header />
-
-          <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 h-[calc(100vh-120px)] overflow-hidden">
             <Sidebar />
             {children}
           </div>
@@ -860,9 +759,9 @@ function App() {
         return (
           <MainLayout>
             {/* Main content - Active Tabs */}
-            <div className="col-span-12 md:col-span-9 lg:col-span-10 overflow-y-auto">
+            <div className="col-span-12 md:col-span-9 lg:col-span-10 h-full">
               {/* Active tabs with futuristic style */}
-              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
+              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4 flex flex-col h-full">
                 <div className="border-b border-slate-700/50 p-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-slate-100 flex items-center font-medium">
@@ -884,7 +783,15 @@ function App() {
                   </div>
                 </div>
 
-                <div className="p-3">
+                <div
+                  className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-800/50"
+                  style={{
+                    height: "calc(100vh - 200px)",
+                    minHeight: "300px",
+                    overflowY: "auto",
+                    padding: "12px",
+                  }}
+                >
                   {loading ? (
                     <div className="flex flex-col items-center justify-center p-8">
                       <div className="relative w-16 h-16">
@@ -935,19 +842,10 @@ function App() {
                                 onClick={() => openTab(tab)}
                               >
                                 <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                  {tab.favIconUrl ? (
-                                    <img
-                                      src={tab.favIconUrl}
-                                      alt=""
-                                      className="w-4 h-4"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src =
-                                          "https://via.placeholder.com/16";
-                                      }}
-                                    />
-                                  ) : (
-                                    <Globe className="w-4 h-4 text-slate-400" />
-                                  )}
+                                  <FallbackIcon
+                                    favIconUrl={tab.favIconUrl}
+                                    size="md"
+                                  />
                                 </div>
                                 <div className="flex-1 truncate">
                                   <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
@@ -995,10 +893,10 @@ function App() {
         return (
           <MainLayout>
             {/* Main dashboard */}
-            <div className="col-span-12 md:col-span-9 lg:col-span-7 overflow-y-auto">
+            <div className="col-span-12 md:col-span-9 lg:col-span-7 flex flex-col min-h-0">
               {/* System overview */}
-              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
-                <div className="border-b border-slate-700/50 p-3">
+              <div className="flex-1 bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg flex flex-col min-h-0">
+                <div className="flex-none border-b border-slate-700/50 p-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-slate-100 flex items-center font-medium">
                       <Activity className="mr-2 h-5 w-5 text-cyan-500" />
@@ -1019,126 +917,100 @@ function App() {
                   </div>
                 </div>
 
-                <div className="p-3">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <MetricCard
-                      title="CPU Usage"
-                      value={cpuUsage}
-                      icon={Cpu}
-                      trend="up"
-                      color="cyan"
-                      detail="System Performance"
-                    />
-                    <MetricCard
-                      title="Memory"
-                      value={memoryUsage}
-                      icon={HardDrive}
-                      trend="stable"
-                      color="purple"
-                      detail="RAM Usage"
-                    />
-                    <MetricCard
-                      title="Network"
-                      value={networkStatus}
-                      icon={Wifi}
-                      trend="down"
-                      color="blue"
-                      detail="Connectivity"
-                    />
+                <div className="flex flex-col flex-1 min-h-0">
+                  {/* Fixed metrics section */}
+                  <div className="flex-none p-4">
+                    <SystemMetrics />
                   </div>
 
-                  <div className="space-y-4">
-                    {filteredDashboardWindowGroups.map((window) => (
-                      <div
-                        key={window.id}
-                        className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
-                      >
-                        <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div
-                              className={`h-2 w-2 rounded-full ${
-                                window.focused ? "bg-cyan-500" : "bg-slate-500"
-                              } mr-2`}
-                            ></div>
-                            <span className="text-sm font-medium text-slate-300">
-                              Window {window.id}
-                            </span>
-                            <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
-                              {window.tabs.length} tabs
-                            </span>
-                          </div>
-                          <button
-                            className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                            onClick={() => saveSession(window.id)}
-                          >
-                            <Plus className="h-3 w-3 inline mr-1" /> Save
-                            Session
-                          </button>
-                        </div>
-
-                        <div className="divide-y divide-slate-700/30">
-                          {window.tabs.map((tab) => (
-                            <div
-                              key={tab.id}
-                              className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
-                              onClick={() => openTab(tab)}
-                            >
-                              <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                {tab.favIconUrl ? (
-                                  <img
-                                    src={tab.favIconUrl}
-                                    alt=""
-                                    className="w-4 h-4"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src =
-                                        "https://via.placeholder.com/16";
-                                    }}
-                                  />
-                                ) : (
-                                  <Globe className="w-4 h-4 text-slate-400" />
-                                )}
-                              </div>
-                              <div className="flex-1 truncate">
-                                <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
-                                  {tab.title}
-                                </div>
-                                <div className="text-xs text-slate-500 truncate">
-                                  {tab.url}
-                                </div>
-                              </div>
-                              <button
-                                className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteTab(tab);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                  {/* Scrollable windows section */}
+                  <div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4">
+                    <div className="space-y-4">
+                      {filteredDashboardWindowGroups.map((window) => (
+                        <div
+                          key={window.id}
+                          className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                        >
+                          <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  window.focused
+                                    ? "bg-cyan-500"
+                                    : "bg-slate-500"
+                                } mr-2`}
+                              ></div>
+                              <span className="text-sm font-medium text-slate-300">
+                                Window {window.id}
+                              </span>
+                              <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                                {window.tabs.length} tabs
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                            <button
+                              className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                              onClick={() => saveSession(window.id)}
+                            >
+                              <Plus className="h-3 w-3 inline mr-1" /> Save
+                              Session
+                            </button>
+                          </div>
 
-                    {filteredDashboardWindowGroups.length === 0 && (
-                      <div className="text-center py-8 text-slate-500">
-                        {searchQuery ? (
-                          <div>No windows or tabs match your search.</div>
-                        ) : (
-                          <div>No active windows or tabs found.</div>
-                        )}
-                      </div>
-                    )}
+                          <div className="divide-y divide-slate-700/30">
+                            {window.tabs.map((tab) => (
+                              <div
+                                key={tab.id}
+                                className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                                onClick={() => openTab(tab)}
+                              >
+                                <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                  <FallbackIcon
+                                    favIconUrl={tab.favIconUrl}
+                                    size="md"
+                                  />
+                                </div>
+                                <div className="flex-1 truncate">
+                                  <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                    {tab.title}
+                                  </div>
+                                  <div className="text-xs text-slate-500 truncate">
+                                    {tab.url}
+                                  </div>
+                                </div>
+                                <button
+                                  className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteTab(tab);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      {filteredDashboardWindowGroups.length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          {searchQuery ? (
+                            <div>No windows or tabs match your search.</div>
+                          ) : (
+                            <div>No active windows or tabs found.</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Right sidebar - Sessions */}
-            <div className="col-span-12 lg:col-span-3 overflow-y-auto">
-              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden h-full flex flex-col">
-                <div className="p-3 border-b border-slate-700/50">
+            <div className="col-span-12 lg:col-span-3 flex flex-col min-h-0">
+              <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg flex flex-col min-h-0">
+                <div className="flex-none p-3 border-b border-slate-700/50">
                   <div className="flex items-center justify-between">
                     <h2 className="text-slate-100 flex items-center font-medium">
                       <Bookmark className="mr-2 h-5 w-5 text-purple-500" />
@@ -1153,7 +1025,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   {sessionsLoading ? (
                     <div className="flex flex-col items-center justify-center p-8">
                       <div className="relative w-12 h-12">
@@ -1225,7 +1097,15 @@ function App() {
                                     </div>
                                   </div>
 
-                                  <div className="p-2 max-h-40 overflow-y-auto">
+                                  <div
+                                    style={{
+                                      padding: "8px",
+                                      maxHeight: "160px",
+                                      overflowY: "scroll",
+                                      msOverflowStyle: "auto",
+                                      scrollbarWidth: "auto",
+                                    }}
+                                  >
                                     {session.tabs
                                       .slice(0, 3)
                                       .map((tab, index) => (
@@ -1235,21 +1115,10 @@ function App() {
                                           onClick={() => openTab(tab)}
                                         >
                                           <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                            {tab.favIconUrl ? (
-                                              <img
-                                                src={tab.favIconUrl}
-                                                alt=""
-                                                className="w-3 h-3"
-                                                onError={(e) => {
-                                                  (
-                                                    e.target as HTMLImageElement
-                                                  ).src =
-                                                    "https://via.placeholder.com/12";
-                                                }}
-                                              />
-                                            ) : (
-                                              <Globe className="w-3 h-3 text-slate-400" />
-                                            )}
+                                            <FallbackIcon
+                                              favIconUrl={tab.favIconUrl}
+                                              size="sm"
+                                            />
                                           </div>
                                           <div className="truncate text-xs text-slate-300 group-hover:text-cyan-300">
                                             {tab.title}
@@ -1273,7 +1142,7 @@ function App() {
                   )}
                 </div>
 
-                <div className="p-3 border-t border-slate-700/50 bg-slate-800/30">
+                <div className="flex-none p-3 border-t border-slate-700/50 bg-slate-800/30">
                   <div className="w-full flex justify-between items-center">
                     <div className="text-xs text-slate-500">
                       {savedSessions.length}{" "}

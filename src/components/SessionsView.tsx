@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Tab } from "../interfaces/TabInterface";
+import FallbackIcon from "./FallbackIcon";
 
 interface SavedSession {
   id: string;
@@ -304,26 +305,15 @@ const SessionsView: React.FC = () => {
                     {session.tabs.map((tab, index) => (
                       <div
                         key={`${session.id}-${index}`}
-                        className="flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer"
-                        onClick={() => openTab(tab.url || "")}
+                        className="flex items-center p-2 hover:bg-slate-700/30 rounded-md group"
                       >
-                        <div className="flex-shrink-0 mr-3">
-                          {tab.favIconUrl ? (
-                            <img
-                              src={tab.favIconUrl}
-                              alt=""
-                              className="w-4 h-4"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  "/icons/globe.svg";
-                              }}
-                            />
-                          ) : (
-                            <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                          )}
+                        <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                          <FallbackIcon favIconUrl={tab.favIconUrl} size="sm" />
                         </div>
-                        <div className="truncate text-sm text-gray-200">
-                          {tab.title || "Untitled Tab"}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-slate-300 truncate">
+                            {tab.title}
+                          </div>
                         </div>
                       </div>
                     ))}

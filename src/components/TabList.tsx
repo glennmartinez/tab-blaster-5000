@@ -1,5 +1,6 @@
 import React from "react";
 import { Tab, SavedTab } from "../interfaces/TabInterface";
+import FallbackIcon from "./FallbackIcon";
 
 interface TabListProps {
   tabs: Tab[] | SavedTab[];
@@ -38,13 +39,11 @@ const TabList: React.FC<TabListProps> = ({
               }
             }}
           >
-            {tab.favIconUrl && (
-              <img
-                src={tab.favIconUrl}
-                alt=""
-                className="w-6 h-6 mr-3 rounded"
-              />
-            )}
+            <FallbackIcon
+              favIconUrl={tab.favIconUrl}
+              size="sm"
+              className="mr-3"
+            />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{tab.title}</p>
               <p className="text-xs text-gray-400 truncate">{tab.url}</p>

@@ -48,9 +48,9 @@ export class SessionController {
    */
   static async getSessions(): Promise<Session[]> {
     const sessions = await StorageService.getSessions();
-    
+
     // Transform any sessions in the windows format to tabs format
-    return sessions.map(session => this.normalizeSessionFormat(session));
+    return sessions.map((session) => this.normalizeSessionFormat(session));
   }
 
   /**
@@ -58,12 +58,12 @@ export class SessionController {
    */
   private static normalizeSessionFormat(session: SessionFormat): Session {
     // If session already has tabs array, it's in the right format
-    if ('tabs' in session) {
+    if ("tabs" in session) {
       return session;
     }
 
     // If session has windows array, flatten it to tabs
-    if ('windows' in session && Array.isArray(session.windows)) {
+    if ("windows" in session && Array.isArray(session.windows)) {
       return {
         id: session.id,
         name: session.name,
@@ -107,11 +107,11 @@ export class SessionController {
   static async getSession(sessionId: string): Promise<Session | undefined> {
     const sessions = await StorageService.getSessions();
     const session = sessions.find((session) => session.id === sessionId);
-    
+
     if (session) {
       return this.normalizeSessionFormat(session);
     }
-    
+
     return undefined;
   }
 
@@ -160,21 +160,23 @@ export class SessionController {
     if (chrome?.windows) {
       const firstTab = session.tabs[0];
       // Create a new window with the first tab
-      const createdWindow = await new Promise<chrome.windows.Window | undefined>((resolve) => {
+      const createdWindow = await new Promise<
+        chrome.windows.Window | undefined
+      >((resolve) => {
         chrome.windows.create(
           { url: firstTab.url || "about:blank" },
           (createdWindow) => resolve(createdWindow)
         );
       });
-      
+
       // Store the ID of the newly created window
       const newWindowId = createdWindow?.id;
-      
+
       if (!newWindowId) {
         console.error("Failed to create new window or get window ID");
         return;
       }
-      
+
       // Add the rest of the tabs to the new window
       for (let i = 1; i < session.tabs.length; i++) {
         const tab = session.tabs[i];

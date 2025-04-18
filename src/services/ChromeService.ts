@@ -114,12 +114,12 @@ export class ChromeService {
     return new Promise((resolve, reject) => {
       if (chrome?.tabs) {
         const createOptions: chrome.tabs.CreateProperties = { url };
-        
+
         // Add windowId to options if specified
         if (windowId !== undefined) {
           createOptions.windowId = windowId;
         }
-        
+
         chrome.tabs.create(createOptions, (tab) => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
@@ -136,7 +136,12 @@ export class ChromeService {
           windowId: windowId || 1,
           index: mockTabs.length,
         };
-        console.log(`Mock: Creating tab with URL ${url} in window ${windowId || 'current'}`, newTab);
+        console.log(
+          `Mock: Creating tab with URL ${url} in window ${
+            windowId || "current"
+          }`,
+          newTab
+        );
         resolve(newTab);
       }
     });

@@ -194,16 +194,24 @@ export const useSessions = () => {
   /**
    * Select a session to display
    */
-  const selectSession = useCallback(async (sessionId: string) => {
-    try {
-      const session = await getSession(sessionId);
-      if (session) {
-        setSelectedSession(session);
+  const selectSession = useCallback(
+    async (sessionId: string) => {
+      try {
+        if (!sessionId) {
+          // If sessionId is empty, clear the selected session
+          setSelectedSession(null);
+          return;
+        }
+        const session = await getSession(sessionId);
+        if (session) {
+          setSelectedSession(session);
+        }
+      } catch (err) {
+        console.error("Error selecting session:", err);
       }
-    } catch (err) {
-      console.error("Error selecting session:", err);
-    }
-  }, [getSession]);
+    },
+    [getSession]
+  );
 
   // Load sessions and summaries on mount
   useEffect(() => {

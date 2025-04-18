@@ -3,7 +3,6 @@ import { Tab, WindowInfo, SavedTab } from "../interfaces/TabInterface";
 import {
   Activity,
   BarChart3,
-  Command,
   Cpu,
   Database,
   Globe,
@@ -97,6 +96,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
     []
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeView, setActiveView] = useState<"windows" | "sessions">(
+    "windows"
+  );
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -117,15 +119,19 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
     fetchSessionSummaries();
   }, [fetchSessionSummaries]);
 
-  // Simulate data loading
+  // Update useEffect to store windowGroups properly
+  useEffect(() => {
+    setActiveWindowGroups(windowGroups);
+  }, [windowGroups]);
+
+  // Simulate data loading only on initial mount
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-      setActiveWindowGroups(windowGroups);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [windowGroups]);
+  }, []);
 
   // Update time
   useEffect(() => {
@@ -291,6 +297,21 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         .filter((window) => window.tabs.length > 0)
     : activeWindowGroups;
 
+  // Clear selected session and restore active windows when switching views
+  const handleViewChange = (view: "windows" | "sessions") => {
+    setActiveView(view);
+    if (view === "windows") {
+      selectSession(""); // This will now properly clear selectedSession
+      setActiveWindowGroups(windowGroups);
+
+      // Force re-render of active windows by setting loading briefly
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+    }
+  };
+
   return (
     <div
       className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative min-h-screen w-full`}
@@ -364,9 +385,18 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
           <div className="col-span-12 md:col-span-3 lg:col-span-2 flex flex-col h-full">
             <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
               <nav className="space-y-1">
-                <NavItem icon={Command} label="Dashboard" active />
-                <NavItem icon={Activity} label="Tabs" />
-                <NavItem icon={Database} label="Sessions" />
+                <NavItem
+                  icon={Activity}
+                  label="Active Windows"
+                  active={activeView === "windows"}
+                  onClick={() => handleViewChange("windows")}
+                />
+                <NavItem
+                  icon={Database}
+                  label="Sessions"
+                  active={activeView === "sessions"}
+                  onClick={() => handleViewChange("sessions")}
+                />
                 <NavItem icon={Shield} label="Security" />
                 <NavItem icon={Settings} label="Settings" />
               </nav>
@@ -471,7 +501,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                   }}
                                 />
                               ) : (
-                                <Globe className="h-4 text-slate-400" />
+                                <Globe className="w-4 h-4 text-slate-400" />
                               )}
                             </div>
                             <div className="flex-1 truncate">
@@ -566,7 +596,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                       }}
                                     />
                                   ) : (
-                                    <Globe className="h-4 text-slate-400" />
+                                    <Globe className="w-4 h-4 text-slate-400" />
                                   )}
                                 </div>
                                 <div className="flex-1 truncate">
@@ -750,7 +780,7 @@ type NavItemProps = {
 };
 
 function NavItem(props: NavItemProps) {
-  const { icon: Icon, label } = props;
+  const { icon: Icon, label, onClick } = props;
 
   // Determine if item is active based on the provided props
   const isActive =
@@ -766,6 +796,7 @@ function NavItem(props: NavItemProps) {
           ? "bg-slate-800/70 text-cyan-400"
           : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/30"
       }`}
+      onClick={onClick}
     >
       <Icon className="mr-2 h-4 w-4" />
       {label}

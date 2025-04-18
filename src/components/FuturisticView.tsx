@@ -341,7 +341,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
 
   return (
     <div
-      className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative`}
+      className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative min-h-screen w-full`}
     >
       {/* Background particle effect */}
       <canvas
@@ -367,7 +367,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         </div>
       )}
 
-      <div className="container mx-auto p-4 relative z-10 h-full flex flex-col">
+      <div className="container mx-auto p-4 relative z-10 h-full flex flex-col min-h-screen">
         {/* Top control bar */}
         <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
           <div className="flex items-center space-x-2">
@@ -409,8 +409,8 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         {/* Main content */}
         <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
           {/* Left sidebar */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto">
-            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2">
+          <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto flex flex-col h-full">
+            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
               <nav className="space-y-1">
                 <NavItem icon={Command} label="Dashboard" active />
                 <NavItem icon={Activity} label="Tabs" />
@@ -418,7 +418,6 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                 <NavItem icon={Shield} label="Security" />
                 <NavItem icon={Settings} label="Settings" />
               </nav>
-
               <div className="mt-4 pt-3 border-t border-slate-700/50">
                 <div className="text-xs text-slate-500 mb-2 font-mono">
                   SYSTEM STATUS
@@ -439,6 +438,19 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                     value={networkStatus}
                     color="blue"
                   />
+                </div>
+              </div>
+
+              {/* Push the Gmoney branding to bottom with flex-grow */}
+              <div className="flex-grow"></div>
+
+              {/* Gmoney branding footer */}
+              <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col items-center">
+                <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                  Gmoney
+                </div>
+                <div className="text-xs text-slate-500 mt-1 flex items-center">
+                  <span className="mr-1">™</span> Labs
                 </div>
               </div>
             </div>

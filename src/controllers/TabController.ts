@@ -109,6 +109,7 @@ export class TabController {
         groups[domain].push(tab);
       } catch (e) {
         // Handle invalid URLs
+        throw new Error(`Invalid URL: ${tab.url}error: ${e}`);
         if (!groups["other"]) {
           groups["other"] = [];
         }

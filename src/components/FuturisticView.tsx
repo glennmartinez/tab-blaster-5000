@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Tab, SavedTab, WindowInfo } from "../interfaces/TabInterface";
+import { Tab, WindowInfo, SavedTab } from "../interfaces/TabInterface";
 import {
   Activity,
   BarChart3,
@@ -330,8 +330,10 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
           ...window,
           tabs: window.tabs.filter(
             (tab) =>
-              tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              tab.url.toLowerCase().includes(searchQuery.toLowerCase())
+              tab.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              false ||
+              tab.url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              false
           ),
         }))
         .filter((window) => window.tabs.length > 0)

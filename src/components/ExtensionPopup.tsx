@@ -96,6 +96,8 @@ const ExtensionPopup: React.FC = () => {
             title: tab.title || "Untitled Tab",
             url: tab.url || "",
             favIconUrl: tab.favIconUrl || "",
+            windowId: tab.windowId || 0, // Adding required windowId property
+            index: tab.index || 0, // Adding required index property
           };
         }),
       };

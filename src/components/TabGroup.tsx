@@ -58,7 +58,6 @@ const TabGroup: React.FC<TabGroupProps> = ({
           </h2>
         </div>
       </div>
-
       <TabList
         tabs={tabs}
         type="saved"

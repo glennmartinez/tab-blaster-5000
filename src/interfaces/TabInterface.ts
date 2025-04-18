@@ -1,19 +1,27 @@
+/**
+ * Tab information interface
+ */
 export interface Tab {
   id: number;
-  title: string;
-  url: string;
+  title?: string;
+  url?: string;
   favIconUrl?: string;
-  windowId?: number; // Add windowId to track which window a tab belongs to
-  index?: number; // Add index to track the tab's position in a window
+  windowId: number;
+  index: number;
 }
 
+/**
+ * Saved tab information interface with additional metadata
+ */
 export interface SavedTab extends Tab {
   savedAt: string;
 }
 
+/**
+ * Window information interface
+ */
 export interface WindowInfo {
   id: number;
-  title?: string;
-  focused?: boolean;
+  focused: boolean;
   tabs: Tab[];
 }

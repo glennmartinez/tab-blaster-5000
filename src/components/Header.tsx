@@ -36,6 +36,11 @@ const Header: React.FC<HeaderProps> = ({
   // Choose whether to show search bar based on view
   const showSearchBar = activeView !== "sessions";
 
+  // Handle search query changes for the new SearchBar API
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
   return (
     <header className="bg-gray-800 border-b border-gray-700 p-4">
       <div className="flex items-center justify-between">
@@ -88,8 +93,9 @@ const Header: React.FC<HeaderProps> = ({
         {showSearchBar && (
           <div className="flex items-center mr-2">
             <SearchBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
+              onSearch={handleSearch}
+              initialValue={searchQuery}
+              placeholder="Search tabs..."
             />
           </div>
         )}

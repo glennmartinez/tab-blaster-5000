@@ -40,6 +40,7 @@ export const useSessions = () => {
     setError(null);
     try {
       const summaries = await SessionController.getSessionSummaries();
+      console.log("Fetched session summaries:", summaries);
       setSessionSummaries(summaries);
     } catch (err) {
       setError(

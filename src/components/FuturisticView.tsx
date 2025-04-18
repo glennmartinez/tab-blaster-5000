@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Tab, WindowInfo, SavedTab } from "../interfaces/TabInterface";
 import {
   Activity,
@@ -25,24 +25,17 @@ import {
   Trash2,
 } from "lucide-react";
 import { ViewType } from "../interfaces/ViewTypes";
+import { useSessions } from "../hooks/useSessions";
+import { SessionSummary } from "../models/Session";
 
 // Interface for the component props
 interface FuturisticViewProps {
-  activeTabs?: Tab[];
-  savedTabs?: SavedTab[];
   windowGroups?: WindowInfo[];
-  onSwitchTab?: (tabId: number) => void;
-  onCloseTab?: (tabId: number) => void;
-  onRestoreTab?: (tab: SavedTab) => void;
-  onRemoveSavedTab?: (tab: SavedTab) => void;
-}
-
-// Helper types for the futuristic UI
-interface SavedSession {
-  id: string;
-  name: string;
-  createdAt: string;
-  tabs: Tab[];
+  savedTabs?: SavedTab[];
+  onSwitchTab?: (tabId: number) => Promise<void>;
+  onCloseTab?: (tabId: number) => Promise<void>;
+  onRestoreTab?: (savedTab: SavedTab) => Promise<void>;
+  onRemoveSavedTab?: (savedTab: SavedTab) => Promise<void>;
 }
 
 // For particles in the background
@@ -88,12 +81,9 @@ class Particle {
 }
 
 const FuturisticView: React.FC<FuturisticViewProps> = ({
-  savedTabs = [],
   windowGroups = [],
   onSwitchTab,
   onCloseTab,
-  onRestoreTab,
-  onRemoveSavedTab,
 }) => {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [systemStatus, setSystemStatus] = useState(85);
@@ -103,14 +93,27 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
   const [securityLevel] = useState(75);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
-  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState<boolean>(true);
   const [activeWindowGroups, setActiveWindowGroups] = useState<WindowInfo[]>(
     []
   );
   const [searchQuery, setSearchQuery] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Use our sessions hook for managing saved sessions
+  const {
+    sessionSummaries,
+    loading: sessionsLoading,
+    fetchSessionSummaries,
+    deleteSession,
+    restoreSession,
+    createSession,
+  } = useSessions();
+
+  // Fetch sessions when component mounts
+  useEffect(() => {
+    fetchSessionSummaries();
+  }, [fetchSessionSummaries]);
 
   // Simulate data loading
   useEffect(() => {
@@ -142,46 +145,6 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
 
     return () => clearInterval(interval);
   }, []);
-
-  // Load saved sessions
-  const loadSavedSessions = useCallback(() => {
-    setSessionsLoading(true);
-
-    // Convert savedTabs to sessions by grouping by day
-    const groupedByDate: Record<string, SavedTab[]> = {};
-
-    savedTabs.forEach((tab) => {
-      const date = new Date(tab.savedAt).toDateString();
-      if (!groupedByDate[date]) {
-        groupedByDate[date] = [];
-      }
-      groupedByDate[date].push(tab);
-    });
-
-    // Create sessions from the grouped tabs
-    const sessions: SavedSession[] = Object.entries(groupedByDate).map(
-      ([date, tabs], index) => {
-        return {
-          id: `session-${index}`,
-          name: `Session ${new Date(date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}`,
-          createdAt: new Date(date).toISOString(),
-          tabs: tabs as Tab[],
-        };
-      }
-    );
-
-    setTimeout(() => {
-      setSavedSessions(sessions);
-      setSessionsLoading(false);
-    }, 500);
-  }, [savedTabs]);
-
-  useEffect(() => {
-    loadSavedSessions();
-  }, [savedTabs, loadSavedSessions]);
 
   // Particle effect
   useEffect(() => {
@@ -259,43 +222,47 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
     }
   };
 
-  // Restore a saved tab using the onRestoreTab function if provided
-  const restoreSession = (session: SavedSession) => {
-    session.tabs.forEach((tab) => {
-      if (onRestoreTab && "savedAt" in tab) {
-        onRestoreTab(tab as SavedTab);
-      } else {
-        window.open(tab.url, "_blank");
-      }
-    });
+  // Save the current window as a session
+  const saveWindowAsSession = async (windowId: number, name?: string) => {
+    const windowToSave = activeWindowGroups.find(
+      (window) => window.id === windowId
+    );
+    if (!windowToSave) return;
+
+    try {
+      const sessionName =
+        name || `Window ${windowId} - ${new Date().toLocaleTimeString()}`;
+      await createSession(sessionName);
+      // Refresh sessions list
+      fetchSessionSummaries();
+    } catch (error) {
+      console.error("Error saving session:", error);
+    }
   };
 
-  // Delete a session
-  const deleteSession = (sessionId: string) => {
-    // Find the session
-    const session = savedSessions.find((s) => s.id === sessionId);
-    if (!session) return;
-
-    // Remove all tabs in this session if onRemoveSavedTab is provided
-    if (onRemoveSavedTab) {
-      session.tabs.forEach((tab) => {
-        if ("savedAt" in tab) {
-          onRemoveSavedTab(tab as SavedTab);
-        }
-      });
+  // Handle restoring a session
+  const handleRestoreSession = async (sessionId: string) => {
+    try {
+      await restoreSession(sessionId, false);
+    } catch (error) {
+      console.error("Error restoring session:", error);
     }
+  };
 
-    // Update the sessions list
-    setSavedSessions(
-      savedSessions.filter((session) => session.id !== sessionId)
-    );
+  // Handle deleting a session
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await deleteSession(sessionId);
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
   };
 
   // Group sessions by date
   const groupSessionsByDate = () => {
-    const grouped: { [date: string]: SavedSession[] } = {};
+    const grouped: { [date: string]: SessionSummary[] } = {};
 
-    savedSessions.forEach((session) => {
+    sessionSummaries.forEach((session) => {
       const date = new Date(session.createdAt).toLocaleDateString();
       if (!grouped[date]) {
         grouped[date] = [];
@@ -304,23 +271,6 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
     });
 
     return grouped;
-  };
-
-  // Add this function to handle saving a session
-  const saveSession = (windowId: number) => {
-    const windowToSave = activeWindowGroups.find(
-      (window) => window.id === windowId
-    );
-    if (!windowToSave) return;
-
-    const newSession: SavedSession = {
-      id: `session-${Date.now()}`,
-      name: `Session ${new Date().toLocaleTimeString()}`,
-      createdAt: new Date().toISOString(),
-      tabs: windowToSave.tabs,
-    };
-
-    setSavedSessions((prev) => [newSession, ...prev]);
   };
 
   // Filter tabs based on search query
@@ -440,7 +390,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                   />
                 </div>
               </div>
-              
+
               {/* Gmoney branding footer - positioned at bottom with fixed distance from top */}
               <div className="mt-auto pt-4 border-t border-slate-700/50 flex flex-col items-center">
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -525,7 +475,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                         </div>
                         <button
                           className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                          onClick={() => saveSession(window.id)}
+                          onClick={() => saveWindowAsSession(window.id)}
                         >
                           <Plus className="h-3 w-3 inline mr-1" /> Save Session
                         </button>
@@ -601,7 +551,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                   </h2>
                   <button
                     className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50"
-                    onClick={loadSavedSessions}
+                    onClick={fetchSessionSummaries}
                   >
                     <RefreshCw className="h-4 w-4" />
                   </button>
@@ -619,7 +569,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                       LOADING SESSIONS
                     </div>
                   </div>
-                ) : savedSessions.length === 0 ? (
+                ) : sessionSummaries.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-8">
                     <div className="text-slate-400 text-sm">
                       No saved sessions found
@@ -648,7 +598,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                     <div className="flex space-x-1">
                                       <button
                                         className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
-                                        onClick={() => restoreSession(session)}
+                                        onClick={() =>
+                                          handleRestoreSession(session.id)
+                                        }
                                         title="Restore all tabs"
                                       >
                                         <ExternalLink className="h-3 w-3" />
@@ -656,7 +608,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                       <button
                                         className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
                                         onClick={() =>
-                                          deleteSession(session.id)
+                                          handleDeleteSession(session.id)
                                         }
                                         title="Delete session"
                                       >
@@ -671,46 +623,16 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                     ).toLocaleTimeString()}{" "}
                                     •
                                     <Layers className="h-3 w-3 mx-1" />
-                                    {session.tabs.length}{" "}
-                                    {session.tabs.length === 1 ? "tab" : "tabs"}
+                                    {session.tabCount}{" "}
+                                    {session.tabCount === 1 ? "tab" : "tabs"} in{" "}
+                                    {session.windowCount}{" "}
+                                    {session.windowCount === 1
+                                      ? "window"
+                                      : "windows"}
                                   </div>
-                                </div>
-
-                                <div className="p-2 max-h-40 overflow-y-auto">
-                                  {session.tabs
-                                    .slice(0, 3)
-                                    .map((tab, index) => (
-                                      <div
-                                        key={`${session.id}-${index}`}
-                                        className="flex items-center p-2 hover:bg-slate-700/50 rounded-md cursor-pointer group"
-                                        onClick={() => openTab(tab)}
-                                      >
-                                        <div className="flex-shrink-0 mr-2 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                          {tab.favIconUrl ? (
-                                            <img
-                                              src={tab.favIconUrl}
-                                              alt=""
-                                              className="w-3 h-3"
-                                              onError={(e) => {
-                                                (
-                                                  e.target as HTMLImageElement
-                                                ).src =
-                                                  "https://via.placeholder.com/12";
-                                              }}
-                                            />
-                                          ) : (
-                                            <Globe className="w-3 h-3 text-slate-400" />
-                                          )}
-                                        </div>
-                                        <div className="truncate text-xs text-slate-300 group-hover:text-cyan-300">
-                                          {tab.title}
-                                        </div>
-                                      </div>
-                                    ))}
-
-                                  {session.tabs.length > 3 && (
-                                    <div className="px-2 py-1 text-xs text-slate-500 italic">
-                                      +{session.tabs.length - 3} more tabs
+                                  {session.description && (
+                                    <div className="text-xs text-slate-400 mt-1 truncate">
+                                      {session.description}
                                     </div>
                                   )}
                                 </div>
@@ -727,10 +649,17 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
               <div className="p-3 border-t border-slate-700/50 bg-slate-800/30">
                 <div className="w-full flex justify-between items-center">
                   <div className="text-xs text-slate-500">
-                    {savedSessions.length}{" "}
-                    {savedSessions.length === 1 ? "session" : "sessions"}
+                    {sessionSummaries.length}{" "}
+                    {sessionSummaries.length === 1 ? "session" : "sessions"}
                   </div>
-                  <button className="text-xs border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 px-2 py-1 rounded flex items-center">
+                  <button
+                    className="text-xs border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 px-2 py-1 rounded flex items-center"
+                    onClick={() =>
+                      createSession(
+                        `New Session ${new Date().toLocaleTimeString()}`
+                      )
+                    }
+                  >
                     <Plus className="h-3 w-3 mr-1" /> Create Session
                   </button>
                 </div>
@@ -747,10 +676,10 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
 type NavItemProps = {
   icon: React.ElementType;
   label: string;
-  active?: boolean; // Made active optional
+  active?: boolean;
   onClick?: () => void;
-  view?: ViewType; // Made view optional
-  activeView?: ViewType; // Made activeView optional
+  view?: ViewType;
+  activeView?: ViewType;
 };
 
 function NavItem(props: NavItemProps) {

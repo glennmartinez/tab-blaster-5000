@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Tab } from "../interfaces/TabInterface";
 import FallbackIcon from "./FallbackIcon";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 interface SavedSession {
   id: string;
@@ -20,82 +21,24 @@ const SessionsView: React.FC = () => {
 
   const loadSavedSessions = () => {
     setLoading(true);
-    console.log("Loading saved sessions lads...");
+    console.log("Loading saved sessions...");
 
-    // First try to get sessions from localStorage (our backup source)
-    try {
-      const backupData = localStorage.getItem("backup_savedSessions");
-      console.log(
-        "LOCAL STORAGE RAW DATA:",
-        backupData ? backupData.substring(0, 50) + "..." : "null"
-      );
-
-      if (backupData) {
-        try {
-          const parsedSessions = JSON.parse(backupData);
-          console.log("PARSED SESSIONS:", parsedSessions);
-
-          if (Array.isArray(parsedSessions) && parsedSessions.length > 0) {
-            console.log(
-              `✅ SUCCESS: Loaded ${parsedSessions.length} sessions from localStorage`
-            );
-            setSavedSessions(parsedSessions);
-            setLoading(false);
-
-            // Also synchronize with chrome storage if available
-            if (chrome?.storage) {
-              chrome.storage.local.set(
-                { savedSessions: parsedSessions },
-                () => {
-                  console.log(
-                    "Synchronized localStorage sessions to chrome.storage"
-                  );
-                }
-              );
-            }
-            return;
-          } else {
-            console.log("⚠️ localStorage data isn't a valid array or is empty");
-          }
-        } catch (parseError) {
-          console.error(
-            "❌ ERROR: Failed to parse localStorage data:",
-            parseError
-          );
-        }
-      } else {
-        console.log("⚠️ No backup_savedSessions key found in localStorage");
-      }
-    } catch (e) {
-      console.error("❌ ERROR: Failed to access localStorage:", e);
-    }
-
-    // If localStorage fails, try Chrome storage
-    console.log("Falling back to chrome.storage...");
+    // Use Chrome storage only
     if (chrome?.storage) {
-      chrome.storage.local.get(["savedSessions"], (result) => {
+      chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
         console.log("Chrome storage raw result:", result);
 
         if (
           result &&
-          result.savedSessions &&
-          Array.isArray(result.savedSessions)
+          result[STORAGE_KEYS.SESSIONS] &&
+          Array.isArray(result[STORAGE_KEYS.SESSIONS])
         ) {
           console.log(
-            `✅ SUCCESS: Loaded ${result.savedSessions.length} sessions from chrome.storage`
+            `✅ SUCCESS: Loaded ${
+              result[STORAGE_KEYS.SESSIONS].length
+            } sessions from chrome.storage`
           );
-          setSavedSessions(result.savedSessions);
-
-          // Sync to localStorage for next time
-          try {
-            localStorage.setItem(
-              "backup_savedSessions",
-              JSON.stringify(result.savedSessions)
-            );
-            console.log("✅ Updated localStorage with chrome storage data");
-          } catch (e) {
-            console.error("❌ ERROR: Failed to update localStorage:", e);
-          }
+          setSavedSessions(result[STORAGE_KEYS.SESSIONS]);
         } else {
           console.log("⚠️ No valid sessions found in chrome.storage");
           setSavedSessions([]);
@@ -105,7 +48,7 @@ const SessionsView: React.FC = () => {
     } else {
       console.log("⚠️ Chrome storage API not available");
       setLoading(false);
-      setSavedSessions([]); // Ensure we set empty array if both methods fail
+      setSavedSessions([]); // Ensure we set empty array if method fails
     }
   };
 
@@ -117,46 +60,14 @@ const SessionsView: React.FC = () => {
       `Current savedSessions state: ${savedSessions.length} sessions`
     );
 
-    console.log("📌 CHECKING LOCALSTORAGE:");
-    try {
-      console.log("All localStorage keys:", Object.keys(localStorage));
-      const backup = localStorage.getItem("backup_savedSessions");
-      console.log(
-        "backup_savedSessions raw data:",
-        backup ? backup.substring(0, 100) + "..." : "null"
-      );
-
-      if (backup) {
-        try {
-          const parsed = JSON.parse(backup);
-          console.log(`Sessions from localStorage: ${parsed.length} items`);
-          console.log("First session (if available):", parsed[0]);
-        } catch (e) {
-          console.error("Failed to parse localStorage data:", e);
-        }
-      }
-    } catch (e) {
-      console.error("Error accessing localStorage:", e);
-    }
-
     console.log("📌 CHECKING CHROME.STORAGE:");
     if (chrome?.storage) {
       chrome.storage.local.get(null, (allData) => {
         console.log("All chrome.storage keys:", Object.keys(allData));
         console.log("Full chrome.storage data:", allData);
       });
-    }
-
-    // Testing localStorage write
-    try {
-      const testObj = { test: "test-" + Date.now() };
-      localStorage.setItem("debug_test", JSON.stringify(testObj));
-      const readBack = localStorage.getItem("debug_test");
-      console.log(
-        `localStorage write test: ${readBack ? "SUCCESS" : "FAILED"}`
-      );
-    } catch (e) {
-      console.error("localStorage write test failed:", e);
+    } else {
+      console.log("Chrome storage API not available");
     }
   };
 
@@ -175,22 +86,14 @@ const SessionsView: React.FC = () => {
 
     setSavedSessions(updatedSessions);
 
-    // Always update localStorage first
-    try {
-      localStorage.setItem(
-        "backup_savedSessions",
-        JSON.stringify(updatedSessions)
-      );
-      console.log("Updated localStorage after deleting session");
-    } catch (e) {
-      console.warn("Could not update localStorage:", e);
-    }
-
-    // Then update chrome.storage if available
+    // Update chrome.storage
     if (chrome?.storage) {
-      chrome.storage.local.set({ savedSessions: updatedSessions }, () => {
-        console.log(`Session ${sessionId} deleted from chrome.storage`);
-      });
+      chrome.storage.local.set(
+        { [STORAGE_KEYS.SESSIONS]: updatedSessions },
+        () => {
+          console.log(`Session ${sessionId} deleted from chrome.storage`);
+        }
+      );
     }
   };
 

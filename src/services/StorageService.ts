@@ -1,5 +1,6 @@
 import { SavedTab } from "../interfaces/TabInterface";
 import { Session } from "../models/Session";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 // Mock data for development outside of Chrome extension environment
 const mockSavedTabs: SavedTab[] = [
@@ -14,42 +15,8 @@ const mockSavedTabs: SavedTab[] = [
   },
 ];
 
-const mockSessions: Session[] = [
-  {
-    id: "session1",
-    name: "Research Session",
-    description: "Web research for project",
-    createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    lastModified: new Date().toISOString(),
-    windows: [
-      {
-        id: 1,
-        focused: true,
-        tabs: [
-          {
-            id: 1,
-            title: "Google",
-            url: "https://google.com",
-            favIconUrl: "https://google.com/favicon.ico",
-            windowId: 1,
-            index: 0,
-          },
-          {
-            id: 2,
-            title: "MDN Web Docs",
-            url: "https://developer.mozilla.org",
-            favIconUrl: "https://developer.mozilla.org/favicon.ico",
-            windowId: 1,
-            index: 1,
-          },
-        ],
-      },
-    ],
-  },
-];
-
 /**
- * Service to interact with Chrome storage API
+ * Service for interacting with Chrome storage
  */
 export class StorageService {
   /**
@@ -58,8 +25,8 @@ export class StorageService {
   static getSavedTabs(): Promise<SavedTab[]> {
     return new Promise((resolve) => {
       if (chrome?.storage) {
-        chrome.storage.local.get(["savedTabs"], (result) => {
-          resolve(result.savedTabs || []);
+        chrome.storage.local.get([STORAGE_KEYS.SAVED_TABS], (result) => {
+          resolve(result[STORAGE_KEYS.SAVED_TABS] || []);
         });
       } else {
         // Mock data for development
@@ -74,7 +41,7 @@ export class StorageService {
   static saveTabs(tabs: SavedTab[]): Promise<void> {
     return new Promise((resolve, reject) => {
       if (chrome?.storage) {
-        chrome.storage.local.set({ savedTabs: tabs }, () => {
+        chrome.storage.local.set({ [STORAGE_KEYS.SAVED_TABS]: tabs }, () => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else {
@@ -91,82 +58,56 @@ export class StorageService {
   }
 
   /**
-   * Get saved sessions from storage
+   * Get sessions from storage
    */
-  static getSessions(): Promise<Session[]> {
-    return new Promise((resolve) => {
-      if (chrome?.storage) {
-        chrome.storage.local.get(["sessions"], (result) => {
-          resolve(result.sessions || []);
-        });
-      } else {
-        // Mock data for development
-        resolve([...mockSessions]);
-      }
-    });
+  static async getSessions(): Promise<Session[]> {
+    try {
+      // Try to get sessions from the current key
+      const result = await this.get(STORAGE_KEYS.SESSIONS);
+      const sessions = result?.[STORAGE_KEYS.SESSIONS] || [];
+      return sessions;
+    } catch (error) {
+      console.error("Error getting sessions:", error);
+      return [];
+    }
   }
 
   /**
    * Save a session to storage
    */
-  static saveSession(session: Session): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (chrome?.storage) {
-        this.getSessions().then((sessions) => {
-          const updatedSessions = [
-            ...sessions.filter((s) => s.id !== session.id),
-            session,
-          ];
-          chrome.storage.local.set({ sessions: updatedSessions }, () => {
-            if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
-            } else {
-              resolve();
-            }
-          });
-        });
+  static async saveSession(session: Session): Promise<void> {
+    try {
+      // Get current sessions
+      const sessions = await this.getSessions();
+
+      // Update if exists, otherwise add
+      const sessionIndex = sessions.findIndex((s) => s.id === session.id);
+      if (sessionIndex >= 0) {
+        sessions[sessionIndex] = session;
       } else {
-        // Mock behavior for development
-        console.log("Mock: Saving session", session);
-        const existingIndex = mockSessions.findIndex(
-          (s) => s.id === session.id
-        );
-        if (existingIndex >= 0) {
-          mockSessions[existingIndex] = session;
-        } else {
-          mockSessions.push(session);
-        }
-        resolve();
+        sessions.push(session);
       }
-    });
+
+      // Save back to storage
+      await this.set({ [STORAGE_KEYS.SESSIONS]: sessions });
+    } catch (error) {
+      console.error("Error saving session:", error);
+    }
   }
 
   /**
    * Delete a session from storage
    */
-  static deleteSession(sessionId: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (chrome?.storage) {
-        this.getSessions().then((sessions) => {
-          const updatedSessions = sessions.filter((s) => s.id !== sessionId);
-          chrome.storage.local.set({ sessions: updatedSessions }, () => {
-            if (chrome.runtime.lastError) {
-              reject(chrome.runtime.lastError);
-            } else {
-              resolve();
-            }
-          });
-        });
-      } else {
-        // Mock behavior for development
-        console.log(`Mock: Deleting session ${sessionId}`);
-        const index = mockSessions.findIndex((s) => s.id === sessionId);
-        if (index >= 0) {
-          mockSessions.splice(index, 1);
-        }
-        resolve();
-      }
-    });
+  static async deleteSession(sessionId: string): Promise<void> {
+    try {
+      const sessions = await this.getSessions();
+      const filteredSessions = sessions.filter(
+        (session) => session.id !== sessionId
+      );
+      await this.set({ [STORAGE_KEYS.SESSIONS]: filteredSessions });
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    }
   }
 
   /**
@@ -175,8 +116,8 @@ export class StorageService {
   static getSettings<T>(defaultSettings: T): Promise<T> {
     return new Promise((resolve) => {
       if (chrome?.storage) {
-        chrome.storage.local.get(["settings"], (result) => {
-          resolve(result.settings || defaultSettings);
+        chrome.storage.local.get([STORAGE_KEYS.SETTINGS], (result) => {
+          resolve(result[STORAGE_KEYS.SETTINGS] || defaultSettings);
         });
       } else {
         // Mock behavior for development
@@ -191,7 +132,7 @@ export class StorageService {
   static saveSettings<T>(settings: T): Promise<void> {
     return new Promise((resolve, reject) => {
       if (chrome?.storage) {
-        chrome.storage.local.set({ settings }, () => {
+        chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: settings }, () => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else {
@@ -199,8 +140,64 @@ export class StorageService {
           }
         });
       } else {
+        resolve();
+      }
+    });
+  }
+
+  /**
+   * Get data from storage
+   */
+  static get(key: string): Promise<any> {
+    return new Promise((resolve) => {
+      if (chrome?.storage?.sync) {
+        chrome.storage.sync.get(key, (result) => {
+          // Check if result is null or empty
+          if (!result || Object.keys(result).length === 0) {
+            // Fall back to localStorage if Chrome storage result is empty
+            console.log("[Storage Debug] Falling back to localStorage:");
+            const localStorage = window.localStorage.getItem(key);
+            const parsedData = localStorage ? JSON.parse(localStorage) : {};
+            console.log(
+              `[Storage Debug] LocalStorage result for key ${key}:`,
+              parsedData
+            );
+            // Return data in the same format as Chrome storage would
+            resolve({ [key]: parsedData });
+          } else {
+            console.log("data retrieved fine");
+            resolve(result);
+          }
+        });
+      } else {
         // Mock behavior for development
-        console.log("Mock: Saving settings", settings);
+        const localStorage = window.localStorage.getItem(key);
+        console.log("[Storage Debug] LocalStorage data:", localStorage?.length);
+        const parsedData = localStorage ? JSON.parse(localStorage) : {};
+        console.log(
+          `[Storage Debug] LocalStorage result for key ${key}:`,
+          parsedData
+        );
+        // Return data in the same format as Chrome storage would
+        resolve({ [key]: parsedData });
+      }
+    });
+  }
+
+  /**
+   * Set data in storage
+   */
+  static set(data: Record<string, any>): Promise<void> {
+    return new Promise((resolve) => {
+      if (chrome?.storage?.sync) {
+        chrome.storage.sync.set(data, () => {
+          resolve();
+        });
+      } else {
+        // Mock behavior for development
+        Object.entries(data).forEach(([key, value]) => {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        });
         resolve();
       }
     });

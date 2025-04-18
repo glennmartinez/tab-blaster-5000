@@ -41,19 +41,22 @@ export class SessionController {
    */
   static async getSessionSummaries(): Promise<SessionSummary[]> {
     const sessions = await this.getSessions();
-
-    return sessions.map((session) => ({
-      id: session.id,
-      name: session.name,
-      description: session.description,
-      createdAt: session.createdAt,
-      lastModified: session.lastModified,
-      windowCount: session.windows.length,
-      tabCount: session.windows.reduce(
-        (count, window) => count + window.tabs.length,
-        0
-      ),
-    }));
+    return sessions.map((session) => {
+      // Add safety checks for windows property
+      const windows = Array.isArray(session.windows) ? session.windows : [];
+      return {
+        id: session.id,
+        name: session.name,
+        description: session.description,
+        createdAt: session.createdAt,
+        lastModified: session.lastModified,
+        windowCount: windows.length,
+        tabCount: windows.reduce(
+          (count, window) => count + (Array.isArray(window.tabs) ? window.tabs.length : 0),
+          0
+        ),
+      };
+    });
   }
 
   /**

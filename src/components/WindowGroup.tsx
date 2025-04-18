@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { WindowInfo } from "../interfaces/TabInterface";
 import TabList from "./TabList";
 import Button from "./Button";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 interface SavedSession {
   id: string;
@@ -55,7 +56,7 @@ const WindowGroup: React.FC<WindowGroupProps> = ({
     let existingSessions: SavedSession[] = [];
 
     try {
-      const localData = localStorage.getItem("backup_savedSessions");
+      const localData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
       if (localData) {
         existingSessions = JSON.parse(localData) as SavedSession[];
       }
@@ -65,7 +66,7 @@ const WindowGroup: React.FC<WindowGroupProps> = ({
         e
       );
 
-      chrome.storage.local.get(["savedSessions"], (result) => {
+      chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
         existingSessions = (result.savedSessions || []) as SavedSession[];
         continueWithSave();
       });
@@ -79,7 +80,7 @@ const WindowGroup: React.FC<WindowGroupProps> = ({
 
       try {
         localStorage.setItem(
-          "backup_savedSessions",
+          STORAGE_KEYS.SESSIONS,
           JSON.stringify(updatedSessions)
         );
       } catch (e) {

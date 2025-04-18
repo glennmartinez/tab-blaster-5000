@@ -7,9 +7,7 @@ import { SessionController } from "../controllers/SessionController";
  */
 export const useSessions = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>(
-    []
-  );
+  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -23,9 +21,7 @@ export const useSessions = () => {
       const fetchedSessions = await SessionController.getSessions();
       setSessions(fetchedSessions);
     } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("Failed to fetch sessions")
-      );
+      setError(err instanceof Error ? err : new Error("Failed to fetch sessions"));
       console.error("Error fetching sessions:", err);
     } finally {
       setLoading(false);
@@ -44,9 +40,7 @@ export const useSessions = () => {
       setSessionSummaries(summaries);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err
-          : new Error("Failed to fetch session summaries")
+        err instanceof Error ? err : new Error("Failed to fetch session summaries")
       );
       console.error("Error fetching session summaries:", err);
     } finally {
@@ -73,11 +67,7 @@ export const useSessions = () => {
             description: newSession.description,
             createdAt: newSession.createdAt,
             lastModified: newSession.lastModified,
-            windowCount: newSession.windows.length,
-            tabCount: newSession.windows.reduce(
-              (count, window) => count + window.tabs.length,
-              0
-            ),
+            tabCount: newSession.tabs.length
           },
         ]);
         return newSession;
@@ -111,10 +101,7 @@ export const useSessions = () => {
   const restoreSession = useCallback(
     async (sessionId: string, replaceCurrentSession: boolean = false) => {
       try {
-        await SessionController.restoreSession(
-          sessionId,
-          replaceCurrentSession
-        );
+        await SessionController.restoreSession(sessionId, replaceCurrentSession);
         // Update the lastModified date in our local state
         setSessions((prev) =>
           prev.map((session) =>
@@ -158,11 +145,7 @@ export const useSessions = () => {
                 name: updatedSession.name,
                 description: updatedSession.description,
                 lastModified: updatedSession.lastModified,
-                windowCount: updatedSession.windows.length,
-                tabCount: updatedSession.windows.reduce(
-                  (count, window) => count + window.tabs.length,
-                  0
-                ),
+                tabCount: updatedSession.tabs.length
               }
             : summary
         )

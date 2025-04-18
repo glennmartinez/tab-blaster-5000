@@ -1,4 +1,4 @@
-import { WindowInfo } from "../interfaces/TabInterface";
+import { Tab } from "../interfaces/TabInterface";
 
 /**
  * Session model representing a saved browser state
@@ -9,7 +9,7 @@ export interface Session {
   description?: string;
   createdAt: string;
   lastModified: string;
-  windows: WindowInfo[];
+  tabs: Tab[];
 }
 
 /**
@@ -21,7 +21,6 @@ export interface SessionSummary {
   description?: string;
   createdAt: string;
   lastModified: string;
-  windowCount: number;
   tabCount: number;
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
 import { WindowInfo } from "../interfaces/TabInterface";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 // Define a proper interface for sessions matching the model
 interface SavedSession {
@@ -120,7 +121,7 @@ const ExtensionPopup: React.FC = () => {
       let existingSessions: SavedSession[] = [];
 
       try {
-        const localData = localStorage.getItem("backup_savedSessions");
+        const localData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
         if (localData) {
           existingSessions = JSON.parse(localData) as SavedSession[];
           console.log(
@@ -134,7 +135,7 @@ const ExtensionPopup: React.FC = () => {
         );
 
         // Fall back to chrome.storage
-        chrome.storage.local.get(["savedSessions"], (result) => {
+        chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
           existingSessions = (result.savedSessions || []) as SavedSession[];
           console.log(
             `Loaded ${existingSessions.length} existing sessions from chrome.storage`
@@ -157,7 +158,7 @@ const ExtensionPopup: React.FC = () => {
         // ALWAYS save to localStorage first (most reliable)
         try {
           localStorage.setItem(
-            "backup_savedSessions",
+            STORAGE_KEYS.SESSIONS,
             JSON.stringify(updatedSessions)
           );
           console.log("Saved sessions to localStorage");

@@ -624,11 +624,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                     •
                                     <Layers className="h-3 w-3 mx-1" />
                                     {session.tabCount}{" "}
-                                    {session.tabCount === 1 ? "tab" : "tabs"} in{" "}
-                                    {session.windowCount}{" "}
-                                    {session.windowCount === 1
-                                      ? "window"
-                                      : "windows"}
+                                    {session.tabCount === 1 ? "tab" : "tabs"}
                                   </div>
                                   {session.description && (
                                     <div className="text-xs text-slate-400 mt-1 truncate">

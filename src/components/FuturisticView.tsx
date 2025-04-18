@@ -407,9 +407,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         </div>
 
         {/* Main content */}
-        <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
+        <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden h-[calc(100vh-100px)]">
           {/* Left sidebar */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-2 overflow-y-auto flex flex-col h-full">
+          <div className="col-span-12 md:col-span-3 lg:col-span-2 flex flex-col h-full">
             <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
               <nav className="space-y-1">
                 <NavItem icon={Command} label="Dashboard" active />
@@ -440,12 +440,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                   />
                 </div>
               </div>
-
-              {/* Push the Gmoney branding to bottom with flex-grow */}
-              <div className="flex-grow"></div>
-
-              {/* Gmoney branding footer */}
-              <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col items-center">
+              
+              {/* Gmoney branding footer - positioned at bottom with fixed distance from top */}
+              <div className="mt-auto pt-4 border-t border-slate-700/50 flex flex-col items-center">
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
                   Gmoney
                 </div>
@@ -457,10 +454,10 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
           </div>
 
           {/* Main dashboard */}
-          <div className="col-span-12 md:col-span-9 lg:col-span-7 overflow-y-auto">
+          <div className="col-span-12 md:col-span-9 lg:col-span-7 h-full flex flex-col overflow-hidden">
             {/* System overview */}
-            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden mb-4">
-              <div className="border-b border-slate-700/50 p-3">
+            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col h-full">
+              <div className="border-b border-slate-700/50 p-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <h2 className="text-slate-100 flex items-center font-medium">
                     <Activity className="mr-2 h-5 w-5 text-cyan-500" />
@@ -478,7 +475,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                 </div>
               </div>
 
-              <div className="p-3">
+              <div className="p-3 overflow-y-auto flex-grow max-h-[calc(100vh-220px)] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <MetricCard
                     title="CPU Usage"
@@ -506,7 +503,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                   />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 pb-4">
                   {filteredWindowGroups.map((window) => (
                     <div
                       key={window.id}
@@ -594,7 +591,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
           </div>
 
           {/* Right sidebar - Sessions */}
-          <div className="col-span-12 lg:col-span-3 overflow-y-auto">
+          <div className="col-span-12 lg:col-span-3 overflow-y-auto h-full">
             <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden h-full flex flex-col">
               <div className="p-3 border-b border-slate-700/50">
                 <div className="flex items-center justify-between">

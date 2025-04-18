@@ -10,6 +10,7 @@ export const useSessions = () => {
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>(
     []
   );
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -177,6 +178,33 @@ export const useSessions = () => {
     }
   }, []);
 
+  /**
+   * Get a specific session by ID
+   */
+  const getSession = useCallback(async (sessionId: string) => {
+    try {
+      const session = await SessionController.getSession(sessionId);
+      return session;
+    } catch (err) {
+      console.error("Error getting session:", err);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Select a session to display
+   */
+  const selectSession = useCallback(async (sessionId: string) => {
+    try {
+      const session = await getSession(sessionId);
+      if (session) {
+        setSelectedSession(session);
+      }
+    } catch (err) {
+      console.error("Error selecting session:", err);
+    }
+  }, [getSession]);
+
   // Load sessions and summaries on mount
   useEffect(() => {
     fetchSessionSummaries();
@@ -185,6 +213,7 @@ export const useSessions = () => {
   return {
     sessions,
     sessionSummaries,
+    selectedSession,
     loading,
     error,
     fetchSessions,
@@ -194,5 +223,6 @@ export const useSessions = () => {
     restoreSession,
     updateSession,
     searchSessions,
+    selectSession,
   };
 };

@@ -103,11 +103,13 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
   // Use our sessions hook for managing saved sessions
   const {
     sessionSummaries,
+    selectedSession,
     loading: sessionsLoading,
     fetchSessionSummaries,
     deleteSession,
     restoreSession,
     createSession,
+    selectSession,
   } = useSessions();
 
   // Fetch sessions when component mounts
@@ -411,12 +413,14 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                 <div className="flex items-center justify-between">
                   <h2 className="text-slate-100 flex items-center font-medium">
                     <Activity className="mr-2 h-5 w-5 text-cyan-500" />
-                    Active Windows
+                    {selectedSession
+                      ? `Session: ${selectedSession.name}`
+                      : "Active Windows"}
                   </h2>
                   <div className="flex items-center space-x-2">
                     <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
                       <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
-                      LIVE
+                      {selectedSession ? "SAVED SESSION" : "LIVE"}
                     </span>
                     <button className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/50">
                       <RefreshCw className="h-4 w-4" />
@@ -424,65 +428,32 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                   </div>
                 </div>
               </div>
-
               <div className="p-3 overflow-y-auto flex-grow max-h-[calc(100vh-220px)] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <MetricCard
-                    title="CPU Usage"
-                    value={cpuUsage}
-                    icon={Cpu}
-                    trend="up"
-                    color="cyan"
-                    detail="System Performance"
-                  />
-                  <MetricCard
-                    title="Memory"
-                    value={memoryUsage}
-                    icon={HardDrive}
-                    trend="stable"
-                    color="purple"
-                    detail="RAM Usage"
-                  />
-                  <MetricCard
-                    title="Network"
-                    value={networkStatus}
-                    icon={Wifi}
-                    trend="down"
-                    color="blue"
-                    detail="Connectivity"
-                  />
-                </div>
-
-                <div className="space-y-4 pb-4">
-                  {filteredWindowGroups.map((window) => (
-                    <div
-                      key={window.id}
-                      className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
-                    >
+                {selectedSession ? (
+                  <div className="space-y-4 pb-4">
+                    <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden">
                       <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center">
-                          <div
-                            className={`h-2 w-2 rounded-full ${
-                              window.focused ? "bg-cyan-500" : "bg-slate-500"
-                            } mr-2`}
-                          ></div>
+                          <div className="h-2 w-2 rounded-full bg-cyan-500 mr-2"></div>
                           <span className="text-sm font-medium text-slate-300">
-                            Window {window.id}
+                            Saved Tabs
                           </span>
                           <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
-                            {window.tabs.length} tabs
+                            {selectedSession.tabs.length} tabs
                           </span>
                         </div>
                         <button
                           className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                          onClick={() => saveWindowAsSession(window.id)}
+                          onClick={() =>
+                            handleRestoreSession(selectedSession.id)
+                          }
                         >
-                          <Plus className="h-3 w-3 inline mr-1" /> Save Session
+                          <ExternalLink className="h-3 w-3 inline mr-1" />{" "}
+                          Restore All
                         </button>
                       </div>
-
                       <div className="divide-y divide-slate-700/30">
-                        {window.tabs.map((tab) => (
+                        {selectedSession.tabs.map((tab) => (
                           <div
                             key={tab.id}
                             className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
@@ -500,7 +471,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                   }}
                                 />
                               ) : (
-                                <Globe className="w-4 h-4 text-slate-400" />
+                                <Globe className="h-4 text-slate-400" />
                               )}
                             </div>
                             <div className="flex-1 truncate">
@@ -511,31 +482,128 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                 {tab.url}
                               </div>
                             </div>
-                            <button
-                              className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteTab(tab);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <MetricCard
+                        title="CPU Usage"
+                        value={cpuUsage}
+                        icon={Cpu}
+                        trend="up"
+                        color="cyan"
+                        detail="System Performance"
+                      />
+                      <MetricCard
+                        title="Memory"
+                        value={memoryUsage}
+                        icon={HardDrive}
+                        trend="stable"
+                        color="purple"
+                        detail="RAM Usage"
+                      />
+                      <MetricCard
+                        title="Network"
+                        value={networkStatus}
+                        icon={Wifi}
+                        trend="down"
+                        color="blue"
+                        detail="Connectivity"
+                      />
+                    </div>
 
-                  {filteredWindowGroups.length === 0 && (
-                    <div className="text-center py-8 text-slate-500">
-                      {searchQuery ? (
-                        <div>No windows or tabs match your search.</div>
-                      ) : (
-                        <div>No active windows or tabs found.</div>
+                    <div className="space-y-4 pb-4">
+                      {filteredWindowGroups.map((window) => (
+                        <div
+                          key={window.id}
+                          className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                        >
+                          <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  window.focused
+                                    ? "bg-cyan-500"
+                                    : "bg-slate-500"
+                                } mr-2`}
+                              ></div>
+                              <span className="text-sm font-medium text-slate-300">
+                                Window {window.id}
+                              </span>
+                              <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                                {window.tabs.length} tabs
+                              </span>
+                            </div>
+                            <button
+                              className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                              onClick={() => saveWindowAsSession(window.id)}
+                            >
+                              <Plus className="h-3 w-3 inline mr-1" /> Save
+                              Session
+                            </button>
+                          </div>
+
+                          <div className="divide-y divide-slate-700/30">
+                            {window.tabs.map((tab) => (
+                              <div
+                                key={tab.id}
+                                className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                                onClick={() => openTab(tab)}
+                              >
+                                <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                  {tab.favIconUrl ? (
+                                    <img
+                                      src={tab.favIconUrl}
+                                      alt=""
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src =
+                                          "https://via.placeholder.com/16";
+                                      }}
+                                    />
+                                  ) : (
+                                    <Globe className="h-4 text-slate-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1 truncate">
+                                  <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                    {tab.title}
+                                  </div>
+                                  <div className="text-xs text-slate-500 truncate">
+                                    {tab.url}
+                                  </div>
+                                </div>
+                                <button
+                                  className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteTab(tab);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      {filteredWindowGroups.length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          {searchQuery ? (
+                            <div>No windows or tabs match your search.</div>
+                          ) : (
+                            <div>No active windows or tabs found.</div>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -588,7 +656,8 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                             {sessions.map((session) => (
                               <div
                                 key={session.id}
-                                className="mb-3 bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                                className="mb-3 bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden cursor-pointer hover:border-cyan-500/50"
+                                onClick={() => selectSession(session.id)}
                               >
                                 <div className="p-3 bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm border-b border-slate-700/50">
                                   <div className="flex items-center justify-between">
@@ -598,18 +667,20 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                                     <div className="flex space-x-1">
                                       <button
                                         className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
-                                        onClick={() =>
-                                          handleRestoreSession(session.id)
-                                        }
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRestoreSession(session.id);
+                                        }}
                                         title="Restore all tabs"
                                       >
                                         <ExternalLink className="h-3 w-3" />
                                       </button>
                                       <button
                                         className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
-                                        onClick={() =>
-                                          handleDeleteSession(session.id)
-                                        }
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteSession(session.id);
+                                        }}
                                         title="Delete session"
                                       >
                                         <Trash2 className="h-3 w-3" />

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
-import { Tab } from "../interfaces/TabInterface";
+import { WindowInfo } from "../interfaces/TabInterface";
 
-// Define a proper interface for sessions
+// Define a proper interface for sessions matching the model
 interface SavedSession {
   id: string;
   name: string;
   createdAt: string;
-  tabs: Tab[]; // Using the Tab interface from TabInterface.ts
+  lastModified: string;
+  windows: WindowInfo[]; // Using WindowInfo from TabInterface.ts
 }
 
 const ExtensionPopup: React.FC = () => {
@@ -85,32 +86,43 @@ const ExtensionPopup: React.FC = () => {
     chrome.tabs.query({ currentWindow: true }, (currentTabs) => {
       console.log(`Found ${currentTabs.length} tabs to save in current window`);
 
-      // Create session object with metadata
+      // Create tabs array with required properties
+      const formattedTabs = currentTabs.map((tab) => {
+        return {
+          id: tab.id || 0, // Ensuring id is a number, defaulting to 0 if undefined
+          title: tab.title || "Untitled Tab",
+          url: tab.url || "",
+          favIconUrl: tab.favIconUrl || "",
+          windowId: tab.windowId || 0,
+          index: tab.index || 0,
+        };
+      });
+
+      // Create window object
+      const windowInfo: WindowInfo = {
+        id: currentTabs.length > 0 ? currentTabs[0].windowId || 1 : 1,
+        focused: true,
+        tabs: formattedTabs,
+      };
+
+      // Create session object with metadata in the proper format
       const newSession: SavedSession = {
         id: `session_${Date.now()}`,
         name: `Session ${new Date().toLocaleString()}`,
         createdAt: new Date().toISOString(),
-        tabs: currentTabs.map((tab) => {
-          return {
-            id: tab.id || 0, // Ensuring id is a number, defaulting to 0 if undefined
-            title: tab.title || "Untitled Tab",
-            url: tab.url || "",
-            favIconUrl: tab.favIconUrl || "",
-            windowId: tab.windowId || 0, // Adding required windowId property
-            index: tab.index || 0, // Adding required index property
-          };
-        }),
+        lastModified: new Date().toISOString(),
+        windows: [windowInfo],
       };
 
       console.log("Created new session object:", newSession);
 
       // Get existing sessions from localStorage first (most reliable)
-      let existingSessions: SavedSession[] = []; // Using proper type
+      let existingSessions: SavedSession[] = [];
 
       try {
         const localData = localStorage.getItem("backup_savedSessions");
         if (localData) {
-          existingSessions = JSON.parse(localData) as SavedSession[]; // Type assertion
+          existingSessions = JSON.parse(localData) as SavedSession[];
           console.log(
             `Loaded ${existingSessions.length} existing sessions from localStorage`
           );
@@ -123,7 +135,7 @@ const ExtensionPopup: React.FC = () => {
 
         // Fall back to chrome.storage
         chrome.storage.local.get(["savedSessions"], (result) => {
-          existingSessions = (result.savedSessions || []) as SavedSession[]; // Type assertion
+          existingSessions = (result.savedSessions || []) as SavedSession[];
           console.log(
             `Loaded ${existingSessions.length} existing sessions from chrome.storage`
           );

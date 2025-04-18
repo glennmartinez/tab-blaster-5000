@@ -106,12 +106,21 @@ export class ChromeService {
   }
 
   /**
-   * Create a new tab
+   * Create a new tab, optionally in a specific window
+   * @param url The URL to open in the new tab
+   * @param windowId Optional window ID to create the tab in
    */
-  static createTab(url: string): Promise<Tab> {
+  static createTab(url: string, windowId?: number): Promise<Tab> {
     return new Promise((resolve, reject) => {
       if (chrome?.tabs) {
-        chrome.tabs.create({ url }, (tab) => {
+        const createOptions: chrome.tabs.CreateProperties = { url };
+        
+        // Add windowId to options if specified
+        if (windowId !== undefined) {
+          createOptions.windowId = windowId;
+        }
+        
+        chrome.tabs.create(createOptions, (tab) => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
           } else {
@@ -124,10 +133,10 @@ export class ChromeService {
           id: Math.floor(Math.random() * 1000),
           title: "New Tab",
           url,
-          windowId: 1,
+          windowId: windowId || 1,
           index: mockTabs.length,
         };
-        console.log(`Mock: Creating tab with URL ${url}`, newTab);
+        console.log(`Mock: Creating tab with URL ${url} in window ${windowId || 'current'}`, newTab);
         resolve(newTab);
       }
     });

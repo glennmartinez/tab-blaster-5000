@@ -1,138 +1,68 @@
 import React from "react";
-import Button from "./Button";
-import SearchBar from "./SearchBar";
+import { BookmarkCheck, Moon, Search, Sun } from "lucide-react";
 
-interface HeaderProps {
-  title: string;
-  activeTabs: number;
-  savedTabs: number;
-  activeView: "active" | "sessions" | "futuristic";
-  setActiveView: (view: "active" | "sessions" | "futuristic") => void;
+interface FuturisticHeaderProps {
+  theme: "dark" | "light";
+  toggleTheme: () => void;
+  currentTime: Date;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  onSidebarToggle: () => void;
-  onGroupTabs?: () => void;
-  onSaveAllTabs?: () => void;
-  loadSavedSessions?: () => void; // Add this to ensure we can load sessions
 }
 
-const Header: React.FC<HeaderProps> = ({
-  title,
-  activeTabs,
-  activeView,
-  setActiveView,
+const Header: React.FC<FuturisticHeaderProps> = ({
+  theme,
+  toggleTheme,
+  currentTime,
   searchQuery,
   setSearchQuery,
-  onSidebarToggle,
-  onGroupTabs,
-  onSaveAllTabs,
 }) => {
-  // This ensures we load saved sessions when switching to views
-  const handleViewChange = (view: "active" | "sessions" | "futuristic") => {
-    console.log(`Switching to ${view} view...`);
-    setActiveView(view);
-  };
-
-  // Choose whether to show search bar based on view
-  const showSearchBar = activeView !== "sessions";
-
-  // Handle search query changes for the new SearchBar API
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  // Format time
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   };
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <button
-            className="mr-4 text-gray-400 hover:text-white"
-            onClick={onSidebarToggle}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-          <div className="text-2xl font-semibold text-blue-200">{title}</div>
+    <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
+      <div className="flex items-center space-x-2">
+        <BookmarkCheck className="h-6 w-6 text-cyan-500" />
+        <span className="text-lg font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
+          Tab Blaster 5000
+        </span>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1 bg-slate-800/50 rounded-full px-3 py-1.5 border border-slate-700/50 backdrop-blur-sm">
+          <Search className="h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search tabs..."
+            className="bg-transparent border-none focus:outline-none text-sm w-40 placeholder:text-slate-500"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <div className="flex gap-2">
-          {activeView === "active" && (
-            <>
-              {onGroupTabs && (
-                <Button
-                  onClick={onGroupTabs}
-                  className="bg-gray-700 hover:bg-gray-600 text-white text-sm"
-                >
-                  Group Tabs
-                </Button>
-              )}
-              {onSaveAllTabs && (
-                <Button
-                  onClick={onSaveAllTabs}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Save All Tabs
-                </Button>
-              )}
-            </>
+
+        <div className="text-cyan-500 font-mono text-sm">
+          {formatTime(currentTime)}
+        </div>
+
+        <button
+          className="p-1.5 rounded-full bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-slate-100"
+          onClick={toggleTheme}
+        >
+          {theme === "dark" ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
           )}
-        </div>
+        </button>
       </div>
-      <div className="flex mt-4 space-x-2">
-        {showSearchBar && (
-          <div className="flex items-center mr-2">
-            <SearchBar
-              onSearch={handleSearch}
-              initialValue={searchQuery}
-              placeholder="Search tabs..."
-            />
-          </div>
-        )}
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => handleViewChange("active")}
-            className={
-              activeView === "active"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-300 hover:bg-gray-600"
-            }
-          >
-            Active Tabs ({activeTabs})
-          </Button>
-          <Button
-            onClick={() => handleViewChange("sessions")}
-            className={
-              activeView === "sessions"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-300 hover:bg-gray-600"
-            }
-          >
-            Sessions
-          </Button>
-          <Button
-            onClick={() => handleViewChange("futuristic")}
-            className={
-              activeView === "futuristic"
-                ? "bg-cyan-600 text-white"
-                : "bg-gray-300 hover:bg-gray-600"
-            }
-          >
-            Futuristic
-          </Button>
-        </div>
-      </div>
-    </header>
+    </div>
   );
 };
 

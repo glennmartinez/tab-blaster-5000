@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import { ViewType } from "./interfaces/ViewTypes";
-import FuturisticView from "./components/FuturisticView";
+import MainLayout from "./views/layout/MainLayout";
 import SessionsView from "./components/SessionsView";
 import { useTabs } from "./hooks/useTabs";
 
@@ -42,7 +42,7 @@ function App() {
       case "dashboard":
         return (
           <div className="relative">
-            <FuturisticView
+            <MainLayout
               windowGroups={windowGroups}
               savedTabs={savedTabs}
               onSwitchTab={switchToTab}
@@ -71,7 +71,7 @@ function App() {
       case "sessions":
         return <SessionsView />;
       default:
-        return <FuturisticView />;
+        return <MainLayout />;
     }
   };
 

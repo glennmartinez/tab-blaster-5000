@@ -7,7 +7,6 @@ import {
   Database,
   Globe,
   HardDrive,
-  Hexagon,
   LineChart,
   Moon,
   RefreshCw,
@@ -22,6 +21,7 @@ import {
   Layers,
   Plus,
   Trash2,
+  BookmarkCheck,
 } from "lucide-react";
 import { ViewType } from "../interfaces/ViewTypes";
 import { useSessions } from "../hooks/useSessions";
@@ -58,7 +58,7 @@ class Particle {
     this.speedY = (Math.random() - 0.5) * 0.5;
     this.color = `rgba(${Math.floor(Math.random() * 100) + 100}, ${
       Math.floor(Math.random() * 100) + 150
-    }, ${Math.floor(Math.random() * 55) + 200}, ${Math.random() * 0.5 + 0.2})`;
+    }, ${Math.floor(Math.random() * 55) + 200}, ${Math.random() * 0.6 + 0.3})`;
   }
 
   update() {
@@ -319,7 +319,7 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
       {/* Background particle effect */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full opacity-30"
+        className="absolute inset-0 w-full h-full opacity-100"
       />
 
       {/* Loading overlay */}
@@ -344,9 +344,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         {/* Top control bar */}
         <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
           <div className="flex items-center space-x-2">
-            <Hexagon className="h-6 w-6 text-cyan-500" />
+            <BookmarkCheck className="h-6 w-6 text-cyan-500" />
             <span className="text-lg font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-              Tab Dashboard
+              Tab Blaster 5000
             </span>
           </div>
 

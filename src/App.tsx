@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import { ViewType } from "./interfaces/ViewTypes";
-import DashboardView from "./views/dashboard/DashboardView";
 import FuturisticView from "./components/FuturisticView";
 import SessionsView from "./components/SessionsView";
 import { useTabs } from "./hooks/useTabs";
@@ -13,11 +12,6 @@ import { useTabs } from "./hooks/useTabs";
  */
 function App() {
   const [activeView, setActiveView] = useState<ViewType>("dashboard");
-  const [useFuturisticUI, setUseFuturisticUI] = useState(() => {
-    // Check localStorage for user preference, default to true to show futuristic UI
-    const saved = localStorage.getItem("useFuturisticUI");
-    return saved !== null ? JSON.parse(saved) : true;
-  });
 
   const {
     windows: windowGroups,
@@ -27,11 +21,6 @@ function App() {
     restoreTab,
     removeSavedTab,
   } = useTabs();
-
-  // Save UI preference to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem("useFuturisticUI", JSON.stringify(useFuturisticUI));
-  }, [useFuturisticUI]);
 
   // Check URL parameters for view selection
   useEffect(() => {
@@ -47,23 +36,12 @@ function App() {
     }
   }, []);
 
-  // Toggle between futuristic and standard UI
-  const toggleUI = () => {
-    setUseFuturisticUI((prev: boolean) => !prev);
-  };
-
   // Route to the appropriate view component based on activeView
   const renderView = () => {
     switch (activeView) {
       case "dashboard":
-        return useFuturisticUI ? (
+        return (
           <div className="relative">
-            <button
-              onClick={toggleUI}
-              className="absolute top-4 right-4 z-50 px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded-md text-xs"
-            >
-              Switch to Standard UI
-            </button>
             <FuturisticView
               windowGroups={windowGroups}
               savedTabs={savedTabs}
@@ -72,16 +50,6 @@ function App() {
               onRestoreTab={restoreTab}
               onRemoveSavedTab={removeSavedTab}
             />
-          </div>
-        ) : (
-          <div className="relative">
-            <button
-              onClick={toggleUI}
-              className="absolute top-4 right-4 z-50 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs"
-            >
-              Switch to Futuristic UI
-            </button>
-            <DashboardView />
           </div>
         );
       case "active":
@@ -103,7 +71,7 @@ function App() {
       case "sessions":
         return <SessionsView />;
       default:
-        return useFuturisticUI ? <FuturisticView /> : <DashboardView />;
+        return <FuturisticView />;
     }
   };
 

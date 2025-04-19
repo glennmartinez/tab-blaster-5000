@@ -99,6 +99,9 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
   const [activeView, setActiveView] = useState<"windows" | "sessions">(
     "windows"
   );
+  const [expandedWindows, setExpandedWindows] = useState<{
+    [windowId: number]: boolean;
+  }>({});
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -310,6 +313,14 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
         setIsLoading(false);
       }, 100);
     }
+  };
+
+  // Toggle expand/collapse for a window
+  const toggleExpand = (windowId: number) => {
+    setExpandedWindows((prev) => ({
+      ...prev,
+      [windowId]: !prev[windowId],
+    }));
   };
 
   return (
@@ -547,80 +558,100 @@ const FuturisticView: React.FC<FuturisticViewProps> = ({
                     </div>
 
                     <div className="space-y-4 pb-4">
-                      {filteredWindowGroups.map((window) => (
-                        <div
-                          key={window.id}
-                          className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
-                        >
-                          <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div
-                                className={`h-2 w-2 rounded-full ${
-                                  window.focused
-                                    ? "bg-cyan-500"
-                                    : "bg-slate-500"
-                                } mr-2`}
-                              ></div>
-                              <span className="text-sm font-medium text-slate-300">
-                                Window {window.id}
-                              </span>
-                              <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
-                                {window.tabs.length} tabs
-                              </span>
-                            </div>
-                            <button
-                              className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                              onClick={() => saveWindowAsSession(window.id)}
-                            >
-                              <Plus className="h-3 w-3 inline mr-1" /> Save
-                              Session
-                            </button>
-                          </div>
-
-                          <div className="divide-y divide-slate-700/30">
-                            {window.tabs.map((tab) => (
-                              <div
-                                key={tab.id}
-                                className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
-                                onClick={() => openTab(tab)}
-                              >
-                                <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                                  {tab.favIconUrl ? (
-                                    <img
-                                      src={tab.favIconUrl}
-                                      alt=""
-                                      className="w-4 h-4"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src =
-                                          "https://via.placeholder.com/16";
-                                      }}
-                                    />
-                                  ) : (
-                                    <Globe className="w-4 h-4 text-slate-400" />
-                                  )}
-                                </div>
-                                <div className="flex-1 truncate">
-                                  <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
-                                    {tab.title}
-                                  </div>
-                                  <div className="text-xs text-slate-500 truncate">
-                                    {tab.url}
-                                  </div>
-                                </div>
-                                <button
-                                  className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteTab(tab);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                      {filteredWindowGroups.map((window) => {
+                        const isExpanded = expandedWindows[window.id] || false;
+                        const tabsToShow = isExpanded
+                          ? window.tabs
+                          : window.tabs.slice(0, 10);
+                        return (
+                          <div
+                            key={window.id}
+                            className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden"
+                          >
+                            <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div
+                                  className={`h-2 w-2 rounded-full ${
+                                    window.focused
+                                      ? "bg-cyan-500"
+                                      : "bg-slate-500"
+                                  } mr-2`}
+                                ></div>
+                                <span className="text-sm font-medium text-slate-300">
+                                  Window {window.id}
+                                </span>
+                                <span className="ml-2 bg-slate-700/50 text-slate-300 border-slate-600/50 text-xs px-2 py-0.5 rounded-full">
+                                  {window.tabs.length} tabs
+                                </span>
                               </div>
-                            ))}
+                              <button
+                                className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
+                                onClick={() => saveWindowAsSession(window.id)}
+                              >
+                                <Plus className="h-3 w-3 inline mr-1" /> Save
+                                Session
+                              </button>
+                            </div>
+
+                            <div className="divide-y divide-slate-700/30">
+                              {tabsToShow.map((tab) => (
+                                <div
+                                  key={tab.id}
+                                  className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
+                                  onClick={() => openTab(tab)}
+                                >
+                                  <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
+                                    {tab.favIconUrl ? (
+                                      <img
+                                        src={tab.favIconUrl}
+                                        alt=""
+                                        className="w-4 h-4"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src =
+                                            "https://via.placeholder.com/16";
+                                        }}
+                                      />
+                                    ) : (
+                                      <Globe className="w-4 h-4 text-slate-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 truncate">
+                                    <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
+                                      {tab.title}
+                                    </div>
+                                    <div className="text-xs text-slate-500 truncate">
+                                      {tab.url}
+                                    </div>
+                                  </div>
+                                  <button
+                                    className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteTab(tab);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ))}
+                              {window.tabs.length > 10 && (
+                                <div className="flex justify-center py-2 bg-slate-900/40">
+                                  <button
+                                    className="text-xs text-cyan-400 hover:underline focus:outline-none"
+                                    onClick={() => toggleExpand(window.id)}
+                                  >
+                                    {isExpanded
+                                      ? "Collapse"
+                                      : `Expand (${
+                                          window.tabs.length - 10
+                                        } more)`}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {filteredWindowGroups.length === 0 && (
                         <div className="text-center py-8 text-slate-500">

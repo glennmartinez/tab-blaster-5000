@@ -1,23 +1,23 @@
-import { ElementType } from "react";
+import React from "react";
 import { BarChart3, LineChart } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
   value: number;
-  icon: ElementType;
+  icon: React.ElementType;
   trend: "up" | "down" | "stable";
   color: string;
   detail: string;
 }
 
-export const MetricCard = ({
+const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
   icon: Icon,
   trend,
   color,
   detail,
-}: MetricCardProps) => {
+}) => {
   const getColor = () => {
     switch (color) {
       case "cyan":
@@ -65,3 +65,5 @@ export const MetricCard = ({
     </div>
   );
 };
+
+export default MetricCard;

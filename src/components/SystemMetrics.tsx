@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Cpu, HardDrive, Wifi } from "lucide-react";
-import { MetricCard } from "./MetricCard";
-
+import MetricCard from "./MetricCard";
+ 
 const SystemMetrics = () => {
   const [cpuUsage, setCpuUsage] = useState(42);
   const [memoryUsage, setMemoryUsage] = useState(68);

@@ -1,6 +1,7 @@
 import { Session } from "../models/Session";
+import { SessionInterface } from "./SessionInterface";
 
-class DriveStorageService {
+class DriveStorageService implements SessionInterface {
   private static FILE_MIME_TYPE = "application/json";
   private static SESSIONS_FILE_NAME = "ultimate-tab-manager-sessions.json";
 
@@ -272,6 +273,41 @@ class DriveStorageService {
     } catch (error) {
       console.error("Error deleting session from Google Drive:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Fetch all sessions from Google Drive
+   */
+  async fetchSessions(): Promise<Session[]> {
+    return DriveStorageService.getSessions();
+  }
+
+  /**
+   * Store a session in Google Drive
+   */
+  async storeSession(session: Session): Promise<void> {
+    return DriveStorageService.saveSession(session);
+  }
+
+  /**
+   * Delete a session from Google Drive by ID
+   */
+  async deleteSession(sessionId: string): Promise<void> {
+    return DriveStorageService.deleteSession(sessionId);
+  }
+
+  /**
+   * Fetch a specific session by ID from Google Drive
+   */
+  async fetchSessionById(sessionId: string): Promise<Session | null> {
+    try {
+      const sessions = await DriveStorageService.getSessions();
+      const session = sessions.find(session => session.id === sessionId);
+      return session || null;
+    } catch (error) {
+      console.error("Error fetching session by ID from Google Drive:", error);
+      return null;
     }
   }
 }

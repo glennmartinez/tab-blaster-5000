@@ -6,6 +6,8 @@ export const STORAGE_KEYS = {
   // Current keys
   SESSIONS: "sessions",
   SAVED_TABS: "savedTabs",
+  FAVOURITES: "favorites",
   SETTINGS: "settings",
   METRICS: "metrics",
+  STORAGE_PREFERENCE: "storagePreference",
 };

@@ -7,6 +7,7 @@ import Sidebar from "../../components/Sidebar";
 import WindowsPanel from "../../components/WindowsPanel";
 import SessionPanel from "../../components/SessionPanel";
 import SessionsSidebar from "../../components/SessionsSidebar";
+import SettingsView from "../settings/SettingsView";
 
 // Interface for the component props
 interface FuturisticViewProps {
@@ -35,9 +36,9 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
     []
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeView, setActiveView] = useState<"windows" | "sessions">(
-    "windows"
-  );
+  const [activeView, setActiveView] = useState<
+    "windows" | "sessions" | "settings"
+  >("windows");
   const [expandedWindows, setExpandedWindows] = useState<{
     [windowId: number]: boolean;
   }>({});
@@ -152,7 +153,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   };
 
   // Clear selected session and restore active windows when switching views
-  const handleViewChange = (view: "windows" | "sessions") => {
+  const handleViewChange = (view: "windows" | "sessions" | "settings") => {
     setActiveView(view);
     if (view === "windows") {
       selectSession(""); // This will now properly clear selectedSession
@@ -194,6 +195,21 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   const handleCreateSession = () => {
     createSession(`New Session ${new Date().toLocaleTimeString()}`);
   };
+
+  // Handle navigation back from settings
+  const handleBackFromSettings = () => {
+    console.log("Navigating back from settings");
+    setActiveView("windows");
+  };
+
+  // Render settings view if that's the active view
+  if (activeView === "settings") {
+    return (
+      <div className="settings-container">
+        <SettingsView onBack={handleBackFromSettings} />
+      </div>
+    );
+  }
 
   return (
     <div

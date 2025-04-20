@@ -4,8 +4,8 @@ import StatusItem from "./StatusItem";
 import { Activity, Database, Shield, Settings } from "lucide-react";
 
 interface FuturisticSidebarProps {
-  activeView: "windows" | "sessions";
-  handleViewChange: (view: "windows" | "sessions") => void;
+  activeView: "windows" | "sessions" | "settings";
+  handleViewChange: (view: "windows" | "sessions" | "settings") => void;
   systemStatus: number;
   securityLevel: number;
   networkStatus: number;
@@ -34,7 +34,12 @@ const Sidebar: React.FC<FuturisticSidebarProps> = ({
           onClick={() => handleViewChange("sessions")}
         />
         <NavItem icon={Shield} label="Security" />
-        <NavItem icon={Settings} label="Settings" />
+        <NavItem
+          icon={Settings}
+          label="Settings"
+          active={activeView === "settings"}
+          onClick={() => handleViewChange("settings")}
+        />
       </nav>
       <div className="mt-4 pt-3 border-t border-slate-700/50">
         <div className="text-xs text-slate-500 mb-2 font-mono">

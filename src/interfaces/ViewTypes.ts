@@ -1,1 +1,1 @@
-export type ViewType = "active" | "sessions" | "dashboard";
+export type ViewType = "active" | "sessions" | "dashboard" | "settings";

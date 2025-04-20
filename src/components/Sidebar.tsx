@@ -11,7 +11,7 @@ interface FuturisticSidebarProps {
   networkStatus: number;
 }
 
-const FuturisticSidebar: React.FC<FuturisticSidebarProps> = ({
+const Sidebar: React.FC<FuturisticSidebarProps> = ({
   activeView,
   handleViewChange,
   systemStatus,
@@ -60,4 +60,4 @@ const FuturisticSidebar: React.FC<FuturisticSidebarProps> = ({
   );
 };
 
-export default FuturisticSidebar;
+export default Sidebar;

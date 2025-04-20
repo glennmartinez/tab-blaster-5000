@@ -3,7 +3,7 @@ import { Tab, WindowInfo, SavedTab } from "../../interfaces/TabInterface";
 import { useSessions } from "../../hooks/useSessions";
 import ParticleBackground from "../../components/ParticleBackground";
 import Header from "../../components/Header";
-import FuturisticSidebar from "../../components/FuturisticSidebar";
+import Sidebar from "../../components/Sidebar";
 import WindowsPanel from "../../components/WindowsPanel";
 import SessionPanel from "../../components/SessionPanel";
 import SessionsSidebar from "../../components/SessionsSidebar";
@@ -234,7 +234,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
         <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden h-[calc(100vh-100px)]">
           {/* Left sidebar */}
           <div className="col-span-12 md:col-span-3 lg:col-span-2 flex flex-col h-full">
-            <FuturisticSidebar
+            <Sidebar
               activeView={activeView}
               handleViewChange={handleViewChange}
               systemStatus={systemStatus}

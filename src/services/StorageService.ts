@@ -1,213 +1,141 @@
 import { SavedTab } from "../interfaces/TabInterface";
 import { Session } from "../models/Session";
-import { STORAGE_KEYS } from "../constants/storageKeys";
-import DriveStorageService from "./DriveStorageService";
+import { StorageFactory, StorageType } from "./StorageFactory";
 
-// Storage provider types
+// Storage provider types - kept for backward compatibility
 export type StorageProvider = "local" | "chrome" | "drive";
 
 /**
+ * @deprecated Use StorageFactory.getStorageService() instead.
+ * This class is maintained for backward compatibility.
  * Service for interacting with storage
  */
 export class StorageService {
-  // Default storage provider
-  private static storageProvider: StorageProvider = "local";
+  // We'll use StorageFactory directly instead of tracking our own provider
+
+  /**
+   * Map the old storage provider type to the new StorageType enum
+   */
+  private static mapProviderToType(provider: StorageProvider): StorageType {
+    switch (provider) {
+      case "local":
+        return StorageType.LOCAL_STORAGE;
+      case "chrome":
+        return StorageType.CHROME_STORAGE;
+      case "drive":
+        return StorageType.DRIVE;
+      default:
+        return StorageType.LOCAL_STORAGE;
+    }
+  }
+
+  /**
+   * Get the storage service instance from the factory
+   */
+  private static getStorageInstance() {
+    return StorageFactory.getStorageService();
+  }
 
   /**
    * Set the storage provider to use
    * @param provider The storage provider to use
+   * @deprecated Use StorageFactory.setPreferredStorageType() instead
    */
   static setStorageProvider(provider: StorageProvider): void {
-    this.storageProvider = provider;
+    // Update the factory's preferred storage type directly
+    const storageType = this.mapProviderToType(provider);
+    StorageFactory.setPreferredStorageType(storageType);
     console.log(`Storage provider set to: ${provider}`);
   }
 
   /**
    * Get the current storage provider
    * @returns The current storage provider
+   * @deprecated Use StorageFactory.getCurrentStorageType() instead
    */
   static getStorageProvider(): StorageProvider {
-    return this.storageProvider;
+    const currentType = StorageFactory.getCurrentStorageType();
+    switch (currentType) {
+      case StorageType.LOCAL_STORAGE:
+        return "local";
+      case StorageType.CHROME_STORAGE:
+        return "chrome";
+      case StorageType.DRIVE:
+        return "drive";
+      default:
+        return "local";
+    }
   }
 
   /**
    * Get saved tabs from storage
+   * @deprecated Use StorageFactory.getStorageService().getSavedTabs() instead
    */
   static getSavedTabs(): Promise<SavedTab[]> {
-    return new Promise((resolve) => {
-      const savedTabs = localStorage.getItem(STORAGE_KEYS.SAVED_TABS);
-      resolve(savedTabs ? JSON.parse(savedTabs) : []);
-    });
+    return this.getStorageInstance().getSavedTabs();
   }
 
   /**
    * Save tabs to storage
+   * @deprecated Use StorageFactory.getStorageService().saveTabs() instead
    */
   static saveTabs(tabs: SavedTab[]): Promise<void> {
-    return new Promise((resolve) => {
-      localStorage.setItem(STORAGE_KEYS.SAVED_TABS, JSON.stringify(tabs));
-      resolve();
-    });
+    return this.getStorageInstance().saveTabs(tabs);
   }
 
   /**
    * Get sessions from storage
+   * @deprecated Use StorageFactory.getStorageService().fetchSessions() instead
    */
   static async getSessions(): Promise<Session[]> {
-    // Use Google Drive if selected
-    if (this.storageProvider === "drive") {
-      return DriveStorageService.getSessions();
-    }
-
-    // Otherwise use local or chrome storage
-    try {
-      // First try localStorage (primary)
-      const localData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-      if (localData) {
-        const sessions = JSON.parse(localData);
-        console.log("[Storage Debug] localStorage sessions:", sessions);
-        return sessions;
-      }
-
-      // Fall back to chrome.storage if localStorage fails or is empty
-      if (this.storageProvider === "chrome" && chrome?.storage) {
-        return new Promise((resolve) => {
-          chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
-            const sessions = result[STORAGE_KEYS.SESSIONS] || [];
-            console.log("[Storage Debug] chrome.storage sessions:", sessions);
-            resolve(sessions);
-          });
-        });
-      }
-
-      return [];
-    } catch (error) {
-      console.error("Error getting sessions:", error);
-      return [];
-    }
+    return this.getStorageInstance().fetchSessions();
   }
 
   /**
    * Save a session to storage
+   * @deprecated Use StorageFactory.getStorageService().storeSession() instead
    */
   static async saveSession(session: Session): Promise<void> {
-    // Use Google Drive if selected
-    if (this.storageProvider === "drive") {
-      return DriveStorageService.saveSession(session);
-    }
-
-    try {
-      // Get current sessions
-      const sessions = await this.getSessions();
-
-      // Update if exists, otherwise add
-      const sessionIndex = sessions.findIndex((s) => s.id === session.id);
-      if (sessionIndex >= 0) {
-        sessions[sessionIndex] = session;
-      } else {
-        sessions.unshift(session); // Add new session to the beginning of the array
-      }
-
-      // Save to localStorage (primary)
-      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
-      console.log("[Storage Debug] Saved sessions to localStorage:", sessions);
-
-      // Also save to chrome.storage if that's the provider
-      if (this.storageProvider === "chrome" && chrome?.storage) {
-        chrome.storage.local.set({ [STORAGE_KEYS.SESSIONS]: sessions });
-      }
-    } catch (error) {
-      console.error("Error saving session:", error);
-      throw error;
-    }
+    return this.getStorageInstance().storeSession(session);
   }
 
   /**
    * Delete a session from storage
+   * @deprecated Use StorageFactory.getStorageService().deleteSession() instead
    */
   static async deleteSession(sessionId: string): Promise<void> {
-    // Use Google Drive if selected
-    if (this.storageProvider === "drive") {
-      return DriveStorageService.deleteSession(sessionId);
-    }
-
-    try {
-      const sessions = await this.getSessions();
-      const filteredSessions = sessions.filter(
-        (session) => session.id !== sessionId
-      );
-
-      // Save to localStorage (primary)
-      localStorage.setItem(
-        STORAGE_KEYS.SESSIONS,
-        JSON.stringify(filteredSessions)
-      );
-      console.log("[Storage Debug] Deleted from localStorage");
-
-      // Also save to chrome.storage if that's the provider
-      if (this.storageProvider === "chrome" && chrome?.storage) {
-        chrome.storage.local.set({ [STORAGE_KEYS.SESSIONS]: filteredSessions });
-      }
-    } catch (error) {
-      console.error("Error deleting session:", error);
-      throw error;
-    }
+    return this.getStorageInstance().deleteSession(sessionId);
   }
 
   /**
    * Get application settings
+   * @deprecated Use StorageFactory.getStorageService().getSettings() instead
    */
   static getSettings<T>(defaultSettings: T): Promise<T> {
-    return new Promise((resolve) => {
-      const settings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      resolve(settings ? JSON.parse(settings) : defaultSettings);
-    });
+    return this.getStorageInstance().getSettings(defaultSettings);
   }
 
   /**
    * Save application settings
+   * @deprecated Use StorageFactory.getStorageService().saveSettings() instead
    */
   static saveSettings<T>(settings: T): Promise<void> {
-    return new Promise((resolve) => {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-      resolve();
-    });
+    return this.getStorageInstance().saveSettings(settings);
   }
 
   /**
    * Get data from storage
+   * @deprecated Use StorageFactory.getStorageService().get() instead
    */
   static get(key: string): Promise<Record<string, unknown>> {
-    return new Promise((resolve) => {
-      try {
-        const data = localStorage.getItem(key);
-        const parsedData = data ? JSON.parse(data) : null;
-        console.log(
-          `[Storage Debug] LocalStorage data for ${key}:`,
-          parsedData
-        );
-        resolve({ [key]: parsedData });
-      } catch (e) {
-        console.error(`Error parsing localStorage data for ${key}:`, e);
-        resolve({ [key]: null });
-      }
-    });
+    return this.getStorageInstance().get(key);
   }
 
   /**
    * Set data in storage
+   * @deprecated Use StorageFactory.getStorageService().set() instead
    */
   static set(data: Record<string, unknown>): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        Object.entries(data).forEach(([key, value]) => {
-          localStorage.setItem(key, JSON.stringify(value));
-          console.log(`[Storage Debug] Saved to localStorage - ${key}:`, value);
-        });
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    });
+    return this.getStorageInstance().set(data);
   }
 }

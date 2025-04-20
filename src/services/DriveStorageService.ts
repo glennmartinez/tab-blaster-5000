@@ -1,9 +1,12 @@
 import { Session } from "../models/Session";
 import { SessionInterface } from "./SessionInterface";
+import { SavedTab } from "../interfaces/TabInterface";
 
 class DriveStorageService implements SessionInterface {
   private static FILE_MIME_TYPE = "application/json";
   private static SESSIONS_FILE_NAME = "ultimate-tab-manager-sessions.json";
+  private static SAVED_TABS_FILE_NAME = "ultimate-tab-manager-saved-tabs.json";
+  private static SETTINGS_FILE_NAME = "ultimate-tab-manager-settings.json";
 
   /**
    * Get authentication token for Google Drive API
@@ -303,11 +306,167 @@ class DriveStorageService implements SessionInterface {
   async fetchSessionById(sessionId: string): Promise<Session | null> {
     try {
       const sessions = await DriveStorageService.getSessions();
-      const session = sessions.find(session => session.id === sessionId);
+      const session = sessions.find((session) => session.id === sessionId);
       return session || null;
     } catch (error) {
       console.error("Error fetching session by ID from Google Drive:", error);
       return null;
+    }
+  }
+
+  /**
+   * Get saved tabs from Google Drive
+   */
+  async getSavedTabs(): Promise<SavedTab[]> {
+    try {
+      // Search for existing saved tabs file
+      const files = await DriveStorageService.listFiles(
+        `name='${DriveStorageService.SAVED_TABS_FILE_NAME}'`
+      );
+
+      if (files.length > 0) {
+        return await DriveStorageService.readFile<SavedTab[]>(files[0].id);
+      }
+
+      // No saved tabs file exists yet
+      return [];
+    } catch (error) {
+      console.error("Error getting saved tabs from Google Drive:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Save tabs to Google Drive
+   */
+  async saveTabs(tabs: SavedTab[]): Promise<void> {
+    try {
+      // Search for existing saved tabs file
+      const files = await DriveStorageService.listFiles(
+        `name='${DriveStorageService.SAVED_TABS_FILE_NAME}'`
+      );
+
+      if (files.length > 0) {
+        // Update existing file
+        await DriveStorageService.createOrUpdateFile(
+          DriveStorageService.SAVED_TABS_FILE_NAME,
+          tabs,
+          files[0].id
+        );
+      } else {
+        // Create new file
+        await DriveStorageService.createOrUpdateFile(
+          DriveStorageService.SAVED_TABS_FILE_NAME,
+          tabs
+        );
+      }
+    } catch (error) {
+      console.error("Error saving tabs to Google Drive:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get application settings from Google Drive
+   */
+  async getSettings<T>(defaultSettings: T): Promise<T> {
+    try {
+      // Search for existing settings file
+      const files = await DriveStorageService.listFiles(
+        `name='${DriveStorageService.SETTINGS_FILE_NAME}'`
+      );
+
+      if (files.length > 0) {
+        return await DriveStorageService.readFile<T>(files[0].id);
+      }
+
+      // No settings file exists yet, return default settings
+      return defaultSettings;
+    } catch (error) {
+      console.error("Error getting settings from Google Drive:", error);
+      return defaultSettings;
+    }
+  }
+
+  /**
+   * Save application settings to Google Drive
+   */
+  async saveSettings<T>(settings: T): Promise<void> {
+    try {
+      // Search for existing settings file
+      const files = await DriveStorageService.listFiles(
+        `name='${DriveStorageService.SETTINGS_FILE_NAME}'`
+      );
+
+      if (files.length > 0) {
+        // Update existing file
+        await DriveStorageService.createOrUpdateFile(
+          DriveStorageService.SETTINGS_FILE_NAME,
+          settings,
+          files[0].id
+        );
+      } else {
+        // Create new file
+        await DriveStorageService.createOrUpdateFile(
+          DriveStorageService.SETTINGS_FILE_NAME,
+          settings
+        );
+      }
+    } catch (error) {
+      console.error("Error saving settings to Google Drive:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get data from Google Drive by key
+   */
+  async get(key: string): Promise<Record<string, unknown>> {
+    try {
+      // Search for file with name matching the key
+      const files = await DriveStorageService.listFiles(`name='${key}.json'`);
+
+      if (files.length > 0) {
+        const data = await DriveStorageService.readFile<unknown>(files[0].id);
+        return { [key]: data };
+      }
+
+      return { [key]: null };
+    } catch (error) {
+      console.error(
+        `Error getting data for key ${key} from Google Drive:`,
+        error
+      );
+      return { [key]: null };
+    }
+  }
+
+  /**
+   * Set data in Google Drive
+   */
+  async set(data: Record<string, unknown>): Promise<void> {
+    try {
+      for (const [key, value] of Object.entries(data)) {
+        const fileName = `${key}.json`;
+
+        // Search for existing file
+        const files = await DriveStorageService.listFiles(`name='${fileName}'`);
+
+        if (files.length > 0) {
+          // Update existing file
+          await DriveStorageService.createOrUpdateFile(
+            fileName,
+            value,
+            files[0].id
+          );
+        } else {
+          // Create new file
+          await DriveStorageService.createOrUpdateFile(fileName, value);
+        }
+      }
+    } catch (error) {
+      console.error("Error setting data in Google Drive:", error);
+      throw error;
     }
   }
 }

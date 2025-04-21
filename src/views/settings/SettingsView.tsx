@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import StorageSettings from "../../components/StorageSettings";
 import ParticleBackground from "../../components/ParticleBackground";
+import { StorageProvider } from "../../services/StorageService";
 
 interface SettingsViewProps {
   onBack?: () => void;
@@ -26,6 +27,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     }
   };
 
+  // Handle storage provider change
+  const handleStorageChange = (provider: StorageProvider) => {
+    console.log(`Storage provider changed to: ${provider}`);
+    // Could add additional logic here if needed when storage changes
+  };
+
   // Sections for the settings menu
   const settingsSections = [
     { id: "storage", label: "Storage", icon: Database },
@@ -37,7 +44,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const renderSectionContent = () => {
     switch (activeSection) {
       case "storage":
-        return <StorageSettings />;
+        return <StorageSettings onStorageChange={handleStorageChange} />;
       case "appearance":
         return (
           <div className="p-4 bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg">

@@ -1,8 +1,9 @@
 import React from "react";
-import { Globe, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
 import MetricCard from "./MetricCard";
 import { Cpu, HardDrive, Wifi } from "lucide-react";
+import FallbackIcon from "./FallbackIcon";
 
 interface WindowsPanelProps {
   windowGroups: WindowInfo[];
@@ -97,19 +98,7 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                     onClick={() => onOpenTab(tab)}
                   >
                     <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                      {tab.favIconUrl ? (
-                        <img
-                          src={tab.favIconUrl}
-                          alt=""
-                          className="w-4 h-4"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "https://via.placeholder.com/16";
-                          }}
-                        />
-                      ) : (
-                        <Globe className="w-4 h-4 text-slate-400" />
-                      )}
+                      <FallbackIcon favIconUrl={tab.favIconUrl} size="md" />
                     </div>
                     <div className="flex-1 truncate">
                       <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">

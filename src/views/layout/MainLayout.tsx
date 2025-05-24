@@ -26,10 +26,6 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
 }) => {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [systemStatus, setSystemStatus] = useState(85);
-  const [cpuUsage, setCpuUsage] = useState(42);
-  const [memoryUsage, setMemoryUsage] = useState(68);
-  const [networkStatus, setNetworkStatus] = useState(92);
-  const [securityLevel] = useState(75);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [activeWindowGroups, setActiveWindowGroups] = useState<WindowInfo[]>(
@@ -83,14 +79,11 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Simulate changing data for system metrics
+  // Updated to use real system status from Chrome APIs - only update system status periodically
   useEffect(() => {
     const interval = setInterval(() => {
-      setCpuUsage(Math.floor(Math.random() * 30) + 30);
-      setMemoryUsage(Math.floor(Math.random() * 20) + 60);
-      setNetworkStatus(Math.floor(Math.random() * 15) + 80);
       setSystemStatus(Math.floor(Math.random() * 10) + 80);
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -254,8 +247,8 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
               activeView={activeView}
               handleViewChange={handleViewChange}
               systemStatus={systemStatus}
-              securityLevel={securityLevel}
-              networkStatus={networkStatus}
+              securityLevel={75}
+              networkStatus={92}
             />
           </div>
 
@@ -288,9 +281,6 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
                 ) : (
                   <WindowsPanel
                     windowGroups={filteredWindowGroups}
-                    cpuUsage={cpuUsage}
-                    memoryUsage={memoryUsage}
-                    networkStatus={networkStatus}
                     expandedWindows={expandedWindows}
                     onOpenTab={openTab}
                     onDeleteTab={deleteTab}

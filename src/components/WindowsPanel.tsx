@@ -1,15 +1,11 @@
 import React from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
-import MetricCard from "./MetricCard";
-import { Cpu, HardDrive, Wifi } from "lucide-react";
+import SystemMetricsWidget from "./SystemMetricsWidget";
 import FallbackIcon from "./FallbackIcon";
 
 interface WindowsPanelProps {
   windowGroups: WindowInfo[];
-  cpuUsage: number;
-  memoryUsage: number;
-  networkStatus: number;
   expandedWindows: { [windowId: number]: boolean };
   onOpenTab: (tab: Tab) => void;
   onDeleteTab: (tab: Tab) => void;
@@ -19,9 +15,6 @@ interface WindowsPanelProps {
 
 const WindowsPanel: React.FC<WindowsPanelProps> = ({
   windowGroups,
-  cpuUsage,
-  memoryUsage,
-  networkStatus,
   expandedWindows,
   onOpenTab,
   onDeleteTab,
@@ -30,32 +23,8 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
 }) => {
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <MetricCard
-          title="CPU Usage"
-          value={cpuUsage}
-          icon={Cpu}
-          trend="up"
-          color="cyan"
-          detail="System Performance"
-        />
-        <MetricCard
-          title="Memory"
-          value={memoryUsage}
-          icon={HardDrive}
-          trend="stable"
-          color="purple"
-          detail="RAM Usage"
-        />
-        <MetricCard
-          title="Network"
-          value={networkStatus}
-          icon={Wifi}
-          trend="down"
-          color="blue"
-          detail="Connectivity"
-        />
-      </div>
+      {/* Use the new SystemMetricsWidget component instead of hard-coded metrics */}
+      <SystemMetricsWidget />
 
       <div className="space-y-4 pb-4">
         {windowGroups.map((window) => {

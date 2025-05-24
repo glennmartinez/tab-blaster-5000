@@ -18,7 +18,11 @@
     "scripting",
     "windows",
     "system.cpu",
-    "identity"
+    "system.memory",
+    "identity",
+    "processes",
+    "webRequest",
+    "tabs"
   ],
   "host_permissions": ["<all_urls>", "https://www.googleapis.com/*"],
   "background": {

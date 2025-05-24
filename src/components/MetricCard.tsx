@@ -3,11 +3,12 @@ import { BarChart3, LineChart } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: React.ElementType;
   trend: "up" | "down" | "stable";
   color: string;
   detail: string;
+  showPercentageSymbol?: boolean;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -17,6 +18,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
   trend,
   color,
   detail,
+  showPercentageSymbol = true,
 }) => {
   const getColor = () => {
     switch (color) {
@@ -46,6 +48,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
     }
   };
 
+  // Format the displayed value
+  const displayValue = () => {
+    if (typeof value === "string") {
+      return value;
+    }
+    return showPercentageSymbol ? `${value}%` : value;
+  };
+
   return (
     <div
       className={`bg-slate-800/50 rounded-md border ${getColor()} p-3 relative overflow-hidden`}
@@ -55,7 +65,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <Icon className="h-4 w-4 text-cyan-500" />
       </div>
       <div className="text-xl font-bold mb-1 bg-gradient-to-r bg-clip-text text-transparent from-slate-100 to-slate-300">
-        {value}%
+        {displayValue()}
       </div>
       <div className="text-xs text-slate-500">{detail}</div>
       <div className="absolute bottom-2 right-2 flex items-center">

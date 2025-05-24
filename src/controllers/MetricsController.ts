@@ -2,6 +2,9 @@ import {
   SystemMetrics,
   SystemStatus,
   MemoryMetrics,
+  TabMemoryInfo,
+  WindowMemoryInfo,
+  CpuMetrics,
 } from "../models/SystemMetrics";
 import { ChromeService } from "../services/ChromeService";
 
@@ -19,45 +22,124 @@ export class MetricsController {
    * Get current system metrics
    */
   static async getSystemMetrics(): Promise<SystemMetrics> {
-    const [tabs, windows] = await Promise.all([
+    const [tabs, windows, processInfo] = await Promise.all([
       ChromeService.getTabs(),
       ChromeService.getWindows(),
+      ChromeService.getProcessInfo(),
     ]);
 
     // Default memory metrics
     const memoryUsage: MemoryMetrics = {
       usagePercentage: 0,
+      totalMemoryMB: 0,
+      usedMemoryMB: 0,
+      isTabsOnlyMetric: false,
+      showAbsoluteOnly: false,
     };
 
-    // Get memory info if available in Chrome
+    // Get system memory info if available in Chrome
     if (chrome?.system?.memory) {
       await new Promise<void>((resolve) => {
         chrome.system.memory.getInfo((info) => {
+          // Convert bytes to MB for easier reading
+          const totalMemoryMB = Math.round(info.capacity / (1024 * 1024));
+          const usedMemoryMB = Math.round(
+            (info.capacity - info.availableCapacity) / (1024 * 1024)
+          );
+
           memoryUsage.usagePercentage = Math.round(
             ((info.capacity - info.availableCapacity) / info.capacity) * 100
           );
+          memoryUsage.totalMemoryMB = totalMemoryMB;
+          memoryUsage.usedMemoryMB = usedMemoryMB;
+          memoryUsage.isTabsOnlyMetric = false; // This is system-wide memory
           resolve();
         });
       });
-    } else if (typeof performance !== "undefined" && "memory" in performance) {
-      // Use performance.memory as a fallback (only works in Chrome)
-      // TypeScript doesn't know about this Chrome-specific property
-      const memory = (performance as any).memory as {
-        jsHeapSizeLimit: number;
-        totalJSHeapSize: number;
-        usedJSHeapSize: number;
-      };
-
-      memoryUsage.jsHeapSizeLimit = memory.jsHeapSizeLimit;
-      memoryUsage.totalJSHeapSize = memory.totalJSHeapSize;
-      memoryUsage.usedJSHeapSize = memory.usedJSHeapSize;
-      memoryUsage.usagePercentage = Math.round(
-        (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100
-      );
     } else {
-      // Mock data for development
-      memoryUsage.usagePercentage = Math.round(30 + Math.random() * 40); // 30-70% usage
+      // If system API not available, use the tab memory absolute values instead of misleading percentages
+      
+      // Calculate tabs total memory in MB
+      const tabsTotalMemoryKB = processInfo.totalMemory || 0;
+      const tabsTotalMemoryMB = Math.round(tabsTotalMemoryKB / 1024);
+      
+      // Rather than showing a misleading percentage of unknown total memory,
+      // we'll display the absolute memory usage and avoid showing a percentage
+      memoryUsage.usagePercentage = 0; // We'll use this to indicate "not available"
+      memoryUsage.totalMemoryMB = 0; // Unknown total system memory
+      memoryUsage.usedMemoryMB = tabsTotalMemoryMB;
+      memoryUsage.isTabsOnlyMetric = true; // Flag that this is only measuring tabs, not system
+      memoryUsage.showAbsoluteOnly = true; // Flag to show only absolute value, not percentage
     }
+
+    // Calculate Chrome browser memory usage
+    const browserMemory = await this.estimateBrowserMemoryUsage(tabs.length);
+    memoryUsage.browserMemoryMB = browserMemory.totalMB;
+    memoryUsage.extensionMemoryMB = browserMemory.extensionMB;
+
+    // Process tab memory information
+    const tabMemoryInfo: TabMemoryInfo[] = tabs
+      .filter((tab) => tab.id !== undefined)
+      .map((tab) => {
+        const tabId = tab.id!;
+        const processData = processInfo.tabInfo[tabId] || {
+          memory: 0,
+          processId: -1,
+          cpu: 0,
+        };
+
+        return {
+          tabId,
+          title: tab.title || "Unknown",
+          url: tab.url || "about:blank",
+          memoryUsage: processData.memory,
+          processId: processData.processId,
+          windowId: tab.windowId || 0,
+          cpuUsage: processData.cpu,
+        };
+      });
+
+    // Calculate window memory usage by aggregating tab memory info
+    const windowMemoryMap = new Map<
+      number,
+      {
+        memory: number;
+        tabCount: number;
+        cpu: number;
+      }
+    >();
+
+    tabMemoryInfo.forEach((tabInfo) => {
+      const windowData = windowMemoryMap.get(tabInfo.windowId) || {
+        memory: 0,
+        tabCount: 0,
+        cpu: 0,
+      };
+      windowMemoryMap.set(tabInfo.windowId, {
+        memory: windowData.memory + tabInfo.memoryUsage,
+        tabCount: windowData.tabCount + 1,
+        cpu: windowData.cpu + (tabInfo.cpuUsage || 0),
+      });
+    });
+
+    const windowMemoryInfo: WindowMemoryInfo[] = Array.from(
+      windowMemoryMap.entries()
+    ).map(([windowId, data]) => ({
+      windowId,
+      memoryUsage: data.memory,
+      tabCount: data.tabCount,
+      cpuUsage: data.cpu,
+    }));
+
+    // Create CPU metrics
+    const cpuUsage: CpuMetrics = {
+      totalUsage: Math.min(processInfo.totalCpu || 0, 100),
+      perTabUsage: new Map(
+        tabMemoryInfo
+          .filter((tab) => tab.cpuUsage !== undefined)
+          .map((tab) => [tab.tabId, tab.cpuUsage || 0])
+      ),
+    };
 
     // Create system metrics object
     const metrics: SystemMetrics = {
@@ -65,9 +147,48 @@ export class MetricsController {
       memoryUsage,
       tabCount: tabs.length,
       windowCount: windows.length,
+      tabMemoryInfo,
+      windowMemoryInfo,
+      cpuUsage,
     };
 
     return metrics;
+  }
+
+  /**
+   * Estimate Chrome browser memory usage
+   * This combines information from various sources to approximate Chrome's memory footprint
+   */
+  static async estimateBrowserMemoryUsage(tabCount: number): Promise<{totalMB: number, extensionMB: number}> {
+    // Get this extension's memory usage
+    let extensionMemoryMB = 0;
+    
+    // Use performance.memory if available (Chrome only feature)
+    if (typeof performance !== "undefined" && "memory" in performance) {
+      const memory = (performance as any).memory as {
+        jsHeapSizeLimit: number;
+        totalJSHeapSize: number;
+        usedJSHeapSize: number;
+      };
+      
+      // Convert to MB
+      extensionMemoryMB = Math.round(memory.usedJSHeapSize / (1024 * 1024));
+    }
+    
+    // Approximate memory per tab (very rough estimate)
+    const averageMemoryPerTabMB = 60; // Most tabs use between 40-100MB
+    
+    // Approximate browser overhead (for the browser UI, renderer process, etc.)
+    const browserOverheadMB = 300; // Base memory consumption for Chrome itself
+    
+    // Estimated browser memory: extension + tabs + overhead
+    const tabsMemoryMB = tabCount * averageMemoryPerTabMB;
+    const totalBrowserMemoryMB = extensionMemoryMB + tabsMemoryMB + browserOverheadMB;
+    
+    return {
+      totalMB: totalBrowserMemoryMB,
+      extensionMB: extensionMemoryMB
+    };
   }
 
   /**

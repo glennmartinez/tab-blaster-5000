@@ -5,19 +5,21 @@ import { FavoriteTab } from "../services/FavoritesService";
 import TagInput from "../components/TagInput";
 
 const FavouritesView: React.FC = () => {
-  const { 
-    favorites, 
-    tags, 
-    loading, 
-    removeFavorite, 
-    updateFavoriteTags, 
+  const {
+    favorites,
+    tags,
+    loading,
+    removeFavorite,
+    updateFavoriteTags,
     addTag,
-    getFavoritesByTags 
+    getFavoritesByTags,
   } = useFavorites();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [filteredFavourites, setFilteredFavourites] = useState<FavoriteTab[]>([]);
+  const [filteredFavourites, setFilteredFavourites] = useState<FavoriteTab[]>(
+    []
+  );
   const [editingTags, setEditingTags] = useState<string | null>(null);
 
   // Filter favorites based on search and tags
@@ -32,10 +34,13 @@ const FavouritesView: React.FC = () => {
 
       // Then filter by search query
       if (searchQuery.trim()) {
-        filtered = filtered.filter(fav =>
-          fav.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          fav.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          fav.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        filtered = filtered.filter(
+          (fav) =>
+            fav.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            fav.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            fav.tags.some((tag) =>
+              tag.toLowerCase().includes(searchQuery.toLowerCase())
+            )
         );
       }
 
@@ -58,11 +63,15 @@ const FavouritesView: React.FC = () => {
     setEditingTags(null);
   };
 
-  const availableTagNames = Array.from(new Set(favorites.flatMap(fav => fav.tags)));
-  const tagCategories = availableTagNames.map(name => {
-    const tagData = tags.find(t => t.name === name);
-    return { name, count: tagData?.count || 0, color: tagData?.color };
-  }).sort((a, b) => b.count - a.count);
+  const availableTagNames = Array.from(
+    new Set(favorites.flatMap((fav) => fav.tags))
+  );
+  const tagCategories = availableTagNames
+    .map((name) => {
+      const tagData = tags.find((t) => t.name === name);
+      return { name, count: tagData?.count || 0, color: tagData?.color };
+    })
+    .sort((a, b) => b.count - a.count);
 
   if (loading) {
     return (
@@ -71,7 +80,9 @@ const FavouritesView: React.FC = () => {
           <div className="relative w-16 h-16 mx-auto mb-4">
             <Heart className="w-16 h-16 text-pink-500 animate-pulse" />
           </div>
-          <div className="text-lg font-semibold text-slate-300">Loading Favourites...</div>
+          <div className="text-lg font-semibold text-slate-300">
+            Loading Favourites...
+          </div>
         </div>
       </div>
     );
@@ -88,10 +99,11 @@ const FavouritesView: React.FC = () => {
               Favourites
             </h1>
             <span className="ml-3 text-sm text-slate-400">
-              {filteredFavourites.length} {filteredFavourites.length === 1 ? 'favorite' : 'favorites'}
+              {filteredFavourites.length}{" "}
+              {filteredFavourites.length === 1 ? "favorite" : "favorites"}
             </span>
           </div>
-          
+
           {/* Search and Filters */}
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -109,28 +121,34 @@ const FavouritesView: React.FC = () => {
             {/* Tag Filter */}
             {tagCategories.length > 0 && (
               <div>
-                <div className="text-sm text-slate-400 mb-2">Filter by tags:</div>
+                <div className="text-sm text-slate-400 mb-2">
+                  Filter by tags:
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {tagCategories.map(({ name, count, color }) => (
                     <button
                       key={name}
                       onClick={() => {
-                        setSelectedTags(prev => 
-                          prev.includes(name) 
-                            ? prev.filter(t => t !== name)
+                        setSelectedTags((prev) =>
+                          prev.includes(name)
+                            ? prev.filter((t) => t !== name)
                             : [...prev, name]
                         );
                       }}
                       className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
                         selectedTags.includes(name)
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50'
-                          : 'bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:bg-slate-600/50'
+                          ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50"
+                          : "bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:bg-slate-600/50"
                       }`}
-                      style={color && selectedTags.includes(name) ? {
-                        backgroundColor: `${color}20`,
-                        borderColor: `${color}50`,
-                        color: color
-                      } : {}}
+                      style={
+                        color && selectedTags.includes(name)
+                          ? {
+                              backgroundColor: `${color}20`,
+                              borderColor: `${color}50`,
+                              color: color,
+                            }
+                          : {}
+                      }
                     >
                       <Hash className="w-3 h-3" />
                       {name}
@@ -156,10 +174,12 @@ const FavouritesView: React.FC = () => {
           {filteredFavourites.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <Heart className="w-16 h-16 mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">No favourites found</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                No favourites found
+              </h3>
               <p className="text-center">
                 {searchQuery || selectedTags.length > 0
-                  ? "Try adjusting your search or filter criteria" 
+                  ? "Try adjusting your search or filter criteria"
                   : "Start adding tabs to your favorites by clicking the heart icon on any tab"}
               </p>
             </div>
@@ -182,7 +202,7 @@ const FavouritesView: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <p className="text-sm text-slate-400 mb-3 truncate">
                     {favourite.url}
                   </p>
@@ -192,16 +212,20 @@ const FavouritesView: React.FC = () => {
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1">
                         {favourite.tags.map((tagName) => {
-                          const tagData = tags.find(t => t.name === tagName);
+                          const tagData = tags.find((t) => t.name === tagName);
                           return (
                             <span
                               key={tagName}
                               className="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded-full border border-cyan-500/30"
-                              style={tagData?.color ? {
-                                backgroundColor: `${tagData.color}20`,
-                                borderColor: `${tagData.color}40`,
-                                color: tagData.color
-                              } : {}}
+                              style={
+                                tagData?.color
+                                  ? {
+                                      backgroundColor: `${tagData.color}20`,
+                                      borderColor: `${tagData.color}40`,
+                                      color: tagData.color,
+                                    }
+                                  : {}
+                              }
                             >
                               #{tagName}
                             </span>
@@ -216,21 +240,27 @@ const FavouritesView: React.FC = () => {
                     <div className="mb-3">
                       <TagInput
                         selectedTags={favourite.tags}
-                        onTagsChange={(newTags) => handleTagsUpdate(favourite.id, newTags)}
+                        onTagsChange={(newTags) =>
+                          handleTagsUpdate(favourite.id, newTags)
+                        }
                         availableTags={tags}
                         onAddTag={addTag}
                         placeholder="Add tags..."
                       />
                     </div>
                   )}
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-500">
                       Added {new Date(favourite.dateAdded).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => setEditingTags(editingTags === favourite.id ? null : favourite.id)}
+                        onClick={() =>
+                          setEditingTags(
+                            editingTags === favourite.id ? null : favourite.id
+                          )
+                        }
                         className="p-1 text-slate-400 hover:text-cyan-400 transition-colors"
                         title="Edit tags"
                       >

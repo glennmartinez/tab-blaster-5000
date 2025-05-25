@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, Hash } from 'lucide-react';
-import { useFavorites } from '../hooks/useFavorites';
-import TagDialog from './TagDialog';
+import React, { useState, useEffect } from "react";
+import { Heart, Hash } from "lucide-react";
+import { useFavorites } from "../hooks/useFavorites";
+import TagDialog from "./TagDialog";
 
 interface FavoriteButtonProps {
   tab: {
@@ -15,19 +15,14 @@ interface FavoriteButtonProps {
   showTagsOnly?: boolean;
 }
 
-const FavoriteButton: React.FC<FavoriteButtonProps> = ({ 
-  tab, 
+const FavoriteButton: React.FC<FavoriteButtonProps> = ({
+  tab,
   className = "",
   showTags = false,
-  showTagsOnly = false 
+  showTagsOnly = false,
 }) => {
-  const { 
-    getFavoriteState, 
-    toggleFavorite, 
-    updateFavoriteTags, 
-    tags, 
-    addTag 
-  } = useFavorites();
+  const { getFavoriteState, toggleFavorite, updateFavoriteTags, tags, addTag } =
+    useFavorites();
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,20 +39,20 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (isLoading) return;
-    
+
     setIsLoading(true);
     try {
       const newState = await toggleFavorite(tab, currentTags);
       setIsFavorited(newState);
-      
+
       if (!newState) {
         setShowTagDialog(false);
         setCurrentTags([]);
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling favorite:", error);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +60,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   const handleTagsChange = async (newTags: string[]) => {
     setCurrentTags(newTags);
-    
+
     // If not favorited yet, favorite it first
     if (!isFavorited) {
       setIsLoading(true);
@@ -73,7 +68,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         const newState = await toggleFavorite(tab, newTags);
         setIsFavorited(newState);
       } catch (error) {
-        console.error('Error favoriting tab:', error);
+        console.error("Error favoriting tab:", error);
       } finally {
         setIsLoading(false);
       }
@@ -115,15 +110,19 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           {isFavorited && currentTags.length > 0 && (
             <div className="flex items-center gap-1 ml-1">
               {currentTags.slice(0, 2).map((tagName) => {
-                const tagData = tags.find(t => t.name === tagName);
+                const tagData = tags.find((t) => t.name === tagName);
                 return (
                   <span
                     key={tagName}
                     className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
-                    style={tagData?.color ? { 
-                      borderColor: `${tagData.color}40`,
-                      color: tagData.color 
-                    } : {}}
+                    style={
+                      tagData?.color
+                        ? {
+                            borderColor: `${tagData.color}40`,
+                            color: tagData.color,
+                          }
+                        : {}
+                    }
                   >
                     #{tagName}
                   </span>
@@ -160,15 +159,15 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           disabled={isLoading}
           className={`p-0.5 rounded transition-all duration-200 ${
             isFavorited
-              ? 'text-red-500 hover:text-red-400'
-              : 'text-slate-400 hover:text-red-500 hover:bg-red-500/10'
-          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              ? "text-red-500 hover:text-red-400"
+              : "text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          title={isFavorited ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart 
+          <Heart
             className={`w-3 h-3 transition-all duration-200 ${
-              isFavorited ? 'fill-current' : ''
-            } ${isLoading ? 'animate-pulse' : ''}`}
+              isFavorited ? "fill-current" : ""
+            } ${isLoading ? "animate-pulse" : ""}`}
           />
         </button>
 
@@ -192,15 +191,19 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         {isFavorited && currentTags.length > 0 && !showTags && (
           <div className="flex items-center gap-1 ml-1">
             {currentTags.slice(0, 2).map((tagName) => {
-              const tagData = tags.find(t => t.name === tagName);
+              const tagData = tags.find((t) => t.name === tagName);
               return (
                 <span
                   key={tagName}
                   className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
-                  style={tagData?.color ? { 
-                    borderColor: `${tagData.color}40`,
-                    color: tagData.color 
-                  } : {}}
+                  style={
+                    tagData?.color
+                      ? {
+                          borderColor: `${tagData.color}40`,
+                          color: tagData.color,
+                        }
+                      : {}
+                  }
                 >
                   #{tagName}
                 </span>
@@ -218,15 +221,19 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         {isFavorited && currentTags.length > 0 && showTags && (
           <div className="flex items-center gap-1 ml-1">
             {currentTags.slice(0, 3).map((tagName) => {
-              const tagData = tags.find(t => t.name === tagName);
+              const tagData = tags.find((t) => t.name === tagName);
               return (
                 <span
                   key={tagName}
                   className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
-                  style={tagData?.color ? { 
-                    borderColor: `${tagData.color}40`,
-                    color: tagData.color 
-                  } : {}}
+                  style={
+                    tagData?.color
+                      ? {
+                          borderColor: `${tagData.color}40`,
+                          color: tagData.color,
+                        }
+                      : {}
+                  }
                 >
                   #{tagName}
                 </span>

@@ -66,9 +66,9 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
 
               <div className="divide-y divide-slate-700/30">
                 {tabsToShow.map((tab) => {
-                  const favoriteData = getFavoriteState(tab.url || '');
+                  const favoriteData = getFavoriteState(tab.url || "");
                   const favoriteTags = favoriteData?.tags || [];
-                  
+
                   return (
                     <div
                       key={tab.id}
@@ -88,9 +88,9 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                             <FavoriteButton
                               tab={{
                                 id: tab.id,
-                                title: tab.title || '',
-                                url: tab.url || '',
-                                favicon: tab.favIconUrl
+                                title: tab.title || "",
+                                url: tab.url || "",
+                                favicon: tab.favIconUrl,
                               }}
                               showTags={false}
                               className="relative"
@@ -117,9 +117,9 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                             <FavoriteButton
                               tab={{
                                 id: tab.id,
-                                title: tab.title || '',
-                                url: tab.url || '',
-                                favicon: tab.favIconUrl
+                                title: tab.title || "",
+                                url: tab.url || "",
+                                favicon: tab.favIconUrl,
                               }}
                               showTags={true}
                               showTagsOnly={true}
@@ -127,7 +127,7 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                             />
                             {/* Display current tags */}
                             {favoriteData && favoriteTags.length > 0 && (
-                              <ExpandableTags 
+                              <ExpandableTags
                                 tags={favoriteTags}
                                 availableTags={tags}
                                 className="text-xs"

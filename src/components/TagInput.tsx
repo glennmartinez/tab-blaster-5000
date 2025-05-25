@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Hash, X, Plus } from 'lucide-react';
-import { Tag } from '../services/FavoritesService';
+import React, { useState, useRef, useEffect } from "react";
+import { Hash, X, Plus } from "lucide-react";
+import { Tag } from "../services/FavoritesService";
 
 interface TagInputProps {
   selectedTags: string[];
@@ -17,9 +17,9 @@ const TagInput: React.FC<TagInputProps> = ({
   availableTags,
   onAddTag,
   placeholder = "Add tags...",
-  className = ""
+  className = "",
 }) => {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -28,9 +28,10 @@ const TagInput: React.FC<TagInputProps> = ({
   // Filter tags based on input
   useEffect(() => {
     if (inputValue.trim()) {
-      const filtered = availableTags.filter(tag =>
-        tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
-        !selectedTags.includes(tag.name)
+      const filtered = availableTags.filter(
+        (tag) =>
+          tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+          !selectedTags.includes(tag.name)
       );
       setFilteredTags(filtered);
       setShowSuggestions(filtered.length > 0 || inputValue.trim().length > 0);
@@ -43,13 +44,16 @@ const TagInput: React.FC<TagInputProps> = ({
   // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,13 +61,17 @@ const TagInput: React.FC<TagInputProps> = ({
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
+    if (e.key === "Enter" && inputValue.trim()) {
       e.preventDefault();
       addTag(inputValue.trim());
-    } else if (e.key === 'Backspace' && !inputValue && selectedTags.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      !inputValue &&
+      selectedTags.length > 0
+    ) {
       // Remove last tag if input is empty
       removeTag(selectedTags[selectedTags.length - 1]);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowSuggestions(false);
       inputRef.current?.blur();
     }
@@ -73,8 +81,8 @@ const TagInput: React.FC<TagInputProps> = ({
     if (!tagName || selectedTags.includes(tagName)) return;
 
     // Check if tag exists in available tags
-    const existingTag = availableTags.find(tag => 
-      tag.name.toLowerCase() === tagName.toLowerCase()
+    const existingTag = availableTags.find(
+      (tag) => tag.name.toLowerCase() === tagName.toLowerCase()
     );
 
     if (!existingTag) {
@@ -83,12 +91,12 @@ const TagInput: React.FC<TagInputProps> = ({
     }
 
     onTagsChange([...selectedTags, tagName]);
-    setInputValue('');
+    setInputValue("");
     setShowSuggestions(false);
   };
 
   const removeTag = (tagToRemove: string) => {
-    onTagsChange(selectedTags.filter(tag => tag !== tagToRemove));
+    onTagsChange(selectedTags.filter((tag) => tag !== tagToRemove));
   };
 
   const selectSuggestion = (tag: Tag) => {
@@ -101,8 +109,11 @@ const TagInput: React.FC<TagInputProps> = ({
     }
   };
 
-  const canCreateNewTag = inputValue.trim() && 
-    !availableTags.some(tag => tag.name.toLowerCase() === inputValue.toLowerCase()) &&
+  const canCreateNewTag =
+    inputValue.trim() &&
+    !availableTags.some(
+      (tag) => tag.name.toLowerCase() === inputValue.toLowerCase()
+    ) &&
     !selectedTags.includes(inputValue.trim());
 
   return (
@@ -110,16 +121,20 @@ const TagInput: React.FC<TagInputProps> = ({
       <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-800/50 border border-slate-600/50 rounded-lg min-h-[40px] focus-within:border-cyan-500/50 transition-colors">
         {/* Selected tags */}
         {selectedTags.map((tag, index) => {
-          const tagData = availableTags.find(t => t.name === tag);
+          const tagData = availableTags.find((t) => t.name === tag);
           return (
             <span
               key={index}
               className="inline-flex items-center gap-1 px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-sm border border-cyan-500/30"
-              style={tagData?.color ? { 
-                backgroundColor: `${tagData.color}20`, 
-                borderColor: `${tagData.color}40`,
-                color: tagData.color 
-              } : {}}
+              style={
+                tagData?.color
+                  ? {
+                      backgroundColor: `${tagData.color}20`,
+                      borderColor: `${tagData.color}40`,
+                      color: tagData.color,
+                    }
+                  : {}
+              }
             >
               <Hash className="w-3 h-3" />
               {tag}
@@ -160,13 +175,10 @@ const TagInput: React.FC<TagInputProps> = ({
                   onClick={() => selectSuggestion(tag)}
                   className="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center gap-2 transition-colors"
                 >
-                  <Hash 
-                    className="w-3 h-3" 
-                    style={{ color: tag.color }}
-                  />
+                  <Hash className="w-3 h-3" style={{ color: tag.color }} />
                   <span className="text-white">{tag.name}</span>
                   <span className="text-xs text-slate-400 ml-auto">
-                    {tag.count} {tag.count === 1 ? 'use' : 'uses'}
+                    {tag.count} {tag.count === 1 ? "use" : "uses"}
                   </span>
                 </button>
               ))}
@@ -188,11 +200,13 @@ const TagInput: React.FC<TagInputProps> = ({
             </>
           )}
 
-          {filteredTags.length === 0 && !canCreateNewTag && inputValue.trim() && (
-            <div className="px-3 py-2 text-slate-400 text-sm">
-              No matching tags found
-            </div>
-          )}
+          {filteredTags.length === 0 &&
+            !canCreateNewTag &&
+            inputValue.trim() && (
+              <div className="px-3 py-2 text-slate-400 text-sm">
+                No matching tags found
+              </div>
+            )}
         </div>
       )}
     </div>

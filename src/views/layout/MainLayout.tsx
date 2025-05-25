@@ -8,6 +8,7 @@ import WindowsPanel from "../../components/WindowsPanel";
 import SessionPanel from "../../components/SessionPanel";
 import SessionsSidebar from "../../components/SessionsSidebar";
 import SettingsView from "../settings/SettingsView";
+import FavouritesView from "../FavouritesView";
 
 // Interface for the component props
 interface FuturisticViewProps {
@@ -33,7 +34,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeView, setActiveView] = useState<
-    "windows" | "sessions" | "settings"
+    "windows" | "sessions" | "settings" | "favourites"
   >("windows");
   const [expandedWindows, setExpandedWindows] = useState<{
     [windowId: number]: boolean;
@@ -95,9 +96,19 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
 
   // Open a tab using the onSwitchTab function if provided, otherwise default to window.open
   const openTab = (tab: Tab) => {
+    // For saved session tabs (which don't exist in current browser session),
+    // always open in a new tab
+    if (selectedSession) {
+      if (tab.url) {
+        window.open(tab.url, "_blank");
+      }
+      return;
+    }
+
+    // For active tabs, try to switch to them if possible
     if (onSwitchTab && tab.id) {
       onSwitchTab(tab.id);
-    } else {
+    } else if (tab.url) {
       window.open(tab.url, "_blank");
     }
   };
@@ -119,7 +130,8 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
     try {
       const sessionName =
         name || `Window ${windowId} - ${new Date().toLocaleTimeString()}`;
-      await createSession(sessionName);
+      // Pass the windowId to createSession
+      await createSession(sessionName, undefined, windowId);
       // Refresh sessions list
       fetchSessionSummaries();
     } catch (error) {
@@ -146,7 +158,9 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   };
 
   // Clear selected session and restore active windows when switching views
-  const handleViewChange = (view: "windows" | "sessions" | "settings") => {
+  const handleViewChange = (
+    view: "windows" | "sessions" | "settings" | "favourites"
+  ) => {
     setActiveView(view);
     if (view === "windows") {
       selectSession(""); // This will now properly clear selectedSession
@@ -189,13 +203,59 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
     createSession(`New Session ${new Date().toLocaleTimeString()}`);
   };
 
+  // Render the main content based on active view
+  const renderMainContent = () => {
+    if (activeView === "favourites") {
+      return <FavouritesView />;
+    }
+
+    // Default content - Active Windows or Sessions
+    return (
+      <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col h-full">
+        <div className="border-b border-slate-700/50 p-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className="text-slate-100 flex items-center font-medium">
+              {selectedSession
+                ? `Session: ${selectedSession.name}`
+                : "Active Windows"}
+            </h2>
+            <div className="flex items-center space-x-2">
+              <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
+                <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
+                {selectedSession ? "SAVED SESSION" : "LIVE"}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="p-3 overflow-y-auto flex-grow max-h-[calc(100vh-220px)] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          {selectedSession ? (
+            <SessionPanel
+              selectedSession={selectedSession}
+              onOpenTab={openTab}
+              onRestoreSession={handleRestoreSession}
+            />
+          ) : (
+            <WindowsPanel
+              windowGroups={filteredWindowGroups}
+              expandedWindows={expandedWindows}
+              onOpenTab={openTab}
+              onDeleteTab={deleteTab}
+              onSaveWindowAsSession={saveWindowAsSession}
+              onToggleExpand={toggleExpand}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Handle navigation back from settings
   const handleBackFromSettings = () => {
     console.log("Navigating back from settings");
     setActiveView("windows");
   };
 
-  // Render settings view if that's the active view
+  // Render settings view if that's the active view (full page replacement)
   if (activeView === "settings") {
     return (
       <div className="settings-container">
@@ -254,42 +314,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
 
           {/* Main dashboard */}
           <div className="col-span-12 md:col-span-9 lg:col-span-7 h-full flex flex-col overflow-hidden">
-            {/* System overview */}
-            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col h-full">
-              <div className="border-b border-slate-700/50 p-3 flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-slate-100 flex items-center font-medium">
-                    {selectedSession
-                      ? `Session: ${selectedSession.name}`
-                      : "Active Windows"}
-                  </h2>
-                  <div className="flex items-center space-x-2">
-                    <span className="bg-slate-800/50 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5 rounded-full flex items-center">
-                      <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mr-1 animate-pulse"></div>
-                      {selectedSession ? "SAVED SESSION" : "LIVE"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-3 overflow-y-auto flex-grow max-h-[calc(100vh-220px)] scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                {selectedSession ? (
-                  <SessionPanel
-                    selectedSession={selectedSession}
-                    onOpenTab={openTab}
-                    onRestoreSession={handleRestoreSession}
-                  />
-                ) : (
-                  <WindowsPanel
-                    windowGroups={filteredWindowGroups}
-                    expandedWindows={expandedWindows}
-                    onOpenTab={openTab}
-                    onDeleteTab={deleteTab}
-                    onSaveWindowAsSession={saveWindowAsSession}
-                    onToggleExpand={toggleExpand}
-                  />
-                )}
-              </div>
-            </div>
+            {renderMainContent()}
           </div>
 
           {/* Right sidebar - Sessions */}

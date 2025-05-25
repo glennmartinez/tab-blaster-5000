@@ -10,7 +10,7 @@ export interface MemoryMetrics {
   usedMemoryMB?: number;
   isTabsOnlyMetric?: boolean;
   showAbsoluteOnly?: boolean; // Flag to show absolute values only, not percentages
-  browserMemoryMB?: number;   // Estimated total Chrome browser memory usage
+  browserMemoryMB?: number; // Estimated total Chrome browser memory usage
   extensionMemoryMB?: number; // Memory used by this extension
 }
 
@@ -21,6 +21,7 @@ export interface TabMemoryInfo {
   tabId: number;
   title: string;
   url: string;
+  favIconUrl?: string;
   memoryUsage: number; // Memory in kilobytes
   processId?: number;
   windowId: number;

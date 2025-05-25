@@ -26,9 +26,22 @@ export class SessionController {
    */
   static async saveCurrentSession(
     name: string,
-    description?: string
+    description?: string,
+    windowId?: number
   ): Promise<Session> {
-    const tabs = await ChromeService.getTabs();
+    let tabs;
+    if (windowId !== undefined) {
+      // Get tabs only from the specified window
+      const windows = await ChromeService.getWindows();
+      const targetWindow = windows.find((w) => w.id === windowId);
+      if (!targetWindow) {
+        throw new Error(`Window with ID ${windowId} not found`);
+      }
+      tabs = targetWindow.tabs;
+    } else {
+      // Get all tabs if no window specified
+      tabs = await ChromeService.getTabs();
+    }
 
     const session: Session = {
       id: uuidv4(),

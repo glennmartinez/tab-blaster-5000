@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
 import SystemMetricsWidget from "./SystemMetricsWidget";
 import FallbackIcon from "./FallbackIcon";
+import FavoriteButton from "./FavoriteButton";
 
 interface WindowsPanelProps {
   windowGroups: WindowInfo[];
@@ -77,15 +78,27 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                         {tab.url}
                       </div>
                     </div>
-                    <button
-                      className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteTab(tab);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FavoriteButton
+                        tab={{
+                          id: tab.id,
+                          title: tab.title || '',
+                          url: tab.url || '',
+                          favicon: tab.favIconUrl
+                        }}
+                        showTags={true}
+                        className="relative"
+                      />
+                      <button
+                        className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTab(tab);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {window.tabs.length > 10 && (

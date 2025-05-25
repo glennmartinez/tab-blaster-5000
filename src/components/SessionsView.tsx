@@ -3,7 +3,6 @@ import { Tab } from "../interfaces/TabInterface";
 import FallbackIcon from "./FallbackIcon";
 import { STORAGE_KEYS } from "../constants/storageKeys";
 import StorageSettings from "./StorageSettings";
-import { StorageProvider } from "../services/StorageService";
 
 interface SavedSession {
   id: string;
@@ -122,7 +121,7 @@ const SessionsView: React.FC = () => {
     return grouped;
   };
 
-  const handleStorageChange = (_provider: StorageProvider) => {
+  const handleStorageChange = () => {
     // Reload sessions after storage provider change
     loadSavedSessions();
   };

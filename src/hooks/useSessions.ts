@@ -59,11 +59,12 @@ export const useSessions = () => {
    * Create a new session from current browser state
    */
   const createSession = useCallback(
-    async (name: string, description?: string) => {
+    async (name: string, description?: string, windowId?: number) => {
       try {
         const newSession = await SessionController.saveCurrentSession(
           name,
-          description
+          description,
+          windowId
         );
         setSessions((prev) => [...prev, newSession]);
         setSessionSummaries((prev) => [

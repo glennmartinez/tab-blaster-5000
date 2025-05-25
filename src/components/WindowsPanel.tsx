@@ -4,6 +4,8 @@ import { Tab, WindowInfo } from "../interfaces/TabInterface";
 import SystemMetricsWidget from "./SystemMetricsWidget";
 import FallbackIcon from "./FallbackIcon";
 import FavoriteButton from "./FavoriteButton";
+import ExpandableTags from "./ExpandableTags";
+import { useFavorites } from "../hooks/useFavorites";
 
 interface WindowsPanelProps {
   windowGroups: WindowInfo[];
@@ -22,6 +24,8 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
   onSaveWindowAsSession,
   onToggleExpand,
 }) => {
+  const { getFavoriteState, tags } = useFavorites();
+
   return (
     <div>
       {/* Use the new SystemMetricsWidget component instead of hard-coded metrics */}
@@ -61,46 +65,81 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
               </div>
 
               <div className="divide-y divide-slate-700/30">
-                {tabsToShow.map((tab) => (
-                  <div
-                    key={tab.id}
-                    className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
-                    onClick={() => onOpenTab(tab)}
-                  >
-                    <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                      <FallbackIcon favIconUrl={tab.favIconUrl} size="md" />
-                    </div>
-                    <div className="flex-1 truncate">
-                      <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
-                        {tab.title}
+                {tabsToShow.map((tab) => {
+                  const favoriteData = getFavoriteState(tab.url || '');
+                  const favoriteTags = favoriteData?.tags || [];
+                  
+                  return (
+                    <div
+                      key={tab.id}
+                      className="flex items-start p-2.5 hover:bg-slate-700/30 cursor-pointer group"
+                      onClick={() => onOpenTab(tab)}
+                    >
+                      <div className="flex-shrink-0 mr-2.5 bg-slate-700/50 rounded-full p-0.5 border border-slate-600/50">
+                        <FallbackIcon favIconUrl={tab.favIconUrl} size="sm" />
                       </div>
-                      <div className="text-xs text-slate-500 truncate">
-                        {tab.url}
+                      <div className="flex-1 min-w-0 relative">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-slate-300 truncate group-hover:text-cyan-300 pr-2">
+                            {tab.title}
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            {/* Always show favorite button */}
+                            <FavoriteButton
+                              tab={{
+                                id: tab.id,
+                                title: tab.title || '',
+                                url: tab.url || '',
+                                favicon: tab.favIconUrl
+                              }}
+                              showTags={false}
+                              className="relative"
+                            />
+                            {/* Show delete button only on hover */}
+                            <button
+                              className="flex-shrink-0 p-0.5 text-slate-400 hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteTab(tab);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-500 truncate mt-0.5">
+                          {tab.url}
+                        </div>
+                        {/* Tags section at bottom left */}
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="flex items-center gap-1">
+                            {/* Purple # icon for tags */}
+                            <FavoriteButton
+                              tab={{
+                                id: tab.id,
+                                title: tab.title || '',
+                                url: tab.url || '',
+                                favicon: tab.favIconUrl
+                              }}
+                              showTags={true}
+                              showTagsOnly={true}
+                              className="relative"
+                            />
+                            {/* Display current tags */}
+                            {favoriteData && favoriteTags.length > 0 && (
+                              <ExpandableTags 
+                                tags={favoriteTags}
+                                availableTags={tags}
+                                className="text-xs"
+                                showOnHover={false}
+                              />
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <FavoriteButton
-                        tab={{
-                          id: tab.id,
-                          title: tab.title || '',
-                          url: tab.url || '',
-                          favicon: tab.favIconUrl
-                        }}
-                        showTags={true}
-                        className="relative"
-                      />
-                      <button
-                        className="flex-shrink-0 p-1.5 text-slate-400 hover:text-red-400 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteTab(tab);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {window.tabs.length > 10 && (
                   <div className="flex justify-center py-2 bg-slate-900/40">
                     <button

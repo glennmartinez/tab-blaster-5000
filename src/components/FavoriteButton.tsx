@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Hash } from 'lucide-react';
 import { useFavorites } from '../hooks/useFavorites';
-import TagInput from './TagInput';
+import TagDialog from './TagDialog';
 
 interface FavoriteButtonProps {
   tab: {
@@ -12,12 +12,14 @@ interface FavoriteButtonProps {
   };
   className?: string;
   showTags?: boolean;
+  showTagsOnly?: boolean;
 }
 
 const FavoriteButton: React.FC<FavoriteButtonProps> = ({ 
   tab, 
   className = "",
-  showTags = false 
+  showTags = false,
+  showTagsOnly = false 
 }) => {
   const { 
     getFavoriteState, 
@@ -29,7 +31,7 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showTagInput, setShowTagInput] = useState(false);
+  const [showTagDialog, setShowTagDialog] = useState(false);
   const [currentTags, setCurrentTags] = useState<string[]>([]);
 
   // Check favorite status
@@ -50,11 +52,8 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       const newState = await toggleFavorite(tab, currentTags);
       setIsFavorited(newState);
       
-      // Show tag input when adding to favorites
-      if (newState) {
-        setShowTagInput(true);
-      } else {
-        setShowTagInput(false);
+      if (!newState) {
+        setShowTagDialog(false);
         setCurrentTags([]);
       }
     } catch (error) {
@@ -67,11 +66,25 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const handleTagsChange = async (newTags: string[]) => {
     setCurrentTags(newTags);
     
-    // Update tags if this is already a favorite
-    if (isFavorited) {
+    // If not favorited yet, favorite it first
+    if (!isFavorited) {
+      setIsLoading(true);
+      try {
+        const newState = await toggleFavorite(tab, newTags);
+        setIsFavorited(newState);
+      } catch (error) {
+        console.error('Error favoriting tab:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Update tags if this is already a favorite
       const favoriteData = getFavoriteState(tab.url);
       if (favoriteData) {
         await updateFavoriteTags(favoriteData.id, newTags);
+        // Force re-check to ensure UI updates immediately
+        const updatedFavoriteData = getFavoriteState(tab.url);
+        setCurrentTags(updatedFavoriteData?.tags || []);
       }
     }
   };
@@ -79,89 +92,165 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const handleShowTags = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowTagInput(!showTagInput);
+    setShowTagDialog(true);
   };
 
-  return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      {/* Heart Button */}
-      <button
-        onClick={handleToggleFavorite}
-        disabled={isLoading}
-        className={`p-1 rounded transition-all duration-200 ${
-          isFavorited
-            ? 'text-red-500 hover:text-red-400'
-            : 'text-slate-400 hover:text-red-500 hover:bg-red-500/10'
-        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-      >
-        <Heart 
-          className={`w-4 h-4 transition-all duration-200 ${
-            isFavorited ? 'fill-current' : ''
-          } ${isLoading ? 'animate-pulse' : ''}`}
+  const handleCloseTagDialog = () => {
+    setShowTagDialog(false);
+  };
+
+  // If showTagsOnly is true, only show the purple # icon for tag management
+  if (showTagsOnly) {
+    return (
+      <>
+        <div className={`flex items-center gap-1 ${className}`}>
+          <button
+            onClick={handleShowTags}
+            className="p-0.5 rounded transition-colors text-purple-500 hover:text-purple-400 hover:bg-purple-500/10"
+            title="Manage tags"
+          >
+            <Hash className="w-3 h-3" />
+          </button>
+          {/* Display current tags inline for favorited tabs */}
+          {isFavorited && currentTags.length > 0 && (
+            <div className="flex items-center gap-1 ml-1">
+              {currentTags.slice(0, 2).map((tagName) => {
+                const tagData = tags.find(t => t.name === tagName);
+                return (
+                  <span
+                    key={tagName}
+                    className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
+                    style={tagData?.color ? { 
+                      borderColor: `${tagData.color}40`,
+                      color: tagData.color 
+                    } : {}}
+                  >
+                    #{tagName}
+                  </span>
+                );
+              })}
+              {currentTags.length > 2 && (
+                <span className="text-xs text-slate-400">
+                  +{currentTags.length - 2}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <TagDialog
+          isOpen={showTagDialog}
+          onClose={handleCloseTagDialog}
+          selectedTags={currentTags}
+          onTagsChange={handleTagsChange}
+          availableTags={tags}
+          onAddTag={addTag}
+          tabTitle={tab.title}
         />
-      </button>
+      </>
+    );
+  }
 
-      {/* Tags Button (only show if favorited and showTags is true) */}
-      {isFavorited && showTags && (
+  return (
+    <>
+      <div className={`flex items-center gap-1 ${className}`}>
+        {/* Heart Button */}
         <button
-          onClick={handleShowTags}
-          className={`p-1 rounded transition-colors ${
-            showTagInput 
-              ? 'text-cyan-400 bg-cyan-500/10' 
-              : 'text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10'
-          }`}
-          title="Manage tags"
+          onClick={handleToggleFavorite}
+          disabled={isLoading}
+          className={`p-0.5 rounded transition-all duration-200 ${
+            isFavorited
+              ? 'text-red-500 hover:text-red-400'
+              : 'text-slate-400 hover:text-red-500 hover:bg-red-500/10'
+          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
-          <Hash className="w-4 h-4" />
-          {currentTags.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-cyan-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              {currentTags.length}
-            </span>
-          )}
-        </button>
-      )}
-
-      {/* Tag Input (positioned absolutely) */}
-      {showTagInput && isFavorited && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50">
-          <TagInput
-            selectedTags={currentTags}
-            onTagsChange={handleTagsChange}
-            availableTags={tags}
-            onAddTag={addTag}
-            placeholder="Add tags..."
-            className="w-full"
+          <Heart 
+            className={`w-3 h-3 transition-all duration-200 ${
+              isFavorited ? 'fill-current' : ''
+            } ${isLoading ? 'animate-pulse' : ''}`}
           />
-        </div>
-      )}
+        </button>
 
-      {/* Display current tags (compact view) */}
-      {isFavorited && currentTags.length > 0 && !showTags && (
-        <div className="flex gap-1">
-          {currentTags.slice(0, 2).map((tagName) => {
-            const tagData = tags.find(t => t.name === tagName);
-            return (
-              <span
-                key={tagName}
-                className="text-xs px-1 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
-                style={tagData?.color ? { 
-                  borderColor: `${tagData.color}40`,
-                  color: tagData.color 
-                } : {}}
-              >
-                #{tagName}
+        {/* Tags Button (only show if favorited and showTags is true) */}
+        {isFavorited && showTags && (
+          <button
+            onClick={handleShowTags}
+            className="relative p-0.5 rounded transition-colors text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10"
+            title="Manage tags"
+          >
+            <Hash className="w-3 h-3" />
+            {currentTags.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-cyan-500 text-white text-xs rounded-full w-3 h-3 flex items-center justify-center leading-none">
+                {currentTags.length}
               </span>
-            );
-          })}
-          {currentTags.length > 2 && (
-            <span className="text-xs text-slate-400">
-              +{currentTags.length - 2}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+            )}
+          </button>
+        )}
+
+        {/* Display current tags (compact view) when not editing */}
+        {isFavorited && currentTags.length > 0 && !showTags && (
+          <div className="flex items-center gap-1 ml-1">
+            {currentTags.slice(0, 2).map((tagName) => {
+              const tagData = tags.find(t => t.name === tagName);
+              return (
+                <span
+                  key={tagName}
+                  className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
+                  style={tagData?.color ? { 
+                    borderColor: `${tagData.color}40`,
+                    color: tagData.color 
+                  } : {}}
+                >
+                  #{tagName}
+                </span>
+              );
+            })}
+            {currentTags.length > 2 && (
+              <span className="text-xs text-slate-400">
+                +{currentTags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Show compact tags inline when showTags is true but not editing */}
+        {isFavorited && currentTags.length > 0 && showTags && (
+          <div className="flex items-center gap-1 ml-1">
+            {currentTags.slice(0, 3).map((tagName) => {
+              const tagData = tags.find(t => t.name === tagName);
+              return (
+                <span
+                  key={tagName}
+                  className="text-xs px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 border border-slate-600/50"
+                  style={tagData?.color ? { 
+                    borderColor: `${tagData.color}40`,
+                    color: tagData.color 
+                  } : {}}
+                >
+                  #{tagName}
+                </span>
+              );
+            })}
+            {currentTags.length > 3 && (
+              <span className="text-xs text-slate-400">
+                +{currentTags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <TagDialog
+        isOpen={showTagDialog}
+        onClose={handleCloseTagDialog}
+        selectedTags={currentTags}
+        onTagsChange={handleTagsChange}
+        availableTags={tags}
+        onAddTag={addTag}
+        tabTitle={tab.title}
+      />
+    </>
   );
 };
 

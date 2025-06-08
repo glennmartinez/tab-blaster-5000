@@ -255,31 +255,31 @@ const FavouritesView: React.FC = () => {
                       Added {new Date(favourite.dateAdded).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
+                      <span
                         onClick={() =>
                           setEditingTags(
                             editingTags === favourite.id ? null : favourite.id
                           )
                         }
-                        className="p-1 text-slate-400 hover:text-cyan-400 transition-colors"
+                        className="p-1 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
                         title="Edit tags"
                       >
                         <Hash className="w-4 h-4" />
-                      </button>
-                      <button
+                      </span>
+                      <span
                         onClick={() => handleOpenFavourite(favourite.url)}
-                        className="p-1 text-slate-400 hover:text-white transition-colors"
+                        className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
                         title="Open in new tab"
                       >
                         <ExternalLink className="w-4 h-4" />
-                      </button>
-                      <button
+                      </span>
+                      <span
                         onClick={() => handleRemoveFavourite(favourite.id)}
-                        className="p-1 text-slate-400 hover:text-red-400 transition-colors"
+                        className="p-1 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
                         title="Remove from favourites"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </span>
                     </div>
                   </div>
                 </div>

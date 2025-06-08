@@ -71,7 +71,7 @@ const TagDialog: React.FC<TagDialogProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
-                <Hash className="w-5 h-5 text-purple-500" />
+                <Hash className="w-8 h-8 text-purple-500" />
                 Manage Tags
               </h3>
               <p className="text-sm text-slate-400 truncate mt-1">{tabTitle}</p>
@@ -111,12 +111,11 @@ const TagDialog: React.FC<TagDialogProps> = ({
                     <button
                       key={tagName}
                       onClick={() => handleToggleTag(tagName)}
-                      className="px-2 py-1 text-xs rounded bg-purple-600/20 border border-purple-500/50 text-purple-300 hover:bg-purple-600/30 transition-colors"
+                      className="px-2 py-1 text-xs rounded bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 transition-colors"
                       style={
                         tagData?.color
                           ? {
                               backgroundColor: `${tagData.color}20`,
-                              borderColor: `${tagData.color}50`,
                               color: tagData.color,
                             }
                           : {}
@@ -142,21 +141,19 @@ const TagDialog: React.FC<TagDialogProps> = ({
                   <button
                     key={tag.name}
                     onClick={() => handleToggleTag(tag.name)}
-                    className={`px-2 py-1 text-xs rounded border transition-colors ${
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
                       isSelected
-                        ? "bg-purple-600/20 border-purple-500/50 text-purple-300"
-                        : "bg-slate-700/50 border-slate-600/50 text-slate-300 hover:bg-slate-600/50"
+                        ? "bg-purple-600/20 text-purple-300"
+                        : "bg-slate-700/50 text-slate-300 hover:bg-slate-600/50"
                     }`}
                     style={
                       tag.color && isSelected
                         ? {
                             backgroundColor: `${tag.color}20`,
-                            borderColor: `${tag.color}50`,
                             color: tag.color,
                           }
                         : tag.color && !isSelected
                         ? {
-                            borderColor: `${tag.color}30`,
                             color: `${tag.color}80`,
                           }
                         : {}

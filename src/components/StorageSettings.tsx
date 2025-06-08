@@ -5,7 +5,7 @@ import { STORAGE_KEYS } from "../constants/storageKeys";
 // Define the settings type
 interface Settings {
   storageProvider?: StorageProvider;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface StorageSettingsProps {
@@ -191,11 +191,14 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
               checked={storageProvider === "local"}
               onChange={() => handleStorageChange("local")}
             />
-            <span className="ml-2 text-gray-200">Local Storage (Browser)</span>
+            <span className="ml-2 text-gray-200">Extension localStorage</span>
           </label>
           <p className="text-xs text-gray-400 ml-6 mb-2">
-            Sessions are saved to your browser. Will be lost if you clear
-            browser data.
+            Sessions saved using browser localStorage API within extension
+            context.
+            <span className="text-red-400">
+              Data will be lost when extension is removed.
+            </span>
           </p>
 
           <label className="inline-flex items-center mb-2">
@@ -207,11 +210,14 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
               checked={storageProvider === "chrome"}
               onChange={() => handleStorageChange("chrome")}
             />
-            <span className="ml-2 text-gray-200">Chrome Storage</span>
+            <span className="ml-2 text-gray-200">Chrome Extension Storage</span>
           </label>
           <p className="text-xs text-gray-400 ml-6 mb-2">
-            Sessions are saved to Chrome's extension storage. Persists across
-            devices if sync is enabled.
+            Sessions saved using Chrome's extension storage API. Can sync across
+            devices if enabled.
+            <span className="text-red-400">
+              Data will be lost when extension is removed.
+            </span>
           </p>
 
           <label className="inline-flex items-center mb-2">
@@ -226,8 +232,11 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
             <span className="ml-2 text-gray-200">Google Drive</span>
           </label>
           <p className="text-xs text-gray-400 ml-6 mb-3">
-            Sessions are saved to your Google Drive account. Available across
-            all devices.
+            Sessions saved to your Google Drive account.
+            <span className="text-green-400">
+              Data persists even if extension is removed.
+            </span>
+            Available across all devices and browsers.
           </p>
         </div>
 

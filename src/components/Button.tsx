@@ -32,8 +32,10 @@ export default function Button({
   const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
 
   return (
-    <button className={buttonClasses} {...props}>
+    <button className={buttonClasses} data-component="Button" {...props}>
       {children}
     </button>
   );
 }
+
+Button.displayName = "Button";

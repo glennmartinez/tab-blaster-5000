@@ -27,7 +27,10 @@ const Header: React.FC<FuturisticHeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4">
+    <div
+      className="flex items-center justify-between py-2 border-b border-slate-700/50 mb-4"
+      data-component="Header"
+    >
       <div className="flex items-center space-x-2">
         <BookmarkCheck className="h-6 w-6 text-cyan-500" />
         <span className="text-lg font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
@@ -65,5 +68,7 @@ const Header: React.FC<FuturisticHeaderProps> = ({
     </div>
   );
 };
+
+Header.displayName = "Header";
 
 export default Header;

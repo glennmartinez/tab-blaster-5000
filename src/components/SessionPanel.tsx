@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Tab } from "../interfaces/TabInterface";
-import FallbackIcon from "./FallbackIcon";
+import TabItem from "./TabItem";
 
 interface SessionPanelProps {
   selectedSession: {
@@ -19,16 +19,25 @@ const SessionPanel: React.FC<SessionPanelProps> = ({
   onOpenTab,
   onRestoreSession,
 }) => {
+  const [activeTagInputId, setActiveTagInputId] = useState<string | null>(null);
+
+  const handleTagInputStateChange = (tabId: string, isOpen: boolean) => {
+    setActiveTagInputId(isOpen ? tabId : null);
+  };
+
   if (!selectedSession) {
     return (
-      <div className="flex flex-col items-center justify-center h-full py-8">
+      <div
+        className="flex flex-col items-center justify-center h-full py-8"
+        data-component="SessionPanel"
+      >
         <div className="text-slate-400">No session selected</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4" data-component="SessionPanel">
       <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 overflow-hidden">
         <div className="bg-gradient-to-r from-slate-800/80 to-slate-800/40 backdrop-blur-sm p-3 border-b border-slate-700/50 flex items-center justify-between">
           <div className="flex items-center">
@@ -49,26 +58,23 @@ const SessionPanel: React.FC<SessionPanelProps> = ({
         </div>
         <div className="divide-y divide-slate-700/30">
           {selectedSession.tabs.map((tab) => (
-            <div
+            <TabItem
               key={tab.id}
-              className="flex items-center p-3 hover:bg-slate-700/30 cursor-pointer group"
-              onClick={() => onOpenTab(tab)}
-            >
-              <div className="flex-shrink-0 mr-3 bg-slate-700/50 rounded-full p-1 border border-slate-600/50">
-                <FallbackIcon favIconUrl={tab.favIconUrl} size="md" />
-              </div>
-              <div className="flex-1 truncate">
-                <div className="text-sm text-slate-300 truncate group-hover:text-cyan-300">
-                  {tab.title}
-                </div>
-                <div className="text-xs text-slate-500 truncate">{tab.url}</div>
-              </div>
-            </div>
+              tab={tab}
+              onClick={onOpenTab}
+              showActions={true}
+              showTags={true}
+              activeTagInputId={activeTagInputId}
+              onTagInputStateChange={handleTagInputStateChange}
+              variant="window"
+            />
           ))}
         </div>
       </div>
     </div>
   );
 };
+
+SessionPanel.displayName = "SessionPanel";
 
 export default SessionPanel;

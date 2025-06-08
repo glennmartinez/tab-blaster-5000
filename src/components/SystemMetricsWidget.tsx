@@ -13,11 +13,15 @@ const SystemMetricsWidget: React.FC = () => {
   const [memoryDisplay, setMemoryDisplay] = useState<string | number>("--"); // Could be a percentage or absolute value
   const [cpuPercentage, setCpuPercentage] = useState<number | string>("--"); // Default CPU percentage
   const [memoryDetailText, setMemoryDetailText] = useState<string>("RAM Usage");
-  const [memoryDisplayMode, setMemoryDisplayMode] = useState<"percentage" | "absolute">("percentage");
-  
+  const [memoryDisplayMode, setMemoryDisplayMode] = useState<
+    "percentage" | "absolute"
+  >("percentage");
+
   // Browser memory tracking
-  const [browserMemoryDisplay, setBrowserMemoryDisplay] = useState<string>("--"); 
-  const [browserMemoryDetailText, setBrowserMemoryDetailText] = useState<string>("Browser Memory");
+  const [browserMemoryDisplay, setBrowserMemoryDisplay] =
+    useState<string>("--");
+  const [browserMemoryDetailText, setBrowserMemoryDetailText] =
+    useState<string>("Browser Memory");
 
   const { metrics } = useSystemMetrics(5000); // Refresh every 5 seconds
   const { topCpuConsumers, totalCpuUsage } = useDetailedMemoryMetrics(5000);
@@ -88,11 +92,13 @@ const SystemMetricsWidget: React.FC = () => {
 
       setMemoryDetailText(detailText);
     }
-    
+
     // Update browser memory display
     if (metrics.memoryUsage.browserMemoryMB) {
-      setBrowserMemoryDisplay(formatMemory(metrics.memoryUsage.browserMemoryMB));
-      
+      setBrowserMemoryDisplay(
+        formatMemory(metrics.memoryUsage.browserMemoryMB)
+      );
+
       // Create detail text showing extension's memory usage
       if (metrics.memoryUsage.extensionMemoryMB) {
         setBrowserMemoryDetailText(
@@ -172,7 +178,10 @@ const SystemMetricsWidget: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+    <div
+      className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4"
+      data-component="SystemMetricsWidget"
+    >
       <MetricCard
         title="CPU Usage"
         value={cpuPercentage}
@@ -215,5 +224,7 @@ const SystemMetricsWidget: React.FC = () => {
     </div>
   );
 };
+
+SystemMetricsWidget.displayName = "SystemMetricsWidget";
 
 export default SystemMetricsWidget;

@@ -23,7 +23,7 @@ const StatusItem: React.FC<StatusItemProps> = ({ label, value, color }) => {
   };
 
   return (
-    <div>
+    <div data-component="StatusItem">
       <div className="flex items-center justify-between mb-1">
         <div className="text-xs text-slate-400">{label}</div>
         <div className="text-xs text-slate-400">{value}%</div>
@@ -37,5 +37,7 @@ const StatusItem: React.FC<StatusItemProps> = ({ label, value, color }) => {
     </div>
   );
 };
+
+StatusItem.displayName = "StatusItem";
 
 export default StatusItem;

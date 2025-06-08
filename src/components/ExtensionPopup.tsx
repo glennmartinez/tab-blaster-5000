@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
 import { Tab } from "../interfaces/TabInterface";
-import { STORAGE_KEYS } from "../constants/storageKeys";
 import { BookmarkCheck } from "lucide-react";
 import ParticleBackground from "./ParticleBackground";
 import { StorageFactory } from "../services/StorageFactory";
@@ -61,13 +60,19 @@ const ExtensionPopup: React.FC = () => {
       });
     }
 
-    // Count saved sessions
-    if (chrome?.storage) {
-      chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
-        const savedSessions = result.savedSessions || [];
-        setSessionCount(savedSessions.length);
-      });
-    }
+    // Count saved sessions using StorageFactory
+    const loadSessionCount = async () => {
+      try {
+        const storageService = StorageFactory.getStorageService();
+        const sessions = await storageService.fetchSessions();
+        setSessionCount(sessions.length);
+      } catch (error) {
+        console.error("Error loading session count:", error);
+        setSessionCount(0);
+      }
+    };
+
+    loadSessionCount();
 
     // Show loading effect briefly
     const timer = setTimeout(() => {
@@ -178,7 +183,10 @@ const ExtensionPopup: React.FC = () => {
   };
 
   return (
-    <div className="extension-popup bg-gradient-to-br from-black to-slate-900 text-slate-100 p-6 flex flex-col relative">
+    <div
+      className="extension-popup bg-gradient-to-br from-black to-slate-900 text-slate-100 p-6 flex flex-col relative"
+      data-component="ExtensionPopup"
+    >
       {/* Background particle effect */}
       <ParticleBackground />
 
@@ -306,5 +314,7 @@ const ExtensionPopup: React.FC = () => {
     </div>
   );
 };
+
+ExtensionPopup.displayName = "ExtensionPopup";
 
 export default ExtensionPopup;

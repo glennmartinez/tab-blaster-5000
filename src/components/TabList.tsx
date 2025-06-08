@@ -21,12 +21,14 @@ const TabList: React.FC<TabListProps> = ({
 }) => {
   if (tabs.length === 0) {
     return (
-      <div className="p-6 text-center text-gray-400">No {type} tabs found.</div>
+      <div className="p-6 text-center text-gray-400" data-component="TabList">
+        No {type} tabs found.
+      </div>
     );
   }
 
   return (
-    <ul className="divide-y divide-gray-700">
+    <ul className="divide-y divide-gray-700" data-component="TabList">
       {tabs.map((tab) => (
         <li key={tab.id} className="hover:bg-gray-700">
           <div
@@ -41,14 +43,15 @@ const TabList: React.FC<TabListProps> = ({
           >
             <FallbackIcon
               favIconUrl={tab.favIconUrl}
-              size="sm"
-              className="mr-3"
+              size="md"
+              className="mr-4"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{tab.title}</p>
-              <p className="text-xs text-gray-400 truncate">{tab.url}</p>
+              <p className="text-sm font-medium truncate text-white">
+                {tab.title}
+              </p>
               {type === "saved" && "savedAt" in tab && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 mt-1">
                   Saved:{" "}
                   {new Date((tab as SavedTab).savedAt).toLocaleTimeString()}
                 </p>
@@ -56,7 +59,7 @@ const TabList: React.FC<TabListProps> = ({
             </div>
             <div className="flex items-center space-x-2 ml-4">
               <button
-                className="p-1 rounded-full hover:bg-gray-600"
+                className="p-1.5 rounded-full hover:bg-gray-600 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (type === "active" && onCloseTab) {
@@ -68,7 +71,7 @@ const TabList: React.FC<TabListProps> = ({
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-red-400"
+                  className="h-4 w-4 text-red-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -88,5 +91,7 @@ const TabList: React.FC<TabListProps> = ({
     </ul>
   );
 };
+
+TabList.displayName = "TabList";
 
 export default TabList;

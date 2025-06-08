@@ -2,19 +2,8 @@ import React, { useState } from "react";
 import { WindowInfo } from "../interfaces/TabInterface";
 import TabList from "./TabList";
 import Button from "./Button";
-import { STORAGE_KEYS } from "../constants/storageKeys";
-
-interface SavedSession {
-  id: string;
-  name: string;
-  createdAt: string;
-  tabs: {
-    id: number;
-    title: string;
-    url: string;
-    favIconUrl?: string;
-  }[];
-}
+import { StorageFactory } from "../services/StorageFactory";
+import { Session } from "../models/Session";
 
 interface WindowGroupProps {
   windowInfo: WindowInfo;
@@ -31,86 +20,59 @@ const WindowGroup: React.FC<WindowGroupProps> = ({
   const [saveStatus, setSaveStatus] = useState("");
   const [closeAfterSave, setCloseAfterSave] = useState(false);
 
-  const saveWindowSession = () => {
-    if (!chrome?.storage || !chrome?.runtime) {
-      console.warn("Chrome APIs not available, cannot save window session");
-      alert("Cannot save window session: Extension APIs unavailable");
-      return;
-    }
-
+  const saveWindowSession = async () => {
     setIsSaving(true);
     setSaveStatus("Saving session...");
 
-    const newSession: SavedSession = {
-      id: `session_${Date.now()}_window_${windowInfo.id}`,
-      name: `Window ${windowInfo.id} - ${new Date().toLocaleString()}`,
-      createdAt: new Date().toISOString(),
-      tabs: windowInfo.tabs.map((tab) => ({
-        id: tab.id,
-        title: tab.title || "Untitled Tab",
-        url: tab.url || "",
-        favIconUrl: tab.favIconUrl || "",
-      })),
-    };
-
-    let existingSessions: SavedSession[] = [];
-
     try {
-      const localData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
-      if (localData) {
-        existingSessions = JSON.parse(localData) as SavedSession[];
-      }
-    } catch (e) {
-      console.warn(
-        "Could not load from localStorage, falling back to chrome.storage",
-        e
+      const newSession: Session = {
+        id: `session_${Date.now()}_window_${windowInfo.id}`,
+        name: `Window ${windowInfo.id} - ${new Date().toLocaleString()}`,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        tabs: windowInfo.tabs.map((tab) => ({
+          id: tab.id,
+          title: tab.title || "Untitled Tab",
+          url: tab.url || "",
+          favIconUrl: tab.favIconUrl || "",
+          windowId: windowInfo.id,
+          index: 0,
+        })),
+      };
+
+      const storageService = StorageFactory.getStorageService();
+      await storageService.storeSession(newSession);
+
+      console.log(
+        `Successfully saved Window ${windowInfo.id} session to storage`
       );
 
-      chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
-        existingSessions = (result.savedSessions || []) as SavedSession[];
-        continueWithSave();
-      });
-      return;
-    }
+      // If closeAfterSave is enabled, close the tabs
+      if (closeAfterSave) {
+        const tabIds = windowInfo.tabs
+          .map((tab) => tab.id)
+          .filter((id) => id !== undefined && id !== chrome.tabs.TAB_ID_NONE);
 
-    continueWithSave();
-
-    function continueWithSave() {
-      const updatedSessions: SavedSession[] = [newSession, ...existingSessions];
-
-      try {
-        localStorage.setItem(
-          STORAGE_KEYS.SESSIONS,
-          JSON.stringify(updatedSessions)
-        );
-      } catch (e) {
-        console.warn("Could not save to localStorage:", e);
+        // Close the tabs
+        if (tabIds.length > 0 && chrome.tabs) {
+          chrome.tabs.remove(tabIds);
+        }
       }
 
-      chrome.storage.local.set({ savedSessions: updatedSessions }, () => {
-        console.log(
-          `Successfully saved Window ${windowInfo.id} session to storage`
-        );
+      setIsSaving(false);
+      setSaveStatus("Window saved!");
 
-        // If closeAfterSave is enabled, close the tabs
-        if (closeAfterSave) {
-          const tabIds = windowInfo.tabs
-            .map((tab) => tab.id)
-            .filter((id) => id !== undefined && id !== chrome.tabs.TAB_ID_NONE);
+      setTimeout(() => {
+        setSaveStatus("");
+      }, 3000);
+    } catch (error) {
+      console.error("Error saving window session:", error);
+      setIsSaving(false);
+      setSaveStatus("Error saving session");
 
-          // Close the tabs
-          if (tabIds.length > 0 && chrome.tabs) {
-            chrome.tabs.remove(tabIds);
-          }
-        }
-
-        setIsSaving(false);
-        setSaveStatus("Window saved!");
-
-        setTimeout(() => {
-          setSaveStatus("");
-        }, 3000);
-      });
+      setTimeout(() => {
+        setSaveStatus("");
+      }, 3000);
     }
   };
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Tab } from "../interfaces/TabInterface";
 import FallbackIcon from "./FallbackIcon";
-import { STORAGE_KEYS } from "../constants/storageKeys";
 import StorageSettings from "./StorageSettings";
+import { StorageFactory } from "../services/StorageFactory";
 
 interface SavedSession {
   id: string;
@@ -21,40 +21,25 @@ const SessionsView: React.FC = () => {
     loadSavedSessions();
   }, []);
 
-  const loadSavedSessions = () => {
+  const loadSavedSessions = async () => {
     setLoading(true);
     console.log("Loading saved sessions...");
 
-    // Use Chrome storage only
-    if (chrome?.storage) {
-      chrome.storage.local.get([STORAGE_KEYS.SESSIONS], (result) => {
-        console.log("Chrome storage raw result:", result);
-
-        if (
-          result &&
-          result[STORAGE_KEYS.SESSIONS] &&
-          Array.isArray(result[STORAGE_KEYS.SESSIONS])
-        ) {
-          console.log(
-            `✅ SUCCESS: Loaded ${
-              result[STORAGE_KEYS.SESSIONS].length
-            } sessions from chrome.storage`
-          );
-          setSavedSessions(result[STORAGE_KEYS.SESSIONS]);
-        } else {
-          console.log("⚠️ No valid sessions found in chrome.storage");
-          setSavedSessions([]);
-        }
-        setLoading(false);
-      });
-    } else {
-      console.log("⚠️ Chrome storage API not available");
-      setLoading(false);
-      setSavedSessions([]); // Ensure we set empty array if method fails
+    try {
+      const storageService = StorageFactory.getStorageService();
+      const sessions = await storageService.fetchSessions();
+      console.log(
+        `✅ SUCCESS: Loaded ${sessions.length} sessions from storage`
+      );
+      setSavedSessions(sessions);
+    } catch (error) {
+      console.error("Error loading sessions:", error);
+      setSavedSessions([]);
     }
+    setLoading(false);
   };
 
-  const debugStorage = () => {
+  const debugStorage = async () => {
     console.log("🔍 DEBUGGING STORAGE:");
 
     console.log("📌 CHECKING COMPONENT STATE:");
@@ -62,9 +47,23 @@ const SessionsView: React.FC = () => {
       `Current savedSessions state: ${savedSessions.length} sessions`
     );
 
-    console.log("📌 CHECKING CHROME.STORAGE:");
+    console.log("📌 CHECKING CURRENT STORAGE TYPE:");
+    const currentType = StorageFactory.getCurrentStorageType();
+    console.log(`Current storage type: ${currentType}`);
+
+    console.log("📌 CHECKING STORAGE DATA:");
+    try {
+      const storageService = StorageFactory.getStorageService();
+      const sessions = await storageService.fetchSessions();
+      console.log(`Storage contains ${sessions.length} sessions:`, sessions);
+    } catch (error) {
+      console.error("Error checking storage:", error);
+    }
+
+    // Also check chrome.storage for comparison
     if (chrome?.storage) {
       chrome.storage.local.get(null, (allData) => {
+        console.log("📌 CHROME.STORAGE (for comparison):");
         console.log("All chrome.storage keys:", Object.keys(allData));
         console.log("Full chrome.storage data:", allData);
       });
@@ -81,21 +80,20 @@ const SessionsView: React.FC = () => {
     }
   };
 
-  const deleteSession = (sessionId: string) => {
-    const updatedSessions = savedSessions.filter(
-      (session) => session.id !== sessionId
-    );
+  const deleteSession = async (sessionId: string) => {
+    try {
+      const storageService = StorageFactory.getStorageService();
+      await storageService.deleteSession(sessionId);
 
-    setSavedSessions(updatedSessions);
-
-    // Update chrome.storage
-    if (chrome?.storage) {
-      chrome.storage.local.set(
-        { [STORAGE_KEYS.SESSIONS]: updatedSessions },
-        () => {
-          console.log(`Session ${sessionId} deleted from chrome.storage`);
-        }
+      // Update local state
+      const updatedSessions = savedSessions.filter(
+        (session) => session.id !== sessionId
       );
+      setSavedSessions(updatedSessions);
+
+      console.log(`Session ${sessionId} deleted from storage`);
+    } catch (error) {
+      console.error("Error deleting session:", error);
     }
   };
 

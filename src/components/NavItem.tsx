@@ -28,11 +28,14 @@ const NavItem: React.FC<NavItemProps> = (props) => {
           : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/30"
       }`}
       onClick={onClick}
+      data-component="NavItem"
     >
       <Icon className="mr-2 h-4 w-4" />
       {label}
     </button>
   );
 };
+
+NavItem.displayName = "NavItem";
 
 export default NavItem;

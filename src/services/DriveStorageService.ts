@@ -2,6 +2,15 @@ import { Session } from "../models/Session";
 import { SessionInterface } from "./SessionInterface";
 import { SavedTab } from "../interfaces/TabInterface";
 
+// Google Drive API file metadata interface
+interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  createdTime?: string;
+  modifiedTime?: string;
+}
+
 class DriveStorageService implements SessionInterface {
   private static FILE_MIME_TYPE = "application/json";
   private static SESSIONS_FILE_NAME = "ultimate-tab-manager-sessions.json";
@@ -71,7 +80,7 @@ class DriveStorageService implements SessionInterface {
    */
   static async listFiles(
     query = `mimeType='${DriveStorageService.FILE_MIME_TYPE}'`
-  ): Promise<any[]> {
+  ): Promise<GoogleDriveFile[]> {
     try {
       const token = await this.getAuthToken();
 
@@ -107,9 +116,9 @@ class DriveStorageService implements SessionInterface {
    */
   static async createOrUpdateFile(
     fileName: string,
-    content: any,
+    content: unknown,
     fileId?: string
-  ): Promise<any> {
+  ): Promise<GoogleDriveFile> {
     try {
       const token = await this.getAuthToken();
 

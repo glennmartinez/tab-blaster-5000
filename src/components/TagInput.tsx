@@ -137,12 +137,16 @@ const TagInput: React.FC<TagInputProps> = ({
               }
             >
               <Hash className="w-3 h-3" />
-              {tag}
+              <span className="pointer-events-none select-none">{tag}</span>
               <button
-                onClick={() => removeTag(tag)}
-                className="hover:bg-red-500/20 rounded p-0.5 transition-colors"
+                className="flex items-center justify-center w-4 h-4 ml-1 rounded-full hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeTag(tag);
+                }}
+                title={`Remove ${tag} tag`}
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3 text-slate-400 group-hover:text-red-400 transition-colors" />
               </button>
             </span>
           );
@@ -172,7 +176,10 @@ const TagInput: React.FC<TagInputProps> = ({
               {filteredTags.map((tag) => (
                 <button
                   key={tag.id}
-                  onClick={() => selectSuggestion(tag)}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // Prevent input blur
+                    selectSuggestion(tag);
+                  }}
                   className="w-full px-3 py-2 text-left hover:bg-slate-700/50 flex items-center gap-2 transition-colors"
                 >
                   <Hash className="w-3 h-3" style={{ color: tag.color }} />

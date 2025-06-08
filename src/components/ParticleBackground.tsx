@@ -101,8 +101,11 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
       className={`absolute inset-0 w-full h-full opacity-100 ${
         className || ""
       }`}
+      data-component="ParticleBackground"
     />
   );
 };
+
+ParticleBackground.displayName = "ParticleBackground";
 
 export default ParticleBackground;

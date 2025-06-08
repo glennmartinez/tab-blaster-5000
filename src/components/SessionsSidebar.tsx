@@ -99,26 +99,26 @@ const SessionsSidebar: React.FC<SessionsSidebarProps> = ({
                             {session.name}
                           </div>
                           <div className="flex space-x-1">
-                            <button
-                              className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded"
+                            <span
+                              className="p-1 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onRestoreSession(session.id);
                               }}
                               title="Restore all tabs"
                             >
-                              <ExternalLink className="h-3 w-3" />
-                            </button>
-                            <button
-                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
+                              <ExternalLink className="h-4 w-4" />
+                            </span>
+                            <span
+                              className="p-1 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDeleteSession(session.id);
                               }}
                               title="Delete session"
                             >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                              <Trash2 className="h-4 w-4" />
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center mt-1 text-xs text-slate-500">

@@ -21,7 +21,10 @@ const Sidebar: React.FC<FuturisticSidebarProps> = ({
   networkStatus,
 }) => {
   return (
-    <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full">
+    <div
+      className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-2 flex flex-col h-full"
+      data-component="Sidebar"
+    >
       <nav className="space-y-1">
         <NavItem
           icon={Activity}
@@ -72,5 +75,7 @@ const Sidebar: React.FC<FuturisticSidebarProps> = ({
     </div>
   );
 };
+
+Sidebar.displayName = "Sidebar";
 
 export default Sidebar;

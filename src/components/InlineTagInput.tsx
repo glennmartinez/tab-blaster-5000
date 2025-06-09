@@ -243,9 +243,7 @@ const InlineTagInput: React.FC<InlineTagInputProps> = ({
                   : {}
               }
             >
-              <span className="pointer-events-none select-none">
-                #{tagName}
-              </span>
+              <span className="pointer-events-none select-none">{tagName}</span>
               <span
                 className="flex items-center justify-center w-4 h-4 -mr-1 rounded-full hover:bg-red-500/20 hover:text-red-400 transition-colors cursor-pointer"
                 onClick={(e) => {

@@ -14,6 +14,7 @@ interface TabItemProps {
   activeTagInputId?: string | null;
   onTagInputStateChange?: (tabId: string, isOpen: boolean) => void;
   variant?: "session" | "window";
+  date?: string; // Optional date field for favorites view
 }
 
 const TabItem: React.FC<TabItemProps> = ({
@@ -25,6 +26,7 @@ const TabItem: React.FC<TabItemProps> = ({
   activeTagInputId,
   onTagInputStateChange,
   variant = "session",
+  date, // Add date to destructuring
 }) => {
   const handleClick = () => {
     onClick(tab);
@@ -55,6 +57,11 @@ const TabItem: React.FC<TabItemProps> = ({
             {tab.title}
           </div>
           <div className="text-xs text-slate-500 truncate">{tab.url}</div>
+          {date && (
+            <div className="text-xs text-slate-500 mt-1">
+              Added {new Date(date).toLocaleDateString()}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -79,6 +86,11 @@ const TabItem: React.FC<TabItemProps> = ({
                 {tab.title}
               </div>
               <div className="text-xs text-slate-500 truncate">{tab.url}</div>
+              {date && (
+                <div className="text-xs text-slate-500 mt-1">
+                  Added {new Date(date).toLocaleDateString()}
+                </div>
+              )}
             </div>
           </div>
           {showActions && (

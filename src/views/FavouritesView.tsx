@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Heart, Trash2, ExternalLink, Hash } from "lucide-react";
+import { Heart, Hash } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { FavoriteTab } from "../services/FavoritesService";
-import TagInput from "../components/TagInput";
+import TabItem from "../components/TabItem";
+import { Tab } from "../interfaces/TabInterface";
 
 const FavouritesView: React.FC = () => {
-  const {
-    favorites,
-    tags,
-    loading,
-    removeFavorite,
-    updateFavoriteTags,
-    addTag,
-    getFavoritesByTags,
-  } = useFavorites();
+  const { favorites, tags, loading, removeFavorite, getFavoritesByTags } =
+    useFavorites();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -56,11 +50,6 @@ const FavouritesView: React.FC = () => {
 
   const handleRemoveFavourite = async (id: string) => {
     await removeFavorite(id);
-  };
-
-  const handleTagsUpdate = async (favoriteId: string, newTags: string[]) => {
-    await updateFavoriteTags(favoriteId, newTags);
-    setEditingTags(null);
   };
 
   const availableTagNames = Array.from(
@@ -169,7 +158,7 @@ const FavouritesView: React.FC = () => {
           </div>
         </div>
 
-        {/* Favourites Grid */}
+        {/* Favourites List */}
         <div className="flex-1 overflow-y-auto">
           {filteredFavourites.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -184,106 +173,41 @@ const FavouritesView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredFavourites.map((favourite) => (
-                <div
-                  key={favourite.id}
-                  className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-4 hover:border-pink-500/50 transition-colors group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-slate-800 rounded flex items-center justify-center mr-3">
-                        <Heart className="w-4 h-4 text-pink-500 fill-current" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white truncate">
-                          {favourite.title}
-                        </h3>
-                      </div>
-                    </div>
+            <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg">
+              {filteredFavourites.map((favourite, index) => {
+                // Convert FavoriteTab to Tab interface for TabItem
+                const tab: Tab = {
+                  id: parseInt(favourite.id) || 0, // Convert string ID to number with fallback
+                  title: favourite.title,
+                  url: favourite.url,
+                  favIconUrl: favourite.favicon,
+                  windowId: 0, // Default value as this is required by Tab interface
+                  index: 0, // Default value as this is required by Tab interface
+                };
+
+                return (
+                  <div key={favourite.id}>
+                    <TabItem
+                      tab={tab}
+                      onClick={() => handleOpenFavourite(favourite.url)}
+                      onDelete={() => handleRemoveFavourite(favourite.id)}
+                      showActions={true}
+                      showTags={true}
+                      activeTagInputId={editingTags}
+                      onTagInputStateChange={(_, isOpen) => {
+                        setEditingTags(isOpen ? favourite.id : null);
+                      }}
+                      variant="window"
+                      date={favourite.dateAdded.toString()}
+                    />
+
+                    {/* Divider */}
+                    {index < filteredFavourites.length - 1 && (
+                      <div className="border-b border-slate-700/50" />
+                    )}
                   </div>
-
-                  <p className="text-sm text-slate-400 mb-3 truncate">
-                    {favourite.url}
-                  </p>
-
-                  {/* Tags */}
-                  {favourite.tags.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex flex-wrap gap-1">
-                        {favourite.tags.map((tagName) => {
-                          const tagData = tags.find((t) => t.name === tagName);
-                          return (
-                            <span
-                              key={tagName}
-                              className="text-xs px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded-full border border-cyan-500/30"
-                              style={
-                                tagData?.color
-                                  ? {
-                                      backgroundColor: `${tagData.color}20`,
-                                      borderColor: `${tagData.color}40`,
-                                      color: tagData.color,
-                                    }
-                                  : {}
-                              }
-                            >
-                              #{tagName}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tag editing */}
-                  {editingTags === favourite.id && (
-                    <div className="mb-3">
-                      <TagInput
-                        selectedTags={favourite.tags}
-                        onTagsChange={(newTags) =>
-                          handleTagsUpdate(favourite.id, newTags)
-                        }
-                        availableTags={tags}
-                        onAddTag={addTag}
-                        placeholder="Add tags..."
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
-                      Added {new Date(favourite.dateAdded).toLocaleDateString()}
-                    </span>
-                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span
-                        onClick={() =>
-                          setEditingTags(
-                            editingTags === favourite.id ? null : favourite.id
-                          )
-                        }
-                        className="p-1 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
-                        title="Edit tags"
-                      >
-                        <Hash className="w-4 h-4" />
-                      </span>
-                      <span
-                        onClick={() => handleOpenFavourite(favourite.url)}
-                        className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                        title="Open in new tab"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </span>
-                      <span
-                        onClick={() => handleRemoveFavourite(favourite.id)}
-                        className="p-1 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                        title="Remove from favourites"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

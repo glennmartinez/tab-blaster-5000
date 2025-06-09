@@ -141,14 +141,14 @@ const TagButton: React.FC<TagButtonProps> = ({
                 }
               >
                 <span className="px-2 py-1 pointer-events-none select-none">
-                  #{tagName}
+                  {tagName}
                 </span>
                 <span
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRemoveTag(tagName);
                   }}
-                  className="flex items-center justify-center w-6 h-6 rounded-r-full hover:bg-red-500/30 hover:text-red-400 transition-all duration-200 opacity-0 group-hover:opacity-100 border-l border-slate-600/30 cursor-pointer"
+                  className="flex items-center justify-center px-1 py-1 rounded-r-full hover:bg-red-500/30 hover:text-red-400 transition-all duration-200 opacity-0 group-hover:opacity-100 border-l border-slate-600/30 cursor-pointer"
                   title={`Remove ${tagName} tag`}
                   data-testid={`tag-remove-${tagName}`}
                 >

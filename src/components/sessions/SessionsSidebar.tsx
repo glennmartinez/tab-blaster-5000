@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { SessionSummary } from "../models/Session";
+import { SessionSummary } from "../../models/Session";
 
 interface SessionsSidebarProps {
   sessionSummaries: SessionSummary[];

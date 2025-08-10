@@ -7,8 +7,7 @@ import {
   Sliders,
   ChevronLeft,
 } from "lucide-react";
-import StorageSettings from "../../components/StorageSettings";
-import ParticleBackground from "../../components/ParticleBackground";
+import { StorageSettings, ParticleBackground } from "../../components";
 import { StorageProvider } from "../../services/StorageService";
 
 interface SettingsViewProps {

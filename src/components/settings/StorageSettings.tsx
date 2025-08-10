@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { StorageProvider, StorageService } from "../services/StorageService";
-import { STORAGE_KEYS } from "../constants/storageKeys";
+import { StorageProvider, StorageService } from "../../services/StorageService";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 // Define the settings type
 interface Settings {

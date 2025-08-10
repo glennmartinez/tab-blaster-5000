@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Heart, Hash } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { FavoriteTab } from "../services/FavoritesService";
-import TabItem from "../components/TabItem";
+import { TabItem } from "../components";
 import { Tab } from "../interfaces/TabInterface";
 
 const FavouritesView: React.FC = () => {

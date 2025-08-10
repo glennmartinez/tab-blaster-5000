@@ -1,6 +1,6 @@
 import React from "react";
 import NavItem from "./NavItem";
-import StatusItem from "./StatusItem";
+import { StatusItem } from "../common";
 import {
   Activity,
   Database,

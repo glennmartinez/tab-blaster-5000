@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import { ViewType } from "./interfaces/ViewTypes";
 import MainLayout from "./views/layout/MainLayout";
-import SessionsView from "./components/SessionsView";
+import { SessionsView } from "./components";
 import { useTabs } from "./hooks/useTabs";
 
 /**

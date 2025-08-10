@@ -1,5 +1,5 @@
 import React from "react";
-import { ViewType } from "../interfaces/ViewTypes";
+import { ViewType } from "../../interfaces/ViewTypes";
 
 type NavItemProps = {
   icon: React.ElementType;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import { useFavorites } from "../hooks/useFavorites";
+import { useFavorites } from "../../hooks/useFavorites";
 
 interface FavoriteButtonProps {
   tab: {

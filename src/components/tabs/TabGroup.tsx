@@ -1,5 +1,5 @@
 import React from "react";
-import { SavedTab } from "../interfaces/TabInterface";
+import { SavedTab } from "../../interfaces/TabInterface";
 import TabList from "./TabList";
 
 interface TabGroupProps {

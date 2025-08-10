@@ -1,9 +1,8 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
-import { Tab } from "../interfaces/TabInterface";
-import FallbackIcon from "./FallbackIcon";
-import FavoriteButton from "./FavoriteButton";
-import TagButton from "./TagButton";
+import { Tab } from "../../interfaces/TabInterface";
+import { FallbackIcon, FavoriteButton } from "../common";
+import { TagButton } from "../tags";
 
 interface TabItemProps {
   tab: Tab;

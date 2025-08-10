@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Tab } from "../interfaces/TabInterface";
-import FallbackIcon from "./FallbackIcon";
-import StorageSettings from "./StorageSettings";
-import { StorageFactory } from "../services/StorageFactory";
+import { Tab } from "../../interfaces/TabInterface";
+import { FallbackIcon } from "../common";
+import { StorageSettings } from "../settings";
+import { StorageFactory } from "../../services/StorageFactory";
 
 interface SavedSession {
   id: string;

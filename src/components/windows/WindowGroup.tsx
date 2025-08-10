@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { WindowInfo } from "../interfaces/TabInterface";
-import TabList from "./TabList";
-import Button from "./Button";
-import { StorageFactory } from "../services/StorageFactory";
-import { Session } from "../models/Session";
+import { WindowInfo } from "../../interfaces/TabInterface";
+import { TabList } from "../tabs";
+import { Button } from "../common";
+import { StorageFactory } from "../../services/StorageFactory";
+import { Session } from "../../models/Session";
 
 interface WindowGroupProps {
   windowInfo: WindowInfo;

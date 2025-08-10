@@ -9,8 +9,8 @@ import {
   Folder,
   Clock,
 } from "lucide-react";
-import { Bookmark as BookmarkType } from "../interfaces/BookmarkInterface";
-import { useBookmarks } from "../hooks/useBookmarks";
+import { Bookmark as BookmarkType } from "../../interfaces/BookmarkInterface";
+import { useBookmarks } from "../../hooks/useBookmarks";
 
 interface BookmarksPanelProps {
   className?: string;

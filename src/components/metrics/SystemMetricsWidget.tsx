@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Cpu, HardDrive, Wifi, Chrome } from "lucide-react";
 import MetricCard from "./MetricCard";
-import { useDetailedMemoryMetrics } from "../hooks/useDetailedMemoryMetrics";
-import { useSystemMetrics } from "../hooks/useSystemMetrics";
+import { useDetailedMemoryMetrics } from "../../hooks/useDetailedMemoryMetrics";
+import { useSystemMetrics } from "../../hooks/useSystemMetrics";
 
 /**
  * Component for displaying system metrics (CPU, memory, and network)

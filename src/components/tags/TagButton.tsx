@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Hash, X } from "lucide-react";
-import { useFavorites } from "../hooks/useFavorites";
+import { useFavorites } from "../../hooks/useFavorites";
 import InlineTagInput from "./InlineTagInput";
 
 interface TagButtonProps {

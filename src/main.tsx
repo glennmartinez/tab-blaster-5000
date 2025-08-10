@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
-import ExtensionPopup from "./components/ExtensionPopup.tsx";
+import { ExtensionPopup } from "./components";
 
 // Determine which view to render based on URL parameter
 const urlParams = new URLSearchParams(window.location.search);

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
-import { Tab, WindowInfo } from "../interfaces/TabInterface";
-import SystemMetricsWidget from "./SystemMetricsWidget";
-import TabItem from "./TabItem";
+import { Tab, WindowInfo } from "../../interfaces/TabInterface";
+import { SystemMetricsWidget } from "../metrics";
+import { TabItem } from "../tabs";
 
 interface WindowsPanelProps {
   windowGroups: WindowInfo[];

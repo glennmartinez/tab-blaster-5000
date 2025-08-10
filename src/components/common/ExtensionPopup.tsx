@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
-import { Tab } from "../interfaces/TabInterface";
+import { Tab } from "../../interfaces/TabInterface";
 import { BookmarkCheck } from "lucide-react";
 import ParticleBackground from "./ParticleBackground";
-import { StorageFactory } from "../services/StorageFactory";
-import { Session } from "../models/Session";
+import { StorageFactory } from "../../services/StorageFactory";
+import { Session } from "../../models/Session";
 
 const ExtensionPopup: React.FC = () => {
   const [tabCount, setTabCount] = useState(0);

@@ -1,5 +1,5 @@
 {
-  "name": "ultimate-tab-manager",
+  "name": "tab-blaster-5k",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,6 +15,7 @@
     "lucide-react": "^0.487.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sharp": "^0.34.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

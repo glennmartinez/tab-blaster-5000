@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Hash, X, Plus } from "lucide-react";
-import { Tag } from "../services/FavoritesService";
+import { Tag } from "../../services/FavoritesService";
 
 interface TagInputProps {
   selectedTags: string[];

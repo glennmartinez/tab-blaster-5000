@@ -1,6 +1,6 @@
 import React from "react";
-import { Tab, SavedTab } from "../interfaces/TabInterface";
-import FallbackIcon from "./FallbackIcon";
+import { Tab, SavedTab } from "../../interfaces/TabInterface";
+import { FallbackIcon } from "../common";
 
 interface TabListProps {
   tabs: Tab[] | SavedTab[];

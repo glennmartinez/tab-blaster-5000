@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Tab, WindowInfo, SavedTab } from "../../interfaces/TabInterface";
 import { useSessions } from "../../hooks/useSessions";
-import ParticleBackground from "../../components/ParticleBackground";
-import Header from "../../components/Header";
-import Sidebar from "../../components/Sidebar";
-import WindowsPanel from "../../components/WindowsPanel";
-import SessionPanel from "../../components/SessionPanel";
-import SessionsSidebar from "../../components/SessionsSidebar";
+import {
+  ParticleBackground,
+  Header,
+  Sidebar,
+  WindowsPanel,
+  SessionPanel,
+  SessionsSidebar,
+  BookmarksPanel,
+} from "../../components";
 import SettingsView from "../settings/SettingsView";
 import FavouritesView from "../FavouritesView";
-import BookmarksPanel from "../../components/BookmarksPanel";
 
 // Interface for the component props
 interface FuturisticViewProps {

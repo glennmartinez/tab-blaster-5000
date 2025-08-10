@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ExternalLink } from "lucide-react";
-import { Tab } from "../interfaces/TabInterface";
-import TabItem from "./TabItem";
+import { Tab } from "../../interfaces/TabInterface";
+import { TabItem } from "../tabs";
 
 interface SessionPanelProps {
   selectedSession: {

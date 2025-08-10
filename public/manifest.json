@@ -22,7 +22,8 @@
     "identity",
     "processes",
     "webRequest",
-    "tabs"
+    "tabs",
+    "bookmarks"
   ],
   "host_permissions": ["<all_urls>", "https://www.googleapis.com/*"],
   "background": {

@@ -1,4 +1,5 @@
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
+import { Bookmark, BookmarkTreeNode } from "../interfaces/BookmarkInterface";
 
 // Mock data for development outside of Chrome extension environment
 const mockTabs: Tab[] = [
@@ -21,6 +22,58 @@ const mockTabs: Tab[] = [
 ];
 
 const mockWindows: WindowInfo[] = [{ id: 1, focused: true, tabs: mockTabs }];
+
+// Mock bookmark data for development
+const mockBookmarks: BookmarkTreeNode[] = [
+  {
+    id: "1",
+    title: "Bookmarks bar",
+    children: [
+      {
+        id: "2",
+        title: "Google",
+        url: "https://google.com",
+        dateAdded: Date.now() - 86400000, // 1 day ago
+      },
+      {
+        id: "3",
+        title: "GitHub",
+        url: "https://github.com",
+        dateAdded: Date.now() - 172800000, // 2 days ago
+      },
+      {
+        id: "4",
+        title: "Development",
+        children: [
+          {
+            id: "5",
+            title: "MDN Web Docs",
+            url: "https://developer.mozilla.org",
+            dateAdded: Date.now() - 259200000, // 3 days ago
+          },
+          {
+            id: "6",
+            title: "Stack Overflow",
+            url: "https://stackoverflow.com",
+            dateAdded: Date.now() - 345600000, // 4 days ago
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "7",
+    title: "Other bookmarks",
+    children: [
+      {
+        id: "8",
+        title: "YouTube",
+        url: "https://youtube.com",
+        dateAdded: Date.now() - 432000000, // 5 days ago
+      },
+    ],
+  },
+];
 
 /**
  * Type guard to check if chrome system memory API is available
@@ -286,6 +339,94 @@ export class ChromeService {
           totalMemory: 0,
           totalCpu: 0,
         });
+      }
+    });
+  }
+
+  /**
+   * Get all bookmarks from Chrome
+   */
+  static getBookmarks(): Promise<BookmarkTreeNode[]> {
+    return new Promise((resolve) => {
+      if (chrome?.bookmarks) {
+        chrome.bookmarks.getTree((bookmarkTreeNodes) => {
+          resolve(bookmarkTreeNodes as BookmarkTreeNode[]);
+        });
+      } else {
+        // Mock data for development
+        resolve([...mockBookmarks]);
+      }
+    });
+  }
+
+  /**
+   * Search bookmarks by query
+   */
+  static searchBookmarks(query: string): Promise<Bookmark[]> {
+    return new Promise((resolve) => {
+      if (chrome?.bookmarks) {
+        chrome.bookmarks.search(query, (results) => {
+          resolve(results as Bookmark[]);
+        });
+      } else {
+        // Mock search for development
+        const flattenBookmarks = (nodes: BookmarkTreeNode[]): Bookmark[] => {
+          const result: Bookmark[] = [];
+          for (const node of nodes) {
+            if (node.url) {
+              result.push({
+                id: node.id,
+                title: node.title,
+                url: node.url,
+                dateAdded: node.dateAdded,
+              });
+            }
+            if (node.children) {
+              result.push(...flattenBookmarks(node.children));
+            }
+          }
+          return result;
+        };
+
+        const allBookmarks = flattenBookmarks(mockBookmarks);
+        const filtered = allBookmarks.filter(
+          (bookmark) =>
+            bookmark.title.toLowerCase().includes(query.toLowerCase()) ||
+            bookmark.url?.toLowerCase().includes(query.toLowerCase())
+        );
+        resolve(filtered);
+      }
+    });
+  }
+
+  /**
+   * Create a new bookmark
+   */
+  static createBookmark(bookmark: {
+    parentId?: string;
+    title: string;
+    url?: string;
+  }): Promise<Bookmark> {
+    return new Promise((resolve, reject) => {
+      if (chrome?.bookmarks) {
+        chrome.bookmarks.create(bookmark, (result) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(result as Bookmark);
+          }
+        });
+      } else {
+        // Mock creation for development
+        const newBookmark: Bookmark = {
+          id: Date.now().toString(),
+          title: bookmark.title,
+          url: bookmark.url,
+          parentId: bookmark.parentId || "1",
+          dateAdded: Date.now(),
+        };
+        console.log("Mock: Creating bookmark", newBookmark);
+        resolve(newBookmark);
       }
     });
   }

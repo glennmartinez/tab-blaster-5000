@@ -76,11 +76,14 @@ export const useTabs = () => {
       await TabController.closeTab(tabId);
       // Update local state
       setTabs((prev) => prev.filter((tab) => tab.id !== tabId));
-      setWindows((prev) =>
-        prev.map((window) => ({
-          ...window,
-          tabs: window.tabs.filter((tab) => tab.id !== tabId),
-        }))
+      setWindows(
+        (prev) =>
+          prev
+            .map((window) => ({
+              ...window,
+              tabs: window.tabs.filter((tab) => tab.id !== tabId),
+            }))
+            .filter((window) => window.tabs.length > 0) // Remove windows with no tabs left
       );
     } catch (err) {
       console.error("Error closing tab:", err);
@@ -96,11 +99,14 @@ export const useTabs = () => {
       await TabController.closeTabs(tabIds);
       // Update local state
       setTabs((prev) => prev.filter((tab) => !tabIds.includes(tab.id)));
-      setWindows((prev) =>
-        prev.map((window) => ({
-          ...window,
-          tabs: window.tabs.filter((tab) => !tabIds.includes(tab.id)),
-        }))
+      setWindows(
+        (prev) =>
+          prev
+            .map((window) => ({
+              ...window,
+              tabs: window.tabs.filter((tab) => !tabIds.includes(tab.id)),
+            }))
+            .filter((window) => window.tabs.length > 0) // Remove windows with no tabs left
       );
     } catch (err) {
       console.error("Error closing tabs:", err);

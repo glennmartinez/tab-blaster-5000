@@ -9,6 +9,7 @@ import SessionPanel from "../../components/SessionPanel";
 import SessionsSidebar from "../../components/SessionsSidebar";
 import SettingsView from "../settings/SettingsView";
 import FavouritesView from "../FavouritesView";
+import BookmarksPanel from "../../components/BookmarksPanel";
 
 // Interface for the component props
 interface FuturisticViewProps {
@@ -36,7 +37,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeView, setActiveView] = useState<
-    "windows" | "sessions" | "settings" | "favourites"
+    "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
   >("windows");
   const [expandedWindows, setExpandedWindows] = useState<{
     [windowId: number]: boolean;
@@ -176,7 +177,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
 
   // Clear selected session and restore active windows when switching views
   const handleViewChange = (
-    view: "windows" | "sessions" | "settings" | "favourites"
+    view: "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
   ) => {
     setActiveView(view);
     if (view === "windows") {
@@ -224,6 +225,16 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   const renderMainContent = () => {
     if (activeView === "favourites") {
       return <FavouritesView />;
+    }
+
+    if (activeView === "bookmarks") {
+      return (
+        <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col h-full">
+          <div className="p-4 h-full">
+            <BookmarksPanel />
+          </div>
+        </div>
+      );
     }
 
     // Default content - Active Windows or Sessions

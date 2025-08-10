@@ -1,12 +1,19 @@
 import React from "react";
 import NavItem from "./NavItem";
 import StatusItem from "./StatusItem";
-import { Activity, Database, Shield, Settings, Heart } from "lucide-react";
+import {
+  Activity,
+  Database,
+  Shield,
+  Settings,
+  Heart,
+  Bookmark,
+} from "lucide-react";
 
 interface FuturisticSidebarProps {
-  activeView: "windows" | "sessions" | "settings" | "favourites";
+  activeView: "windows" | "sessions" | "settings" | "favourites" | "bookmarks";
   handleViewChange: (
-    view: "windows" | "sessions" | "settings" | "favourites"
+    view: "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
   ) => void;
   systemStatus: number;
   securityLevel: number;
@@ -37,6 +44,12 @@ const Sidebar: React.FC<FuturisticSidebarProps> = ({
           label="Favourites"
           active={activeView === "favourites"}
           onClick={() => handleViewChange("favourites")}
+        />
+        <NavItem
+          icon={Bookmark}
+          label="Bookmarks"
+          active={activeView === "bookmarks"}
+          onClick={() => handleViewChange("bookmarks")}
         />
         <NavItem
           icon={Database}

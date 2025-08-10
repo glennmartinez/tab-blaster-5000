@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
 import SystemMetricsWidget from "./SystemMetricsWidget";
 import TabItem from "./TabItem";
@@ -9,7 +9,7 @@ interface WindowsPanelProps {
   expandedWindows: { [windowId: number]: boolean };
   onOpenTab: (tab: Tab) => void;
   onDeleteTab: (tab: Tab) => void;
-  onSaveWindowAsSession: (windowId: number) => void;
+  onSaveWindowAsSession: (windowId: number) => Promise<void>;
   onToggleExpand: (windowId: number) => void;
 }
 
@@ -22,9 +22,23 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
   onToggleExpand,
 }) => {
   const [activeTagInputId, setActiveTagInputId] = useState<string | null>(null);
+  const [savingWindows, setSavingWindows] = useState<Set<number>>(new Set());
 
   const handleTagInputStateChange = (tabId: string, isOpen: boolean) => {
     setActiveTagInputId(isOpen ? tabId : null);
+  };
+
+  const handleSaveSession = async (windowId: number) => {
+    setSavingWindows((prev) => new Set(prev).add(windowId));
+    try {
+      await onSaveWindowAsSession(windowId);
+    } finally {
+      setSavingWindows((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(windowId);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -39,6 +53,7 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
       <div className="space-y-4 pb-4">
         {windowGroups.map((window) => {
           const isExpanded = expandedWindows[window.id] || false;
+          const isSaving = savingWindows.has(window.id);
           const tabsToShow = isExpanded
             ? window.tabs
             : window.tabs.slice(0, 10);
@@ -62,10 +77,20 @@ const WindowsPanel: React.FC<WindowsPanelProps> = ({
                   </span>
                 </div>
                 <button
-                  className="text-xs bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-1 rounded"
-                  onClick={() => onSaveWindowAsSession(window.id)}
+                  className={`text-xs px-2 py-1 rounded ${
+                    isSaving
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-cyan-600 hover:bg-cyan-700"
+                  } text-white`}
+                  onClick={() => handleSaveSession(window.id)}
+                  disabled={isSaving}
                 >
-                  <Plus className="h-3 w-3 inline mr-1" /> Save Session
+                  {isSaving ? (
+                    <Loader2 className="h-3 w-3 inline mr-1 animate-spin" />
+                  ) : (
+                    <Plus className="h-3 w-3 inline mr-1" />
+                  )}
+                  {isSaving ? "Saving..." : "Save Session"}
                 </button>
               </div>
 

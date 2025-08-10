@@ -18,6 +18,7 @@ function App() {
     savedTabs,
     switchToTab,
     closeTab,
+    closeTabs,
     restoreTab,
     removeSavedTab,
   } = useTabs();
@@ -47,6 +48,7 @@ function App() {
               savedTabs={savedTabs}
               onSwitchTab={switchToTab}
               onCloseTab={closeTab}
+              onCloseTabs={closeTabs}
               onRestoreTab={restoreTab}
               onRemoveSavedTab={removeSavedTab}
             />

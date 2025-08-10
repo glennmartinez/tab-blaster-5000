@@ -103,6 +103,27 @@ export class ChromeService {
   }
 
   /**
+   * Close multiple tabs by their IDs
+   */
+  static closeTabs(tabIds: number[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (chrome?.tabs && tabIds.length > 0) {
+        chrome.tabs.remove(tabIds, () => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve();
+          }
+        });
+      } else {
+        // Mock behavior for development
+        console.log(`Mock: Closing ${tabIds.length} tabs:`, tabIds);
+        resolve();
+      }
+    });
+  }
+
+  /**
    * Switch to a specific tab
    */
   static switchToTab(tabId: number): Promise<void> {
@@ -203,14 +224,21 @@ export class ChromeService {
         chrome.system.memory.getInfo((info) => {
           // Calculate memory values
           const totalGB = (info.capacity / (1024 * 1024 * 1024)).toFixed(2);
-          const availableGB = (info.availableCapacity / (1024 * 1024 * 1024)).toFixed(2);
-          const usedGB = ((info.capacity - info.availableCapacity) / (1024 * 1024 * 1024)).toFixed(2);
-          const usedPercent = ((info.capacity - info.availableCapacity) / info.capacity * 100);
-          
+          const availableGB = (
+            info.availableCapacity /
+            (1024 * 1024 * 1024)
+          ).toFixed(2);
+          const usedGB = (
+            (info.capacity - info.availableCapacity) /
+            (1024 * 1024 * 1024)
+          ).toFixed(2);
+          const usedPercent =
+            ((info.capacity - info.availableCapacity) / info.capacity) * 100;
+
           console.log(`Total memory: ${totalGB} GB`);
           console.log(`Available memory: ${availableGB} GB`);
           console.log(`Used memory: ${usedGB} GB (${usedPercent.toFixed(2)}%)`);
-          
+
           // Convert bytes to KB for consistency with old API
           const usedMemoryKB = Math.round(
             (info.capacity - info.availableCapacity) / 1024

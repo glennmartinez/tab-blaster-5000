@@ -16,6 +16,7 @@ interface FuturisticViewProps {
   savedTabs?: SavedTab[];
   onSwitchTab?: (tabId: number) => Promise<void>;
   onCloseTab?: (tabId: number) => Promise<void>;
+  onCloseTabs?: (tabIds: number[]) => Promise<void>;
   onRestoreTab?: (savedTab: SavedTab) => Promise<void>;
   onRemoveSavedTab?: (savedTab: SavedTab) => Promise<void>;
 }
@@ -24,6 +25,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   windowGroups = [],
   onSwitchTab,
   onCloseTab,
+  onCloseTabs,
 }) => {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [systemStatus, setSystemStatus] = useState(85);
@@ -132,6 +134,21 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
         name || `Window ${windowId} - ${new Date().toLocaleTimeString()}`;
       // Pass the windowId to createSession
       await createSession(sessionName, undefined, windowId);
+
+      // Close all tabs in the saved window
+      if (onCloseTabs && windowToSave.tabs.length > 0) {
+        const tabIds = windowToSave.tabs
+          .map((tab) => tab.id)
+          .filter((id) => id !== undefined && id !== chrome?.tabs?.TAB_ID_NONE);
+
+        if (tabIds.length > 0) {
+          await onCloseTabs(tabIds);
+          console.log(
+            `Closed ${tabIds.length} tabs from window ${windowId} after saving session`
+          );
+        }
+      }
+
       // Refresh sessions list
       fetchSessionSummaries();
     } catch (error) {

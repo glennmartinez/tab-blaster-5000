@@ -28,6 +28,13 @@ export class TabController {
   }
 
   /**
+   * Close multiple tabs by their IDs
+   */
+  static async closeTabs(tabIds: number[]): Promise<void> {
+    await ChromeService.closeTabs(tabIds);
+  }
+
+  /**
    * Switch to a specific tab
    */
   static async switchToTab(tabId: number): Promise<void> {

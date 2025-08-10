@@ -89,6 +89,26 @@ export const useTabs = () => {
   }, []);
 
   /**
+   * Close multiple tabs
+   */
+  const closeTabs = useCallback(async (tabIds: number[]) => {
+    try {
+      await TabController.closeTabs(tabIds);
+      // Update local state
+      setTabs((prev) => prev.filter((tab) => !tabIds.includes(tab.id)));
+      setWindows((prev) =>
+        prev.map((window) => ({
+          ...window,
+          tabs: window.tabs.filter((tab) => !tabIds.includes(tab.id)),
+        }))
+      );
+    } catch (err) {
+      console.error("Error closing tabs:", err);
+      throw err;
+    }
+  }, []);
+
+  /**
    * Switch to a tab
    */
   const switchToTab = useCallback(
@@ -193,6 +213,7 @@ export const useTabs = () => {
     fetchWindows,
     fetchSavedTabs,
     closeTab,
+    closeTabs,
     switchToTab,
     saveTab,
     restoreTab,

@@ -23,7 +23,8 @@
     "processes",
     "webRequest",
     "tabs",
-    "bookmarks"
+    "bookmarks",
+    "alarms"
   ],
   "host_permissions": ["<all_urls>", "https://www.googleapis.com/*"],
   "background": {

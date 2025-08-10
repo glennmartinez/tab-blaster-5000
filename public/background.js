@@ -15,6 +15,12 @@ chrome.runtime.onInstalled.addListener(() => {
     },
     savedGroups: []
   });
+
+  // Create daily alarm for score recalculation
+  chrome.alarms.create('recalculateScores', {
+    delayInMinutes: 1, // Start after 1 minute
+    periodInMinutes: 24 * 60 // Repeat every 24 hours
+  });
 });
 
 // Listen for tab events to manage tabs
@@ -25,10 +31,93 @@ chrome.tabs.onCreated.addListener((tab) => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Handle tab updates
-  if (changeInfo.status === 'complete') {
+  if (changeInfo.status === 'complete' && tab.url) {
     console.log('Tab updated:', tabId, tab.url);
+    
+    // Track visit for favorites
+    trackFavoriteVisit(tab.url);
   }
 });
+
+// Function to track favorite visits
+async function trackFavoriteVisit(url) {
+  try {
+    // Get favorites from storage
+    const result = await chrome.storage.local.get('favourites');
+    const favorites = result.favourites || [];
+    
+    // Find matching favorite
+    const favoriteIndex = favorites.findIndex(fav => fav.url === url);
+    
+    if (favoriteIndex !== -1) {
+      // Update visit count and last access
+      favorites[favoriteIndex].usage = favorites[favoriteIndex].usage || { visitCount: 0, lastAccess: null };
+      favorites[favoriteIndex].usage.visitCount++;
+      favorites[favoriteIndex].usage.lastAccess = new Date().toISOString();
+      
+      // Recalculate score
+      recalculateScores(favorites);
+      
+      // Save back to storage
+      await chrome.storage.local.set({ favourites: favorites });
+      
+      console.log('Updated favorite visit for:', url);
+    }
+  } catch (error) {
+    console.error('Error tracking favorite visit:', error);
+  }
+}
+
+// Function to recalculate scores for all favorites
+function recalculateScores(favorites) {
+  if (favorites.length === 0) return;
+
+  // Find max visit count for normalization
+  const maxVisitCount = Math.max(...favorites.map(fav => (fav.usage?.visitCount || 0)), 1);
+
+  favorites.forEach(favorite => {
+    const usage = favorite.usage || { visitCount: 0, lastAccess: null };
+    const normalizedVisitCount = usage.visitCount / maxVisitCount;
+    
+    // Calculate recency factor
+    let recencyFactor = 0;
+    if (usage.lastAccess) {
+      const lastAccessDate = new Date(usage.lastAccess);
+      const daysSinceLastAccess = (Date.now() - lastAccessDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceLastAccess < 7) {
+        recencyFactor = 1;
+      } else if (daysSinceLastAccess < 30) {
+        recencyFactor = 0.5;
+      }
+    }
+
+    // Calculate score: priority (50%) + frequency (30%) + recency (20%)
+    const priority = favorite.priority || 3;
+    favorite.calculatedScore = (priority * 0.5) + (normalizedVisitCount * 0.3) + (recencyFactor * 0.2);
+  });
+}
+
+// Daily score recalculation alarm
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'recalculateScores') {
+    recalculateFavoriteScores();
+  }
+});
+
+// Function to recalculate all scores
+async function recalculateFavoriteScores() {
+  try {
+    const result = await chrome.storage.local.get('favourites');
+    const favorites = result.favourites || [];
+    
+    recalculateScores(favorites);
+    
+    await chrome.storage.local.set({ favourites: favorites });
+    console.log('Daily score recalculation completed');
+  } catch (error) {
+    console.error('Error during daily score recalculation:', error);
+  }
+}
 
 // Message handling between popup and background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

@@ -9,6 +9,12 @@ export interface FavoriteTab {
   dateAdded: Date;
   tags: string[];
   tabId?: number; // Chrome tab ID if it's an active tab
+  priority: number; // 1-5 scale, default 3
+  usage: {
+    visitCount: number; // Track how often visited
+    lastAccess: Date | null; // Timestamp of last visit
+  };
+  calculatedScore: number; // Derived from priority + usage (update dynamically)
 }
 
 export interface Tag {
@@ -42,10 +48,13 @@ export class FavoritesService {
       const result = await this.getStorageService().get(this.favoritesKey);
       const favorites = (result[this.favoritesKey] as FavoriteTab[]) || [];
 
-      // Convert dateAdded strings back to Date objects if needed
+      // Convert dateAdded strings back to Date objects and ensure backward compatibility
       return favorites.map((fav) => ({
         ...fav,
         dateAdded: new Date(fav.dateAdded),
+        priority: fav.priority ?? 3, // Default priority for existing items
+        usage: fav.usage ?? { visitCount: 0, lastAccess: null }, // Default usage for existing items
+        calculatedScore: fav.calculatedScore ?? 0, // Default score for existing items
       }));
     } catch (error) {
       console.error("Error getting favorites:", error);
@@ -55,7 +64,8 @@ export class FavoritesService {
 
   async addFavorite(
     tab: { id?: number; title: string; url: string; favicon?: string },
-    tags: string[] = []
+    tags: string[] = [],
+    priority: number = 3
   ): Promise<FavoriteTab> {
     const favorites = await this.getFavorites();
 
@@ -67,8 +77,10 @@ export class FavoritesService {
         ...new Set([...favorites[existingIndex].tags, ...tags]),
       ];
       favorites[existingIndex].dateAdded = new Date();
+      favorites[existingIndex].priority = priority;
       await this.saveFavorites(favorites);
       await this.updateTagCounts();
+      await this.recalculateScores();
       return favorites[existingIndex];
     }
 
@@ -80,11 +92,18 @@ export class FavoritesService {
       dateAdded: new Date(),
       tags: [...new Set(tags)],
       tabId: tab.id,
+      priority: priority, // Use provided priority
+      usage: {
+        visitCount: 0,
+        lastAccess: null,
+      },
+      calculatedScore: 0, // Will be calculated
     };
 
     favorites.push(favorite);
     await this.saveFavorites(favorites);
     await this.updateTagCounts();
+    await this.recalculateScores();
     return favorite;
   }
 
@@ -223,5 +242,116 @@ export class FavoritesService {
         )
       )
     );
+  }
+
+  // Priority and scoring methods
+  async updateFavoritePriority(
+    favoriteId: string,
+    priority: number
+  ): Promise<void> {
+    const favorites = await this.getFavorites();
+    const favorite = favorites.find((fav) => fav.id === favoriteId);
+    if (favorite) {
+      favorite.priority = Math.max(1, Math.min(5, priority)); // Ensure 1-5 range
+      await this.saveFavorites(favorites);
+      await this.recalculateScores();
+    }
+  }
+
+  async trackVisit(url: string): Promise<void> {
+    const favorites = await this.getFavorites();
+    const favorite = favorites.find((fav) => fav.url === url);
+    if (favorite) {
+      favorite.usage.visitCount++;
+      favorite.usage.lastAccess = new Date();
+      await this.saveFavorites(favorites);
+      await this.recalculateScores();
+    }
+  }
+
+  async recalculateScores(): Promise<void> {
+    const favorites = await this.getFavorites();
+    if (favorites.length === 0) return;
+
+    // Find max visit count for normalization
+    const maxVisitCount = Math.max(
+      ...favorites.map((fav) => fav.usage.visitCount),
+      1
+    );
+
+    favorites.forEach((favorite) => {
+      const normalizedVisitCount = favorite.usage.visitCount / maxVisitCount;
+
+      // Calculate recency factor
+      let recencyFactor = 0;
+      if (favorite.usage.lastAccess) {
+        const daysSinceLastAccess =
+          (Date.now() - favorite.usage.lastAccess.getTime()) /
+          (1000 * 60 * 60 * 24);
+        if (daysSinceLastAccess < 7) {
+          recencyFactor = 1;
+        } else if (daysSinceLastAccess < 30) {
+          recencyFactor = 0.5;
+        }
+      }
+
+      // Calculate score: priority (50%) + frequency (30%) + recency (20%)
+      favorite.calculatedScore =
+        favorite.priority * 0.5 +
+        normalizedVisitCount * 0.3 +
+        recencyFactor * 0.2;
+    });
+
+    await this.saveFavorites(favorites);
+  }
+
+  // Get favorites sorted by calculated score
+  async getFavoritesByScore(): Promise<FavoriteTab[]> {
+    const favorites = await this.getFavorites();
+    return favorites.sort((a, b) => b.calculatedScore - a.calculatedScore);
+  }
+
+  // Get smart groups
+  async getSmartGroups(): Promise<{ [key: string]: FavoriteTab[] }> {
+    const favorites = await this.getFavorites();
+    await this.recalculateScores(); // Ensure scores are up to date
+
+    const sortedByScore = favorites.sort(
+      (a, b) => b.calculatedScore - a.calculatedScore
+    );
+    const sortedByRecent = favorites
+      .filter((fav) => fav.usage.lastAccess)
+      .sort((a, b) => {
+        const aTime = a.usage.lastAccess?.getTime() || 0;
+        const bTime = b.usage.lastAccess?.getTime() || 0;
+        return bTime - aTime;
+      });
+
+    return {
+      "Most Frequent": sortedByScore.slice(0, 10),
+      "High Priority": favorites.filter((fav) => fav.calculatedScore > 3.5),
+      Recent: sortedByRecent.slice(0, 10),
+    };
+  }
+
+  // Get favorites grouped by tags
+  async getFavoritesGroupedByTags(): Promise<{ [key: string]: FavoriteTab[] }> {
+    const favorites = await this.getFavorites();
+    const groups: { [key: string]: FavoriteTab[] } = {};
+
+    // Group by tags
+    favorites.forEach((favorite) => {
+      if (favorite.tags.length === 0) {
+        if (!groups["Other"]) groups["Other"] = [];
+        groups["Other"].push(favorite);
+      } else {
+        favorite.tags.forEach((tag) => {
+          if (!groups[tag]) groups[tag] = [];
+          groups[tag].push(favorite);
+        });
+      }
+    });
+
+    return groups;
   }
 }

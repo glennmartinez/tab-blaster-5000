@@ -44,9 +44,10 @@ export const useFavorites = () => {
   const addFavorite = useCallback(
     async (
       tab: { id?: number; title: string; url: string; favicon?: string },
-      tags: string[] = []
+      tags: string[] = [],
+      priority: number = 3
     ): Promise<FavoriteTab> => {
-      const favorite = await favoritesService.addFavorite(tab, tags);
+      const favorite = await favoritesService.addFavorite(tab, tags, priority);
       await loadData(); // Refresh data
       return favorite;
     },
@@ -133,6 +134,43 @@ export const useFavorites = () => {
     [favorites]
   );
 
+  // Update favorite priority
+  const updateFavoritePriority = useCallback(
+    async (favoriteId: string, priority: number): Promise<void> => {
+      await favoritesService.updateFavoritePriority(favoriteId, priority);
+      await loadData(); // Refresh data
+    },
+    [favoritesService, loadData]
+  );
+
+  // Track visit
+  const trackVisit = useCallback(
+    async (url: string): Promise<void> => {
+      await favoritesService.trackVisit(url);
+      await loadData(); // Refresh data
+    },
+    [favoritesService, loadData]
+  );
+
+  // Get favorites by score
+  const getFavoritesByScore = useCallback(async (): Promise<FavoriteTab[]> => {
+    return await favoritesService.getFavoritesByScore();
+  }, [favoritesService]);
+
+  // Get smart groups
+  const getSmartGroups = useCallback(async (): Promise<{
+    [key: string]: FavoriteTab[];
+  }> => {
+    return await favoritesService.getSmartGroups();
+  }, [favoritesService]);
+
+  // Get favorites grouped by tags
+  const getFavoritesGroupedByTags = useCallback(async (): Promise<{
+    [key: string]: FavoriteTab[];
+  }> => {
+    return await favoritesService.getFavoritesGroupedByTags();
+  }, [favoritesService]);
+
   return {
     favorites,
     tags,
@@ -147,6 +185,11 @@ export const useFavorites = () => {
     searchTags,
     getFavoritesByTags,
     getFavoriteState,
+    updateFavoritePriority,
+    trackVisit,
+    getFavoritesByScore,
+    getSmartGroups,
+    getFavoritesGroupedByTags,
     refreshData: loadData,
   };
 };

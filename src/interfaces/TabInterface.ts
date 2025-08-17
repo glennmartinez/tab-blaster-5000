@@ -8,6 +8,10 @@ export interface Tab {
   favIconUrl?: string;
   windowId: number;
   index: number;
+  usage?: {
+    visitCount: number;
+    lastAccess: Date | null;
+  };
 }
 
 /**

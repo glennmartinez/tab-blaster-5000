@@ -171,6 +171,18 @@ export const useFavorites = () => {
     return await favoritesService.getFavoritesGroupedByTags();
   }, [favoritesService]);
 
+  // Get enhanced smart groups with session integration
+  const getEnhancedSmartGroups = useCallback(async (): Promise<{
+    [key: string]: FavoriteTab[];
+  }> => {
+    return await favoritesService.getEnhancedSmartGroups();
+  }, [favoritesService]);
+
+  // Get combined analytics
+  const getCombinedAnalytics = useCallback(async () => {
+    return await favoritesService.getCombinedAnalytics();
+  }, [favoritesService]);
+
   return {
     favorites,
     tags,
@@ -190,6 +202,8 @@ export const useFavorites = () => {
     getFavoritesByScore,
     getSmartGroups,
     getFavoritesGroupedByTags,
+    getEnhancedSmartGroups,
+    getCombinedAnalytics,
     refreshData: loadData,
   };
 };

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { SessionAnalyticsService, SessionTabAnalytics } from "../services/SessionAnalyticsService";
+import {
+  SessionAnalyticsService,
+  SessionTabAnalytics,
+} from "../services/SessionAnalyticsService";
 
 export const useSessionAnalytics = () => {
   const [analytics, setAnalytics] = useState<SessionTabAnalytics[]>([]);
@@ -50,18 +53,19 @@ export const useSessionAnalytics = () => {
   // Get analytics for a specific session
   const getSessionAnalytics = useCallback(
     async (sessionId: string): Promise<SessionTabAnalytics[]> => {
-      return await sessionAnalyticsService.getSessionSpecificAnalytics(sessionId);
+      return await sessionAnalyticsService.getSessionSpecificAnalytics(
+        sessionId
+      );
     },
     [sessionAnalyticsService]
   );
 
   // Get cross-session tabs
-  const getCrossSessionTabs = useCallback(
-    async (): Promise<SessionTabAnalytics[]> => {
-      return await sessionAnalyticsService.getCrossSessionTabs();
-    },
-    [sessionAnalyticsService]
-  );
+  const getCrossSessionTabs = useCallback(async (): Promise<
+    SessionTabAnalytics[]
+  > => {
+    return await sessionAnalyticsService.getCrossSessionTabs();
+  }, [sessionAnalyticsService]);
 
   // Track a visit manually
   const trackVisit = useCallback(

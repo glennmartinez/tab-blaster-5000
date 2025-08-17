@@ -366,12 +366,12 @@ export class FavoritesService {
       this.getStorageService().fetchSessions(),
     ]);
 
-    const favoriteUrls = new Set(favorites.map(fav => fav.url));
+    const favoriteUrls = new Set(favorites.map((fav) => fav.url));
     const sessionUrls = new Set<string>();
 
-    sessions.forEach(session => {
+    sessions.forEach((session) => {
       if (session.tabs && Array.isArray(session.tabs)) {
-        session.tabs.forEach(tab => {
+        session.tabs.forEach((tab) => {
           if (tab.url) {
             sessionUrls.add(tab.url);
           }
@@ -380,7 +380,7 @@ export class FavoritesService {
     });
 
     const bothFavoriteAndSession = new Set(
-      [...favoriteUrls].filter(url => sessionUrls.has(url))
+      [...favoriteUrls].filter((url) => sessionUrls.has(url))
     );
 
     return {
@@ -411,15 +411,17 @@ export class FavoritesService {
       });
 
     // Filter favorites that are also in sessions
-    const crossPlatformFavorites = favorites.filter(fav => 
+    const crossPlatformFavorites = favorites.filter((fav) =>
       combinedAnalytics.bothFavoriteAndSession.has(fav.url)
     );
 
     return {
       "Most Frequent": sortedByScore.slice(0, 10),
       "High Priority": favorites.filter((fav) => fav.calculatedScore > 3.5),
-      "Recent": sortedByRecent.slice(0, 10),
-      "Cross-Platform": crossPlatformFavorites.sort((a, b) => b.calculatedScore - a.calculatedScore),
+      Recent: sortedByRecent.slice(0, 10),
+      "Cross-Platform": crossPlatformFavorites.sort(
+        (a, b) => b.calculatedScore - a.calculatedScore
+      ),
     };
   }
 }

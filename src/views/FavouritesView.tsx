@@ -11,7 +11,11 @@ import {
 } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { FavoriteTab } from "../services/FavoritesService";
-import { FavoriteGroup, FavoriteItem, CombinedAnalyticsView } from "../components/favorites";
+import {
+  FavoriteGroup,
+  FavoriteItem,
+  CombinedAnalyticsView,
+} from "../components/favorites";
 
 type ViewMode = "all" | "groups" | "frequent";
 type SortOption = "score" | "priority" | "alphabetical" | "recent";
@@ -256,7 +260,7 @@ const FavouritesView: React.FC = () => {
                   Top
                 </button>
               </div>
-              
+
               {/* Analytics Button */}
               <button
                 onClick={() => setShowAnalytics(true)}
@@ -503,7 +507,7 @@ const FavouritesView: React.FC = () => {
           )}
         </div>
       </div>
-      
+
       {/* Analytics Modal */}
       {showAnalytics && (
         <CombinedAnalyticsView onClose={() => setShowAnalytics(false)} />

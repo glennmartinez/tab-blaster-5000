@@ -38,16 +38,19 @@ export class SessionAnalyticsService {
             if (tab.url) {
               const existing = urlMap.get(tab.url);
               const usage = tab.usage || { visitCount: 0, lastAccess: null };
-              
+
               if (existing) {
                 // Combine data from multiple sessions
                 existing.visitCount += usage.visitCount;
                 existing.sessionNames.push(session.name);
-                
+
                 // Keep the most recent access time
                 if (usage.lastAccess) {
                   const newLastAccess = new Date(usage.lastAccess);
-                  if (!existing.lastAccess || newLastAccess > existing.lastAccess) {
+                  if (
+                    !existing.lastAccess ||
+                    newLastAccess > existing.lastAccess
+                  ) {
                     existing.lastAccess = newLastAccess;
                   }
                 }
@@ -55,9 +58,11 @@ export class SessionAnalyticsService {
                 // Create new entry
                 urlMap.set(tab.url, {
                   url: tab.url,
-                  title: tab.title || 'Untitled',
+                  title: tab.title || "Untitled",
                   visitCount: usage.visitCount,
-                  lastAccess: usage.lastAccess ? new Date(usage.lastAccess) : null,
+                  lastAccess: usage.lastAccess
+                    ? new Date(usage.lastAccess)
+                    : null,
                   sessionNames: [session.name],
                 });
               }
@@ -66,7 +71,9 @@ export class SessionAnalyticsService {
         }
       });
 
-      return Array.from(urlMap.values()).sort((a, b) => b.visitCount - a.visitCount);
+      return Array.from(urlMap.values()).sort(
+        (a, b) => b.visitCount - a.visitCount
+      );
     } catch (error) {
       console.error("Error getting session tab analytics:", error);
       return [];
@@ -74,18 +81,20 @@ export class SessionAnalyticsService {
   }
 
   // Get most visited session tabs
-  async getMostVisitedSessionTabs(limit: number = 10): Promise<SessionTabAnalytics[]> {
+  async getMostVisitedSessionTabs(
+    limit: number = 10
+  ): Promise<SessionTabAnalytics[]> {
     const analytics = await this.getSessionTabAnalytics();
-    return analytics
-      .filter(tab => tab.visitCount > 0)
-      .slice(0, limit);
+    return analytics.filter((tab) => tab.visitCount > 0).slice(0, limit);
   }
 
   // Get recently accessed session tabs
-  async getRecentSessionTabs(limit: number = 10): Promise<SessionTabAnalytics[]> {
+  async getRecentSessionTabs(
+    limit: number = 10
+  ): Promise<SessionTabAnalytics[]> {
     const analytics = await this.getSessionTabAnalytics();
     return analytics
-      .filter(tab => tab.lastAccess)
+      .filter((tab) => tab.lastAccess)
       .sort((a, b) => {
         const aTime = a.lastAccess?.getTime() || 0;
         const bTime = b.lastAccess?.getTime() || 0;
@@ -95,9 +104,11 @@ export class SessionAnalyticsService {
   }
 
   // Get session tabs by visit count threshold
-  async getHighTrafficSessionTabs(minVisits: number = 5): Promise<SessionTabAnalytics[]> {
+  async getHighTrafficSessionTabs(
+    minVisits: number = 5
+  ): Promise<SessionTabAnalytics[]> {
     const analytics = await this.getSessionTabAnalytics();
-    return analytics.filter(tab => tab.visitCount >= minVisits);
+    return analytics.filter((tab) => tab.visitCount >= minVisits);
   }
 
   // Track a visit to a session tab (called from background script)
@@ -131,20 +142,24 @@ export class SessionAnalyticsService {
   }
 
   // Get analytics for tabs in a specific session
-  async getSessionSpecificAnalytics(sessionId: string): Promise<SessionTabAnalytics[]> {
+  async getSessionSpecificAnalytics(
+    sessionId: string
+  ): Promise<SessionTabAnalytics[]> {
     try {
-      const session = await this.getStorageService().fetchSessionById(sessionId);
+      const session = await this.getStorageService().fetchSessionById(
+        sessionId
+      );
       if (!session || !session.tabs) {
         return [];
       }
 
       return session.tabs
-        .filter(tab => tab.url)
-        .map(tab => {
+        .filter((tab) => tab.url)
+        .map((tab) => {
           const usage = tab.usage || { visitCount: 0, lastAccess: null };
           return {
             url: tab.url!,
-            title: tab.title || 'Untitled',
+            title: tab.title || "Untitled",
             visitCount: usage.visitCount,
             lastAccess: usage.lastAccess ? new Date(usage.lastAccess) : null,
             sessionNames: [session.name],
@@ -160,6 +175,6 @@ export class SessionAnalyticsService {
   // Get tabs that appear in multiple sessions (cross-session tabs)
   async getCrossSessionTabs(): Promise<SessionTabAnalytics[]> {
     const analytics = await this.getSessionTabAnalytics();
-    return analytics.filter(tab => tab.sessionNames.length > 1);
+    return analytics.filter((tab) => tab.sessionNames.length > 1);
   }
 }

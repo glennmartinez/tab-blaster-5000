@@ -148,8 +148,17 @@ const FavouritesView: React.FC = () => {
   ]);
 
   const handleOpenFavourite = async (url: string) => {
-    await trackVisit(url);
+    console.log("Opening favorite:", url); // Debug log
+
+    // Open the tab first to avoid popup blockers
     window.open(url, "_blank");
+
+    // Track visit after opening (don't let tracking failures prevent opening)
+    try {
+      await trackVisit(url);
+    } catch (error) {
+      console.error("Failed to track visit:", error);
+    }
   };
 
   const handleRemoveFavourite = async (id: string) => {

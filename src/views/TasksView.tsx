@@ -9,6 +9,8 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { Task } from "../interfaces/TaskInterface";
+import { useTasks } from "../hooks/useTasks";
 
 // Modal Dialog Component for Task Editing
 interface TaskEditModalProps {
@@ -29,6 +31,7 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
     description: task.description || "",
     category: task.category,
     size: task.size,
+    priority: task.priority,
     dueDate: task.dueDate ? task.dueDate.toISOString().split("T")[0] : "",
   });
 
@@ -39,6 +42,7 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
       description: formData.description || undefined,
       category: formData.category,
       size: formData.size,
+      priority: formData.priority,
       dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
     };
     onSave(task.id, updates);
@@ -52,6 +56,7 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
       description: task.description || "",
       category: task.category,
       size: task.size,
+      priority: task.priority,
       dueDate: task.dueDate ? task.dueDate.toISOString().split("T")[0] : "",
     });
     onClose();
@@ -108,7 +113,7 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
                   Category
@@ -151,6 +156,26 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
                   <option value="XL">Extra Large (XL)</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Priority
+                </label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      priority: e.target.value as Task["priority"],
+                    })
+                  }
+                  className="w-full bg-slate-800/50 border border-slate-600/50 text-slate-200 text-sm px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -190,53 +215,14 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({
   );
 };
 
-// Task interface
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  category: "development" | "design" | "research" | "meeting" | "other";
-  size: "S" | "M" | "L" | "XL";
-  dueDate?: Date;
-  createdAt: Date;
-  status: "inbox" | "signal" | "noise" | "completed";
-}
-
-// Sample data
-const sampleTasks: Task[] = [
-  {
-    id: "1",
-    title: "Review tab management performance",
-    description: "Analyze memory usage and optimize tab handling",
-    category: "development",
-    size: "L",
-    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(),
-    status: "signal",
-  },
-  {
-    id: "2",
-    title: "Update extension icons",
-    description: "Create new icon set for the extension",
-    category: "design",
-    size: "M",
-    createdAt: new Date(),
-    status: "noise",
-  },
-  {
-    id: "3",
-    title: "Implement session analytics",
-    description: "Add detailed analytics for saved sessions",
-    category: "development",
-    size: "XL",
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(),
-    status: "inbox",
-  },
-];
-
 const TasksView: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const {
+    createTask,
+    updateTask,
+    moveTaskToStatus,
+    getTasksByStatus,
+  } = useTasks();
+
   const [currentView, setCurrentView] = useState<"triage" | "focus">("triage");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -260,27 +246,21 @@ const TasksView: React.FC = () => {
   };
 
   // Add new task
-  const addTask = () => {
+  const addTask = async () => {
     if (!newTaskTitle.trim()) return;
 
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: newTaskTitle,
-      category: "other",
-      size: "M",
-      createdAt: new Date(),
-      status: "inbox",
-    };
-
-    setTasks([...tasks, newTask]);
-    setNewTaskTitle("");
-  };
-
-  // Update task
-  const updateTask = (taskId: string, updates: Partial<Task>) => {
-    setTasks(
-      tasks.map((task) => (task.id === taskId ? { ...task, ...updates } : task))
-    );
+    try {
+      await createTask({
+        title: newTaskTitle,
+        category: "other",
+        size: "M",
+        priority: "medium",
+        status: "inbox",
+      });
+      setNewTaskTitle("");
+    } catch (error) {
+      console.error("Failed to create task:", error);
+    }
   };
 
   // Modal handlers
@@ -292,14 +272,13 @@ const TasksView: React.FC = () => {
     setEditingTask(null);
   };
 
-  const handleSaveTask = (taskId: string, updates: Partial<Task>) => {
-    updateTask(taskId, updates);
-    setEditingTask(null);
-  };
-
-  // Filter tasks by status
-  const getTasksByStatus = (status: Task["status"]) => {
-    return tasks.filter((task) => task.status === status);
+  const handleSaveTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      await updateTask(taskId, updates);
+      setEditingTask(null);
+    } catch (error) {
+      console.error("Failed to save task:", error);
+    }
   };
 
   // Drag handlers
@@ -313,10 +292,17 @@ const TasksView: React.FC = () => {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetStatus: Task["status"]) => {
+  const handleDrop = async (
+    e: React.DragEvent,
+    targetStatus: Task["status"]
+  ) => {
     e.preventDefault();
     if (draggedTask && draggedTask.status !== targetStatus) {
-      updateTask(draggedTask.id, { status: targetStatus });
+      try {
+        await moveTaskToStatus(draggedTask.id, targetStatus);
+      } catch (error) {
+        console.error("Failed to move task:", error);
+      }
     }
     setDraggedTask(null);
   };

@@ -337,9 +337,18 @@ const CurrentTaskSection: React.FC<{
   onComplete: () => void;
   onDrop: (taskId: string) => void;
   formatTime: (seconds: number) => string;
-}> = ({ currentTask, timerSeconds, isTimerRunning, onPause, onResume, onComplete, onDrop, formatTime }) => {
+}> = ({
+  currentTask,
+  timerSeconds,
+  isTimerRunning,
+  onPause,
+  onResume,
+  onComplete,
+  onDrop,
+  formatTime,
+}) => {
   const [dragOver, setDragOver] = useState(false);
-  
+
   const priorityColors = {
     high: "text-red-500",
     medium: "text-yellow-500",
@@ -367,13 +376,10 @@ const CurrentTaskSection: React.FC<{
 
   if (!currentTask) {
     return (
-      <div 
+      <div
         className={`
           bg-slate-800/40 border rounded-lg p-4 mb-6 transition-colors
-          ${dragOver 
-            ? 'border-cyan-400 bg-cyan-400/10' 
-            : 'border-slate-700/50'
-          }
+          ${dragOver ? "border-cyan-400 bg-cyan-400/10" : "border-slate-700/50"}
         `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -385,36 +391,42 @@ const CurrentTaskSection: React.FC<{
         </div>
         <div className="text-center py-8">
           <p className="text-slate-400">No task in progress</p>
-          <p className="text-slate-500 text-sm">Drag a task here to start working</p>
+          <p className="text-slate-500 text-sm">
+            Drag a task here to start working
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-4 mb-6">
+    <div className="bg-slate-800/40 border border-purple-500 animate-pulse shadow-lg shadow-purple-500/20 rounded-lg p-4 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <Play className="h-5 w-5 text-green-400" />
         <h3 className="text-lg font-medium text-slate-200">Current Task</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Task Details */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Flag className={`h-4 w-4 ${priorityColors[currentTask.priority]}`} />
-            <h4 className="text-slate-200 font-medium text-lg">{currentTask.title}</h4>
+            <Flag
+              className={`h-4 w-4 ${priorityColors[currentTask.priority]}`}
+            />
+            <h4 className="text-slate-200 font-medium text-lg">
+              {currentTask.title}
+            </h4>
             <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 rounded font-medium">
               {currentTask.size}
             </span>
           </div>
-          
+
           {currentTask.description && (
             <p className="text-slate-400 text-sm leading-relaxed">
               {currentTask.description}
             </p>
           )}
-          
+
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 rounded">
               {currentTask.category}
@@ -434,15 +446,15 @@ const CurrentTaskSection: React.FC<{
               {formatTime(timerSeconds)}
             </div>
             <p className="text-slate-400 text-sm">
-              {isTimerRunning ? 'In Progress' : 'Paused'}
+              {isTimerRunning ? "In Progress" : "Paused"}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {isTimerRunning ? (
               <button
                 onClick={onPause}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-lg transition-colors"
               >
                 <Pause className="h-4 w-4" />
                 Pause
@@ -450,22 +462,76 @@ const CurrentTaskSection: React.FC<{
             ) : (
               <button
                 onClick={onResume}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-colors"
               >
                 <Play className="h-4 w-4" />
                 Resume
               </button>
             )}
-            
+
             <button
               onClick={onComplete}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-colors"
             >
               <Check className="h-4 w-4" />
               Complete
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const DoneSection: React.FC<{
+  tasks: Task[];
+  viewMode: "focus" | "pool";
+}> = ({ tasks, viewMode }) => {
+  const doneTasks = tasks.filter((task) => task.status === "done");
+
+  const maxHeight = viewMode === "focus" ? "max-h-48" : "max-h-32";
+
+  return (
+    <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Check className="h-4 w-4 text-green-400" />
+        <h3 className="text-sm font-medium text-slate-300">
+          Done ({doneTasks.length})
+        </h3>
+      </div>
+
+      <div className={`${maxHeight} overflow-y-auto space-y-2`}>
+        {doneTasks.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-slate-500 text-sm">No completed tasks</p>
+          </div>
+        ) : (
+          doneTasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-slate-800/40 border border-slate-700/30 rounded p-2 opacity-60"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-slate-300 text-sm line-through">
+                    {task.title}
+                  </h4>
+                  {task.description && (
+                    <p className="text-slate-500 text-xs mt-1 line-clamp-1">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <span className="text-xs px-1.5 py-0.5 bg-slate-700/30 text-slate-400 rounded">
+                    {task.size}
+                  </span>
+                  <Check className="h-3 w-3 text-green-400" />
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -478,7 +544,14 @@ const TimeSlotSection: React.FC<{
   onStartTask: (task: Task) => void;
   currentTask?: Task | null;
   currentHour: number;
-}> = ({ timeSlot, onDrop, onUnschedule, onStartTask, currentTask, currentHour }) => {
+}> = ({
+  timeSlot,
+  onDrop,
+  onUnschedule,
+  onStartTask,
+  currentTask,
+  currentHour,
+}) => {
   const [dragOver, setDragOver] = useState(false);
   const isActiveTime =
     currentHour >= timeSlot.startHour && currentHour < timeSlot.endHour;
@@ -576,7 +649,7 @@ const FocusTaskCard: React.FC<{
 }> = ({ task, onUnschedule, onStartTask, isCurrentTask = false }) => {
   const priorityColors = {
     high: "text-red-500",
-    medium: "text-yellow-500", 
+    medium: "text-yellow-500",
     low: "text-blue-500",
   };
 
@@ -588,9 +661,10 @@ const FocusTaskCard: React.FC<{
     <div
       className={`
         bg-slate-800/40 border rounded-lg p-3 hover:bg-slate-800/60 transition-colors cursor-move group relative
-        ${isCurrentTask 
-          ? 'border-purple-500 animate-pulse shadow-lg shadow-purple-500/20' 
-          : 'border-slate-700/50'
+        ${
+          isCurrentTask
+            ? "border-purple-500 animate-pulse shadow-lg shadow-purple-500/20"
+            : "border-slate-700/50"
         }
       `}
       draggable
@@ -797,8 +871,31 @@ const WeekNavBar: React.FC<{
 
 const TaskPool: React.FC<{
   weekTasks: Task[];
+  tasks: Task[];
   onTaskEdit: (task: Task) => void;
-}> = ({ weekTasks, onTaskEdit }) => {
+  onUnscheduleTask?: (taskId: string) => void;
+}> = ({ weekTasks, tasks, onTaskEdit, onUnscheduleTask }) => {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const taskId = e.dataTransfer.getData("taskId");
+    if (taskId && onUnscheduleTask) {
+      onUnscheduleTask(taskId);
+    }
+  };
+
   // Group tasks by priority
   const tasksByPriority = {
     high: weekTasks.filter((task) => task.priority === "high"),
@@ -853,13 +950,30 @@ const TaskPool: React.FC<{
   };
 
   return (
-    <div className="w-80 bg-slate-900/50 border-r border-slate-700/50 p-4 overflow-y-auto">
+    <div
+      className={`
+        w-80 border-r p-4 overflow-y-auto transition-colors
+        ${
+          dragOver
+            ? "bg-slate-900/70 border-cyan-500/50"
+            : "bg-slate-900/50 border-slate-700/50"
+        }
+      `}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="flex items-center gap-2 mb-4">
         <Target className="h-5 w-5 text-cyan-400" />
         <h3 className="text-lg font-medium text-slate-200">Task Pool</h3>
         <span className="text-xs bg-slate-800/50 text-slate-400 px-2 py-1 rounded-full">
           {weekTasks.length}
         </span>
+        {dragOver && (
+          <span className="text-xs bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded-full animate-pulse">
+            Drop to unschedule
+          </span>
+        )}
       </div>
 
       {weekTasks.length === 0 ? (
@@ -910,6 +1024,11 @@ const TaskPool: React.FC<{
           )}
         </div>
       )}
+
+      {/* Done Tasks - smaller section at bottom */}
+      <div className="mt-6">
+        <DoneSection tasks={tasks} viewMode="pool" />
+      </div>
     </div>
   );
 };
@@ -1009,9 +1128,10 @@ const WeeklyPlanTaskCard: React.FC<{
 
   return (
     <div
-      className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2 hover:bg-slate-800/80 transition-colors cursor-pointer group"
+      className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2 hover:bg-slate-800/80 transition-colors cursor-move group"
       draggable
       onDragStart={handleDragStart}
+      title="Drag to Task Pool to unschedule, or click to edit"
       onClick={() => onEdit(task)}
     >
       <div className="flex items-start justify-between mb-1">
@@ -1110,7 +1230,9 @@ const TasksView: React.FC = () => {
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
   const [timeSlotTasks, setTimeSlotTasks] = useState<{
     [key in TimeSlot["id"]]: Task[];
   }>({
@@ -1215,11 +1337,11 @@ const TasksView: React.FC = () => {
     setCurrentTask(task);
     setTimerSeconds(0);
     setIsTimerRunning(true);
-    
+
     const interval = setInterval(() => {
-      setTimerSeconds(prev => prev + 1);
+      setTimerSeconds((prev) => prev + 1);
     }, 1000);
-    
+
     setTimerInterval(interval);
   };
 
@@ -1234,14 +1356,14 @@ const TasksView: React.FC = () => {
   const resumeTimer = () => {
     setIsTimerRunning(true);
     const interval = setInterval(() => {
-      setTimerSeconds(prev => prev + 1);
+      setTimerSeconds((prev) => prev + 1);
     }, 1000);
     setTimerInterval(interval);
   };
 
   const completeCurrentTask = async () => {
     if (!currentTask) return;
-    
+
     try {
       await updateTask(currentTask.id, { status: "done" });
       setCurrentTask(null);
@@ -1257,7 +1379,7 @@ const TasksView: React.FC = () => {
   };
 
   const handleCurrentTaskDrop = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (task) {
       startTask(task);
     }
@@ -1266,7 +1388,9 @@ const TasksView: React.FC = () => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   // Clean up timer on unmount
@@ -1559,7 +1683,7 @@ const TasksView: React.FC = () => {
 
     const getSectionStyle = (section: string) => {
       const baseStyle =
-        "flex-1 border-2 border-dashed rounded-lg p-3 transition-all duration-200";
+        "border-2 border-dashed rounded-lg p-3 transition-all duration-200";
       let colorStyle = "border-slate-600/50";
 
       if (dragOverSection === section) {
@@ -1589,8 +1713,18 @@ const TasksView: React.FC = () => {
         await handleSectionDrop(e, section);
       };
 
+      // Use a memoized callback to prevent unnecessary re-renders
+      const handleTaskClick = useCallback(
+        (task: Task) => (e: React.MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleEditTask(task);
+        },
+        []
+      );
+
       return (
-        <div className="flex-1 flex flex-col">
+        <div className="mb-4">
           <div className={`border-l-4 ${borderAccent} pl-3 mb-2`}>
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-medium text-slate-300">{title}</h4>
@@ -1601,20 +1735,30 @@ const TasksView: React.FC = () => {
           </div>
 
           <div
-            className={getSectionStyle(section)}
+            className={`${getSectionStyle(section)}`}
+            style={{
+              height:
+                sectionTasks.length === 0
+                  ? "33vh"
+                  : `max(33vh, ${sectionTasks.length * 80 + 24}px)`,
+            }}
             onDragOver={(e) => handleSectionDragOver(e, section)}
             onDragLeave={handleSectionDragLeave}
             onDrop={handleWeekDrop}
           >
             {sectionTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-500">
+              <div className="flex flex-col items-center justify-center h-24 text-slate-500">
                 <Calendar className="h-6 w-6 mb-2 opacity-50" />
                 <p className="text-xs text-center">Drop tasks here</p>
               </div>
             ) : (
-              <div className="space-y-1 overflow-y-auto max-h-full">
+              <div className="space-y-1 p-1">
                 {sectionTasks.map((task) => (
-                  <div key={task.id} onClick={() => handleEditTask(task)}>
+                  <div
+                    key={task.id}
+                    onClick={handleTaskClick(task)}
+                    className="cursor-pointer"
+                  >
                     <TaskCard task={task} />
                   </div>
                 ))}
@@ -1624,7 +1768,6 @@ const TasksView: React.FC = () => {
         </div>
       );
     };
-
     return (
       <div className="flex-1 min-w-0">
         <div
@@ -1642,7 +1785,7 @@ const TasksView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 p-2 flex flex-col gap-2 min-h-0">
+          <div className="p-2">
             <WeekSection
               section="current"
               title={formatWeekLabel(currentWeekStart)}
@@ -1691,16 +1834,21 @@ const TasksView: React.FC = () => {
   const getFocusTasks = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Use selectedDay if it's today, otherwise default to today
-    const targetDay = selectedDay.toDateString() === today.toDateString() ? selectedDay : today;
-    
+    const targetDay =
+      selectedDay.toDateString() === today.toDateString() ? selectedDay : today;
+
     return tasks.filter((task: Task) => {
       if (!task.dueDate) {
         // Include tasks with no due date that are not noise (for today only)
-        return targetDay.toDateString() === today.toDateString() && task.status !== "noise" && task.status !== "done";
+        return (
+          targetDay.toDateString() === today.toDateString() &&
+          task.status !== "noise" &&
+          task.status !== "done"
+        );
       }
-      
+
       const taskDate = new Date(task.dueDate);
       return (
         taskDate.toDateString() === targetDay.toDateString() &&
@@ -2053,7 +2201,9 @@ const TasksView: React.FC = () => {
               {/* Left: Task Pool */}
               <TaskPool
                 weekTasks={getUnscheduledWeekTasks()}
+                tasks={tasks}
                 onTaskEdit={handleEditTask}
+                onUnscheduleTask={handleUnscheduleTask}
               />
 
               {/* Right: Selected Day with Time Slots */}
@@ -2167,6 +2317,9 @@ const TasksView: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Done Tasks */}
+            <DoneSection tasks={tasks} viewMode="focus" />
           </div>
         )}
       </div>

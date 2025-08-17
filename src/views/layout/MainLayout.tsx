@@ -9,9 +9,12 @@ import {
   SessionPanel,
   SessionsSidebar,
   BookmarksPanel,
+  FavoritesSidebar,
+  TasksSidebar,
 } from "../../components";
 import SettingsView from "../settings/SettingsView";
 import FavouritesView from "../FavouritesView";
+import TasksView from "../TasksView";
 
 // Interface for the component props
 interface FuturisticViewProps {
@@ -39,7 +42,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeView, setActiveView] = useState<
-    "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
+    "windows" | "sessions" | "settings" | "favourites" | "bookmarks" | "tasks"
   >("windows");
   const [expandedWindows, setExpandedWindows] = useState<{
     [windowId: number]: boolean;
@@ -179,7 +182,13 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
 
   // Clear selected session and restore active windows when switching views
   const handleViewChange = (
-    view: "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
+    view:
+      | "windows"
+      | "sessions"
+      | "settings"
+      | "favourites"
+      | "bookmarks"
+      | "tasks"
   ) => {
     setActiveView(view);
     if (view === "windows") {
@@ -239,6 +248,10 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
       );
     }
 
+    if (activeView === "tasks") {
+      return <TasksView />;
+    }
+
     // Default content - Active Windows or Sessions
     return (
       <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg overflow-hidden flex flex-col h-full">
@@ -277,6 +290,31 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
         </div>
       </div>
     );
+  };
+
+  // Render the right sidebar based on active view
+  const renderRightSidebar = () => {
+    switch (activeView) {
+      case "tasks":
+        return <TasksSidebar />;
+      case "favourites":
+        return <FavoritesSidebar />;
+      case "windows":
+      case "sessions":
+      case "bookmarks":
+      default:
+        return (
+          <SessionsSidebar
+            sessionSummaries={sessionSummaries}
+            loading={sessionsLoading}
+            onSelectSession={selectSession}
+            onRefreshSessions={fetchSessionSummaries}
+            onDeleteSession={handleDeleteSession}
+            onRestoreSession={handleRestoreSession}
+            onCreateSession={handleCreateSession}
+          />
+        );
+    }
   };
 
   // Handle navigation back from settings
@@ -347,17 +385,9 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
             {renderMainContent()}
           </div>
 
-          {/* Right sidebar - Sessions */}
+          {/* Right sidebar - Contextual */}
           <div className="col-span-12 lg:col-span-3 overflow-y-auto h-full">
-            <SessionsSidebar
-              sessionSummaries={sessionSummaries}
-              loading={sessionsLoading}
-              onSelectSession={selectSession}
-              onRefreshSessions={fetchSessionSummaries}
-              onDeleteSession={handleDeleteSession}
-              onRestoreSession={handleRestoreSession}
-              onCreateSession={handleCreateSession}
-            />
+            {renderRightSidebar()}
           </div>
         </div>
       </div>

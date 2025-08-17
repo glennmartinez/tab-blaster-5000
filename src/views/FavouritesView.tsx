@@ -7,10 +7,15 @@ import {
   List,
   Star,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { FavoriteTab } from "../services/FavoritesService";
-import { FavoriteGroup, FavoriteItem } from "../components/favorites";
+import {
+  FavoriteGroup,
+  FavoriteItem,
+  CombinedAnalyticsView,
+} from "../components/favorites";
 
 type ViewMode = "all" | "groups" | "frequent";
 type SortOption = "score" | "priority" | "alphabetical" | "recent";
@@ -32,6 +37,7 @@ const FavouritesView: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [sortOption, setSortOption] = useState<SortOption>("score");
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [filteredFavourites, setFilteredFavourites] = useState<FavoriteTab[]>(
     []
   );
@@ -103,7 +109,7 @@ const FavouritesView: React.FC = () => {
     };
 
     filterAndSortFavorites();
-  }, [favorites, searchQuery, selectedTags, sortOption]);
+  }, [favorites, searchQuery, selectedTags, sortOption, applyFilters]);
 
   // Load groups when needed
   useEffect(() => {
@@ -227,39 +233,51 @@ const FavouritesView: React.FC = () => {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg p-1">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("all")}
+                  className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
+                    viewMode === "all"
+                      ? "bg-cyan-500 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  All
+                </button>
+                <button
+                  onClick={() => setViewMode("groups")}
+                  className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
+                    viewMode === "groups"
+                      ? "bg-cyan-500 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  Groups
+                </button>
+                <button
+                  onClick={() => setViewMode("frequent")}
+                  className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
+                    viewMode === "frequent"
+                      ? "bg-cyan-500 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Top
+                </button>
+              </div>
+
+              {/* Analytics Button */}
               <button
-                onClick={() => setViewMode("all")}
-                className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
-                  viewMode === "all"
-                    ? "bg-cyan-500 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                onClick={() => setShowAnalytics(true)}
+                className="px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors flex items-center gap-2"
+                title="View Combined Analytics"
               >
-                <List className="w-4 h-4" />
-                All
-              </button>
-              <button
-                onClick={() => setViewMode("groups")}
-                className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
-                  viewMode === "groups"
-                    ? "bg-cyan-500 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                Groups
-              </button>
-              <button
-                onClick={() => setViewMode("frequent")}
-                className={`px-3 py-1 rounded text-sm flex items-center gap-2 transition-colors ${
-                  viewMode === "frequent"
-                    ? "bg-cyan-500 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <TrendingUp className="w-4 h-4" />
-                Top
+                <BarChart3 className="w-4 h-4" />
+                Analytics
               </button>
             </div>
           </div>
@@ -498,6 +516,11 @@ const FavouritesView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <CombinedAnalyticsView onClose={() => setShowAnalytics(false)} />
+      )}
     </div>
   );
 };

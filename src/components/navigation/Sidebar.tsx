@@ -8,12 +8,25 @@ import {
   Settings,
   Heart,
   Bookmark,
+  CheckSquare,
 } from "lucide-react";
 
 interface FuturisticSidebarProps {
-  activeView: "windows" | "sessions" | "settings" | "favourites" | "bookmarks";
+  activeView:
+    | "windows"
+    | "sessions"
+    | "settings"
+    | "favourites"
+    | "bookmarks"
+    | "tasks";
   handleViewChange: (
-    view: "windows" | "sessions" | "settings" | "favourites" | "bookmarks"
+    view:
+      | "windows"
+      | "sessions"
+      | "settings"
+      | "favourites"
+      | "bookmarks"
+      | "tasks"
   ) => void;
   systemStatus: number;
   securityLevel: number;
@@ -50,6 +63,12 @@ const Sidebar: React.FC<FuturisticSidebarProps> = ({
           label="Bookmarks"
           active={activeView === "bookmarks"}
           onClick={() => handleViewChange("bookmarks")}
+        />
+        <NavItem
+          icon={CheckSquare}
+          label="Tasks"
+          active={activeView === "tasks"}
+          onClick={() => handleViewChange("tasks")}
         />
         <NavItem
           icon={Database}

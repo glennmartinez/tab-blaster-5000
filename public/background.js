@@ -34,37 +34,64 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     console.log('Tab updated:', tabId, tab.url);
     
-    // Track visit for favorites
-    trackFavoriteVisit(tab.url);
+    // Track visit for both favorites and session tabs
+    trackVisit(tab.url);
   }
 });
 
-// Function to track favorite visits
-async function trackFavoriteVisit(url) {
+// Function to track visits for favorites and session tabs
+async function trackVisit(url) {
   try {
-    // Get favorites from storage
-    const result = await chrome.storage.local.get('favourites');
+    // Get both favorites and sessions from storage
+    const result = await chrome.storage.local.get(['favourites', 'sessions']);
     const favorites = result.favourites || [];
+    const sessions = result.sessions || [];
     
-    // Find matching favorite
+    let updated = false;
+
+    // Track visit for favorites
     const favoriteIndex = favorites.findIndex(fav => fav.url === url);
-    
     if (favoriteIndex !== -1) {
-      // Update visit count and last access
+      // Update visit count and last access for favorite
       favorites[favoriteIndex].usage = favorites[favoriteIndex].usage || { visitCount: 0, lastAccess: null };
       favorites[favoriteIndex].usage.visitCount++;
       favorites[favoriteIndex].usage.lastAccess = new Date().toISOString();
-      
-      // Recalculate score
-      recalculateScores(favorites);
-      
-      // Save back to storage
-      await chrome.storage.local.set({ favourites: favorites });
+      updated = true;
       
       console.log('Updated favorite visit for:', url);
     }
+
+    // Track visit for tabs in sessions
+    sessions.forEach(session => {
+      if (session.tabs && Array.isArray(session.tabs)) {
+        session.tabs.forEach(tab => {
+          if (tab.url === url) {
+            // Initialize usage tracking for session tabs
+            tab.usage = tab.usage || { visitCount: 0, lastAccess: null };
+            tab.usage.visitCount++;
+            tab.usage.lastAccess = new Date().toISOString();
+            updated = true;
+            
+            console.log('Updated session tab visit for:', url, 'in session:', session.name);
+          }
+        });
+      }
+    });
+
+    // Save back to storage if anything was updated
+    if (updated) {
+      // Recalculate scores for favorites
+      if (favoriteIndex !== -1) {
+        recalculateScores(favorites);
+      }
+      
+      await chrome.storage.local.set({ 
+        favourites: favorites,
+        sessions: sessions 
+      });
+    }
   } catch (error) {
-    console.error('Error tracking favorite visit:', error);
+    console.error('Error tracking visit:', error);
   }
 }
 
@@ -107,12 +134,19 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // Function to recalculate all scores
 async function recalculateFavoriteScores() {
   try {
-    const result = await chrome.storage.local.get('favourites');
+    const result = await chrome.storage.local.get(['favourites', 'sessions']);
     const favorites = result.favourites || [];
+    const sessions = result.sessions || [];
     
+    // Recalculate scores for favorites
     recalculateScores(favorites);
     
-    await chrome.storage.local.set({ favourites: favorites });
+    // Update sessions with any usage data (no scoring for sessions, just preserve the usage data)
+    
+    await chrome.storage.local.set({ 
+      favourites: favorites,
+      sessions: sessions 
+    });
     console.log('Daily score recalculation completed');
   } catch (error) {
     console.error('Error during daily score recalculation:', error);

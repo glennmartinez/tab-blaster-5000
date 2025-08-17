@@ -354,4 +354,74 @@ export class FavoritesService {
 
     return groups;
   }
+
+  // Integration with session analytics
+  async getCombinedAnalytics(): Promise<{
+    favoriteUrls: Set<string>;
+    sessionUrls: Set<string>;
+    bothFavoriteAndSession: Set<string>;
+  }> {
+    const [favorites, sessions] = await Promise.all([
+      this.getFavorites(),
+      this.getStorageService().fetchSessions(),
+    ]);
+
+    const favoriteUrls = new Set(favorites.map((fav) => fav.url));
+    const sessionUrls = new Set<string>();
+
+    sessions.forEach((session) => {
+      if (session.tabs && Array.isArray(session.tabs)) {
+        session.tabs.forEach((tab) => {
+          if (tab.url) {
+            sessionUrls.add(tab.url);
+          }
+        });
+      }
+    });
+
+    const bothFavoriteAndSession = new Set(
+      [...favoriteUrls].filter((url) => sessionUrls.has(url))
+    );
+
+    return {
+      favoriteUrls,
+      sessionUrls,
+      bothFavoriteAndSession,
+    };
+  }
+
+  // Get enhanced smart groups that include session data
+  async getEnhancedSmartGroups(): Promise<{ [key: string]: FavoriteTab[] }> {
+    const [favorites, combinedAnalytics] = await Promise.all([
+      this.getFavorites(),
+      this.getCombinedAnalytics(),
+    ]);
+
+    await this.recalculateScores(); // Ensure scores are up to date
+
+    const sortedByScore = favorites.sort(
+      (a, b) => b.calculatedScore - a.calculatedScore
+    );
+    const sortedByRecent = favorites
+      .filter((fav) => fav.usage.lastAccess)
+      .sort((a, b) => {
+        const aTime = a.usage.lastAccess?.getTime() || 0;
+        const bTime = b.usage.lastAccess?.getTime() || 0;
+        return bTime - aTime;
+      });
+
+    // Filter favorites that are also in sessions
+    const crossPlatformFavorites = favorites.filter((fav) =>
+      combinedAnalytics.bothFavoriteAndSession.has(fav.url)
+    );
+
+    return {
+      "Most Frequent": sortedByScore.slice(0, 10),
+      "High Priority": favorites.filter((fav) => fav.calculatedScore > 3.5),
+      Recent: sortedByRecent.slice(0, 10),
+      "Cross-Platform": crossPlatformFavorites.sort(
+        (a, b) => b.calculatedScore - a.calculatedScore
+      ),
+    };
+  }
 }

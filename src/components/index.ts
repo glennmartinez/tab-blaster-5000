@@ -24,3 +24,9 @@ export * from "./settings";
 
 // Window components
 export * from "./windows";
+
+// Favorites components
+export * from "./favorites";
+
+// Tasks components
+export * from "./tasks";

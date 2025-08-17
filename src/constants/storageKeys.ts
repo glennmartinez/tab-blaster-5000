@@ -10,4 +10,5 @@ export const STORAGE_KEYS = {
   SETTINGS: "settings",
   METRICS: "metrics",
   STORAGE_PREFERENCE: "storagePreference",
+  TASKS: "tasks",
 };

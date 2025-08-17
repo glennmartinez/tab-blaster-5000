@@ -1,7 +1,11 @@
 import React from "react";
 import { Heart, Star, TrendingUp, Clock } from "lucide-react";
 
-const FavoritesSidebar: React.FC = () => {
+interface FavouritesSidebarProps {
+  // Add props as needed for favourites management
+}
+
+const FavouritesSidebar: React.FC<FavouritesSidebarProps> = () => {
   return (
     <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-4 h-full flex flex-col">
       {/* Header */}
@@ -103,4 +107,4 @@ const FavoritesSidebar: React.FC = () => {
   );
 };
 
-export default FavoritesSidebar;
+export default FavouritesSidebar;

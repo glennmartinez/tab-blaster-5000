@@ -7,6 +7,7 @@ export interface Task {
   priority: "low" | "medium" | "high";
   status: "inbox" | "signal" | "noise" | "done";
   dueDate?: Date;
+  schedule?: "morning" | "midday" | "evening";
   createdAt: Date;
   updatedAt: Date;
   tags?: string[];

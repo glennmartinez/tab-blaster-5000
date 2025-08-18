@@ -15,4 +15,5 @@ export interface SessionInterface {
   saveSettings<T>(settings: T): Promise<void>;
   get(key: string): Promise<Record<string, unknown>>;
   set(data: Record<string, unknown>): Promise<void>;
+  remove(keys: string[]): Promise<void>;
 }

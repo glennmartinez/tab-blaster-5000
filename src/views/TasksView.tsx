@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Task } from "../interfaces/TaskInterface";
 import { useTasks } from "../hooks/useTasks";
+import { useFocusSession } from "../hooks/useFocusSession";
 
 // Modal Dialog Component for Task Editing
 interface TaskEditModalProps {
@@ -762,8 +763,8 @@ const WeekNavBar: React.FC<{
   currentWeek,
 }) => {
   return (
-    <div className="bg-slate-800/40 border-b border-slate-700/50 p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-slate-800/40 border-b border-slate-700/50 p-4 w-full">
+      <div className="flex items-center justify-between mb-4 w-full">
         <div className="flex items-center gap-3">
           <Calendar className="h-6 w-6 text-green-400" />
           <div>
@@ -835,12 +836,12 @@ const WeekNavBar: React.FC<{
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto w-full min-w-full">
         {days.map((day) => (
           <button
             key={day.date.toISOString()}
             onClick={() => onDaySelect(day.date)}
-            className={`flex-shrink-0 px-4 py-3 rounded-lg border transition-all duration-200 ${
+            className={`flex-shrink-0 flex-grow px-4 py-3 rounded-lg border transition-all duration-200 min-w-[100px] ${
               day.date.toDateString() === selectedDay.toDateString()
                 ? "bg-green-500/20 border-green-500/50 text-green-300"
                 : day.isToday
@@ -1164,6 +1165,13 @@ const WeeklyPlanTaskCard: React.FC<{
 const TasksView: React.FC = () => {
   const { tasks, createTask, updateTask, moveTaskToStatus, getTasksByStatus } =
     useTasks();
+  
+  const {
+    currentSession,
+    currentDuration,
+    startFocusSession,
+    endSession
+  } = useFocusSession();
 
   const [currentView, setCurrentView] = useState<"triage" | "weekly" | "focus">(
     "triage"
@@ -1227,12 +1235,6 @@ const TasksView: React.FC = () => {
 
   // Focus View Logic
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
-  const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
-    null
-  );
   const [timeSlotTasks, setTimeSlotTasks] = useState<{
     [key in TimeSlot["id"]]: Task[];
   }>({
@@ -1240,6 +1242,11 @@ const TasksView: React.FC = () => {
     midday: [],
     evening: [],
   });
+
+  // Get current task from focus session
+  const currentTask = currentSession ? tasks.find(t => t.id === currentSession.taskId) || null : null;
+  const isTimerRunning = !!currentSession; // Session exists = timer running
+  const timerSeconds = currentDuration; // currentDuration is already in seconds
 
   // Update current time every minute
   useEffect(() => {
@@ -1332,47 +1339,43 @@ const TasksView: React.FC = () => {
     };
   };
 
-  // Timer control functions
-  const startTask = (task: Task) => {
-    setCurrentTask(task);
-    setTimerSeconds(0);
-    setIsTimerRunning(true);
-
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => prev + 1);
-    }, 1000);
-
-    setTimerInterval(interval);
-  };
-
-  const pauseTimer = () => {
-    setIsTimerRunning(false);
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerInterval(null);
+  // Timer control functions - now using simplified focus session service
+  const startTask = async (task: Task) => {
+    try {
+      await startFocusSession(task);
+    } catch (error) {
+      console.error("Failed to start focus session:", error);
     }
   };
 
-  const resumeTimer = () => {
-    setIsTimerRunning(true);
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => prev + 1);
-    }, 1000);
-    setTimerInterval(interval);
+  const pauseTimer = async () => {
+    // With simplified system, pausing = ending the current session
+    try {
+      await endSession();
+    } catch (error) {
+      console.error("Failed to end session:", error);
+    }
+  };
+
+  const resumeTimer = async () => {
+    // With simplified system, resuming = starting a new session for the same task
+    if (currentTask) {
+      try {
+        await startFocusSession(currentTask);
+      } catch (error) {
+        console.error("Failed to resume session:", error);
+      }
+    }
   };
 
   const completeCurrentTask = async () => {
     if (!currentTask) return;
 
     try {
+      // End the session (session completion handled in service)
+      await endSession();
+      // Update task status to done
       await updateTask(currentTask.id, { status: "done" });
-      setCurrentTask(null);
-      setTimerSeconds(0);
-      setIsTimerRunning(false);
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        setTimerInterval(null);
-      }
     } catch (error) {
       console.error("Failed to complete task:", error);
     }
@@ -1392,15 +1395,6 @@ const TasksView: React.FC = () => {
       .toString()
       .padStart(2, "0")}`;
   };
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-      }
-    };
-  }, [timerInterval]);
 
   // Define time slots
   const timeSlots: TimeSlot[] = [

@@ -44,6 +44,11 @@ export class StorageFactory {
         break;
     }
 
+    // Ensure we always return a valid instance
+    if (!this.instance) {
+      this.instance = new LocalStorageService();
+    }
+
     return this.instance;
   }
 

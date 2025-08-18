@@ -157,4 +157,18 @@ export class LocalStorageService implements SessionInterface {
       throw error;
     }
   }
+
+  /**
+   * Remove data from localStorage
+   */
+  async remove(keys: string[]): Promise<void> {
+    try {
+      keys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      console.error("Error removing data:", error);
+      throw error;
+    }
+  }
 }

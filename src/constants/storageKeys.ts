@@ -11,4 +11,7 @@ export const STORAGE_KEYS = {
   METRICS: "metrics",
   STORAGE_PREFERENCE: "storagePreference",
   TASKS: "tasks",
+  // Focus session keys
+  CURRENT_FOCUS_SESSION: "currentFocusSession",
+  TASK_FOCUS_DATA: "taskFocusData",
 };

@@ -478,6 +478,41 @@ class DriveStorageService implements SessionInterface {
       throw error;
     }
   }
+
+  /**
+   * Remove data from Google Drive
+   */
+  async remove(keys: string[]): Promise<void> {
+    try {
+      for (const key of keys) {
+        const fileName = `${key}.json`;
+        
+        // Search for existing file
+        const files = await DriveStorageService.listFiles(`name='${fileName}'`);
+        
+        if (files.length > 0) {
+          // Delete the file
+          const token = await DriveStorageService.getAuthToken();
+          const response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${files[0].id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          
+          if (!response.ok) {
+            throw new Error(`Failed to delete file: ${response.statusText}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error removing data from Google Drive:", error);
+      throw error;
+    }
+  }
 }
 
 export default DriveStorageService;

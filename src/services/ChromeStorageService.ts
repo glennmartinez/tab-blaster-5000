@@ -219,4 +219,24 @@ export class ChromeStorageService implements SessionInterface {
       });
     });
   }
+
+  /**
+   * Remove data from storage
+   */
+  async remove(keys: string[]): Promise<void> {
+    if (!chrome?.storage) {
+      console.warn("Chrome storage API not available");
+      throw new Error("Chrome storage API not available");
+    }
+
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.remove(keys, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
 }

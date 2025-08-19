@@ -3,16 +3,26 @@ import { StorageFactory } from "./StorageFactory";
 import { STORAGE_KEYS } from "../constants/storageKeys";
 
 export class TasksService {
-  private storage = StorageFactory.getStorageService();
+  /**
+   * Get the current storage service (dynamic lookup)
+   */
+  private getStorage() {
+    return StorageFactory.getStorageService();
+  }
 
   /**
    * Get all tasks from storage
    */
   async getTasks(): Promise<Task[]> {
     try {
-      const data = await this.storage.get(STORAGE_KEYS.TASKS);
+      const storage = this.getStorage();
+      console.log(`TasksService.getTasks() using storage: ${storage.constructor.name}`);
+      
+      const data = await storage.get(STORAGE_KEYS.TASKS);
       const tasks = (data[STORAGE_KEYS.TASKS] as Task[]) || [];
 
+      console.log(`Retrieved ${tasks.length} tasks from storage`);
+      
       // Convert date strings back to Date objects
       return tasks.map((task) => ({
         ...task,
@@ -31,9 +41,14 @@ export class TasksService {
    */
   async saveTasks(tasks: Task[]): Promise<void> {
     try {
-      await this.storage.set({
+      const storage = this.getStorage();
+      console.log(`TasksService.saveTasks() saving ${tasks.length} tasks using storage: ${storage.constructor.name}`);
+      
+      await storage.set({
         [STORAGE_KEYS.TASKS]: tasks,
       });
+      
+      console.log(`✅ Successfully saved ${tasks.length} tasks to storage`);
     } catch (error) {
       console.error("Error saving tasks:", error);
       throw error;

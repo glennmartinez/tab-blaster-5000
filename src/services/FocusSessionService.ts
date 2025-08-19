@@ -4,7 +4,12 @@ import { StorageFactory } from "./StorageFactory";
 import { STORAGE_KEYS } from "../constants/storageKeys";
 
 export class FocusSessionService {
-  private storage = StorageFactory.getStorageService();
+  /**
+   * Get the current storage service (dynamic lookup)
+   */
+  private getStorage() {
+    return StorageFactory.getStorageService();
+  }
 
   /**
    * Start a new focus session for a task
@@ -72,7 +77,7 @@ export class FocusSessionService {
   async getCurrentSession(): Promise<FocusSession | null> {
     console.log("📊 Getting current session..."); // Debug log
     try {
-      const data = await this.storage.get(STORAGE_KEYS.CURRENT_FOCUS_SESSION);
+      const data = await this.getStorage().get(STORAGE_KEYS.CURRENT_FOCUS_SESSION);
       const session = data[STORAGE_KEYS.CURRENT_FOCUS_SESSION] as FocusSession;
       console.log("📊 Current session retrieved:", session); // Debug log
 
@@ -95,7 +100,7 @@ export class FocusSessionService {
    */
   private async setCurrentSession(session: FocusSession): Promise<void> {
     console.log("📊 Setting current session in storage:", session); // Debug log
-    await this.storage.set({
+    await this.getStorage().set({
       [STORAGE_KEYS.CURRENT_FOCUS_SESSION]: session,
     });
     console.log("📊 Session saved to storage successfully"); // Debug log
@@ -105,7 +110,7 @@ export class FocusSessionService {
    * Clear current active session
    */
   private async clearCurrentSession(): Promise<void> {
-    await this.storage.remove([STORAGE_KEYS.CURRENT_FOCUS_SESSION]);
+    await this.getStorage().remove([STORAGE_KEYS.CURRENT_FOCUS_SESSION]);
   }
 
   /**
@@ -241,7 +246,7 @@ export class FocusSessionService {
    */
   async getTaskFocusData(taskId: string): Promise<TaskFocusData> {
     try {
-      const data = await this.storage.get(STORAGE_KEYS.TASK_FOCUS_DATA);
+      const data = await this.getStorage().get(STORAGE_KEYS.TASK_FOCUS_DATA);
       const allTaskData =
         (data[STORAGE_KEYS.TASK_FOCUS_DATA] as {
           [taskId: string]: TaskFocusData;
@@ -283,7 +288,7 @@ export class FocusSessionService {
    */
   private async saveTaskFocusData(taskData: TaskFocusData): Promise<void> {
     try {
-      const data = await this.storage.get(STORAGE_KEYS.TASK_FOCUS_DATA);
+      const data = await this.getStorage().get(STORAGE_KEYS.TASK_FOCUS_DATA);
       const allTaskData =
         (data[STORAGE_KEYS.TASK_FOCUS_DATA] as {
           [taskId: string]: TaskFocusData;
@@ -291,7 +296,7 @@ export class FocusSessionService {
 
       allTaskData[taskData.taskId] = taskData;
 
-      await this.storage.set({
+      await this.getStorage().set({
         [STORAGE_KEYS.TASK_FOCUS_DATA]: allTaskData,
       });
     } catch (error) {

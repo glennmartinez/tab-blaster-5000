@@ -7,7 +7,13 @@ import { FocusSession } from "../interfaces/FocusSession";
 import { StorageFactory } from "./StorageFactory";
 
 export class DisruptionService {
-  private storage = StorageFactory.getStorageService();
+  /**
+   * Get the current storage service (dynamic lookup)
+   */
+  private getStorage() {
+    return StorageFactory.getStorageService();
+  }
+  
   private readonly DISRUPTION_IDS_KEY = "disruption_ids";
 
   /**
@@ -15,7 +21,7 @@ export class DisruptionService {
    */
   private async getDisruptionIds(): Promise<string[]> {
     try {
-      const result = await this.storage.get(this.DISRUPTION_IDS_KEY);
+      const result = await this.getStorage().get(this.DISRUPTION_IDS_KEY);
       return (result[this.DISRUPTION_IDS_KEY] as string[]) || [];
     } catch (error) {
       console.error("Error getting disruption IDs:", error);
@@ -30,7 +36,7 @@ export class DisruptionService {
     const ids = await this.getDisruptionIds();
     if (!ids.includes(disruptionId)) {
       ids.push(disruptionId);
-      await this.storage.set({ [this.DISRUPTION_IDS_KEY]: ids });
+      await this.getStorage().set({ [this.DISRUPTION_IDS_KEY]: ids });
     }
   }
 
@@ -40,7 +46,7 @@ export class DisruptionService {
   private async removeDisruptionId(disruptionId: string): Promise<void> {
     const ids = await this.getDisruptionIds();
     const updatedIds = ids.filter((id) => id !== disruptionId);
-    await this.storage.set({ [this.DISRUPTION_IDS_KEY]: updatedIds });
+    await this.getStorage().set({ [this.DISRUPTION_IDS_KEY]: updatedIds });
   }
 
   /**
@@ -61,7 +67,7 @@ export class DisruptionService {
       isManualEntry: false,
     };
 
-    await this.storage.set({ [`disruption_${disruption.id}`]: disruption });
+    await this.getStorage().set({ [`disruption_${disruption.id}`]: disruption });
     await this.addDisruptionId(disruption.id);
     return disruption;
   }
@@ -84,7 +90,7 @@ export class DisruptionService {
       duration,
     };
 
-    await this.storage.set({
+    await this.getStorage().set({
       [`disruption_${disruptionId}`]: updatedDisruption,
     });
     return updatedDisruption;
@@ -114,7 +120,7 @@ export class DisruptionService {
       isManualEntry: true,
     };
 
-    await this.storage.set({ [`disruption_${disruption.id}`]: disruption });
+    await this.getStorage().set({ [`disruption_${disruption.id}`]: disruption });
     await this.addDisruptionId(disruption.id);
     return disruption;
   }
@@ -124,7 +130,7 @@ export class DisruptionService {
    */
   async getDisruption(disruptionId: string): Promise<Disruption | null> {
     try {
-      const data = await this.storage.get(`disruption_${disruptionId}`);
+      const data = await this.getStorage().get(`disruption_${disruptionId}`);
       const disruption = data[`disruption_${disruptionId}`] as Disruption;
       if (!disruption) return null;
 
@@ -149,7 +155,7 @@ export class DisruptionService {
       const disruptions: Disruption[] = [];
 
       for (const disruptionId of disruptionIds) {
-        const result = await this.storage.get(`disruption_${disruptionId}`);
+        const result = await this.getStorage().get(`disruption_${disruptionId}`);
         const disruption = result[`disruption_${disruptionId}`] as Disruption;
 
         if (disruption && disruption.date === date) {
@@ -269,7 +275,7 @@ export class DisruptionService {
       const disruptionIds = await this.getDisruptionIds();
 
       for (const disruptionId of disruptionIds) {
-        const result = await this.storage.get(`disruption_${disruptionId}`);
+        const result = await this.getStorage().get(`disruption_${disruptionId}`);
         const disruption = result[`disruption_${disruptionId}`] as Disruption;
 
         if (disruption && !disruption.endTime) {
@@ -291,7 +297,7 @@ export class DisruptionService {
    */
   async deleteDisruption(disruptionId: string): Promise<boolean> {
     try {
-      await this.storage.remove([`disruption_${disruptionId}`]);
+      await this.getStorage().remove([`disruption_${disruptionId}`]);
       await this.removeDisruptionId(disruptionId);
       return true;
     } catch (error) {

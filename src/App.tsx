@@ -4,6 +4,7 @@ import { ViewType } from "./interfaces/ViewTypes";
 import MainLayout from "./views/layout/MainLayout";
 import { SessionsView } from "./components";
 import { useTabs } from "./hooks/useTabs";
+import { StorageFactory } from "./services/StorageFactory";
 
 /**
  * Main App component that serves as the router for different views
@@ -22,6 +23,18 @@ function App() {
     restoreTab,
     removeSavedTab,
   } = useTabs();
+
+  // Initialize storage on app startup
+  useEffect(() => {
+    console.log("App initializing - setting up storage factory");
+    // Initialize the StorageFactory to ensure the correct storage provider is loaded
+    StorageFactory.initialize();
+    const storageService = StorageFactory.getStorageService();
+    console.log(
+      "Storage service initialized:",
+      storageService.constructor.name
+    );
+  }, []);
 
   // Check URL parameters for view selection
   useEffect(() => {

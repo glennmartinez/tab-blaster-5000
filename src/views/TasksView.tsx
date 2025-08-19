@@ -16,6 +16,7 @@ import {
   Play,
   Pause,
   Check,
+  Repeat,
 } from "lucide-react";
 import { Task } from "../interfaces/TaskInterface";
 import { useTasks } from "../hooks/useTasks";
@@ -247,7 +248,12 @@ const DailyProgressBar: React.FC<{
   progress: DailyProgress;
   currentHour: number;
 }> = ({ progress, currentHour }) => {
-  const dayProgressPercentage = ((currentHour - 6) / 18) * 100; // 6 AM to 12 AM (18 hours)
+  // Timeline from 9 AM to 6 PM (9 hours), if past 6pm show 100%
+  const dayProgressPercentage = currentHour < 9 
+    ? 0 
+    : currentHour >= 18 
+    ? 100 
+    : ((currentHour - 9) / 9) * 100; // 9 AM to 6 PM (9 hours)
   const timeOfDayLabel =
     currentHour < 12 ? "Morning" : currentHour < 17 ? "Midday" : "Evening";
 
@@ -304,10 +310,10 @@ const DailyProgressBar: React.FC<{
       {/* Day Timeline */}
       <div className="relative">
         <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>6 AM</span>
+          <span>9 AM</span>
           <span>12 PM</span>
+          <span>3 PM</span>
           <span>6 PM</span>
-          <span>12 AM</span>
         </div>
         <div className="w-full bg-slate-700/50 rounded-full h-1 relative">
           <div
@@ -555,14 +561,12 @@ const TimeSlotSection: React.FC<{
   timeSlot: TimeSlot;
   onDrop: (taskId: string, timeSlotId: TimeSlot["id"]) => void;
   onUnschedule: (taskId: string) => void;
-  onStartTask: (task: Task) => void;
   currentTask?: Task | null;
   currentHour: number;
 }> = ({
   timeSlot,
   onDrop,
   onUnschedule,
-  onStartTask,
   currentTask,
   currentHour,
 }) => {
@@ -642,7 +646,6 @@ const TimeSlotSection: React.FC<{
                 key={task.id}
                 task={task}
                 onUnschedule={onUnschedule}
-                onStartTask={onStartTask}
                 isCurrentTask={currentTask?.id === task.id}
                 timeSlotId={timeSlot.id}
               />
@@ -657,10 +660,9 @@ const TimeSlotSection: React.FC<{
 const FocusTaskCard: React.FC<{
   task: Task;
   onUnschedule: (taskId: string) => void;
-  onStartTask: (task: Task) => void;
   isCurrentTask?: boolean;
   timeSlotId: TimeSlot["id"];
-}> = ({ task, onUnschedule, onStartTask, isCurrentTask = false }) => {
+}> = ({ task, onUnschedule, isCurrentTask = false }) => {
   const priorityColors = {
     high: "text-red-500",
     medium: "text-yellow-500",
@@ -685,20 +687,8 @@ const FocusTaskCard: React.FC<{
       onDragStart={handleDragStart}
       title="Drag to move task"
     >
-      {/* Start Task Button (appears on hover) */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onStartTask(task);
-        }}
-        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-green-600/80 hover:bg-green-600 text-white p-1 rounded-full z-10"
-        title="Start working on this task"
-      >
-        <Play className="h-3 w-3" />
-      </button>
-
       <div className="flex items-start justify-between mb-2">
-        <h4 className="text-slate-200 font-medium text-sm flex-1 pr-2 ml-6">
+        <h4 className="text-slate-200 font-medium text-sm flex-1 pr-2">
           {task.title}
         </h4>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -711,10 +701,10 @@ const FocusTaskCard: React.FC<{
               e.stopPropagation();
               onUnschedule(task.id);
             }}
-            className="h-3 w-3 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+            className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-400 hover:scale-110 p-0.5"
             title="Remove from schedule"
           >
-            <X className="h-3 w-3" />
+            <Repeat className="h-3 w-3" />
           </button>
         </div>
       </div>
@@ -1434,10 +1424,23 @@ const TasksView: React.FC = () => {
     }
   };
 
-  const handleCurrentTaskDrop = (taskId: string) => {
+  const handleCurrentTaskDrop = async (taskId: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (task) {
-      startTask(task);
+      // If there's already a running session, end it first
+      if (currentSession && currentTask) {
+        console.log('Ending previous session before starting new task');
+        try {
+          await endSession();
+          // Small delay to ensure the session is properly ended
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error('Error ending previous session:', error);
+        }
+      }
+      
+      // Start new task
+      await startTask(task);
     }
   };
 
@@ -2319,7 +2322,6 @@ const TasksView: React.FC = () => {
                   timeSlot={timeSlot}
                   onDrop={handleTimeSlotDrop}
                   onUnschedule={handleUnscheduleTask}
-                  onStartTask={startTask}
                   currentTask={currentTask}
                   currentHour={currentHour}
                 />

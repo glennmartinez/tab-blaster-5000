@@ -21,6 +21,7 @@ import {
 import { Task } from "../interfaces/TaskInterface";
 import { useTasks } from "../hooks/useTasks";
 import { useFocusSession } from "../hooks/useFocusSession";
+import { useTaskView } from "../contexts/TaskViewContext";
 
 // Modal Dialog Component for Task Editing
 interface TaskEditModalProps {
@@ -249,11 +250,12 @@ const DailyProgressBar: React.FC<{
   currentHour: number;
 }> = ({ progress, currentHour }) => {
   // Timeline from 9 AM to 6 PM (9 hours), if past 6pm show 100%
-  const dayProgressPercentage = currentHour < 9 
-    ? 0 
-    : currentHour >= 18 
-    ? 100 
-    : ((currentHour - 9) / 9) * 100; // 9 AM to 6 PM (9 hours)
+  const dayProgressPercentage =
+    currentHour < 9
+      ? 0
+      : currentHour >= 18
+      ? 100
+      : ((currentHour - 9) / 9) * 100; // 9 AM to 6 PM (9 hours)
   const timeOfDayLabel =
     currentHour < 12 ? "Morning" : currentHour < 17 ? "Midday" : "Evening";
 
@@ -455,19 +457,22 @@ const CurrentTaskSection: React.FC<{
             <p className="text-slate-400 text-sm">
               {isTimerRunning ? "In Progress" : "Paused"}
             </p>
-            
+
             {/* Accumulated time from previous sessions */}
-            {currentTask && currentTask.totalFocusTime && currentTask.totalFocusTime > 0 && (
-              <div className="mt-2 text-center">
-                <p className="text-xs text-slate-500 mb-1">Total Time</p>
-                <div className="text-lg font-mono text-slate-400">
-                  {formatTime((currentTask.totalFocusTime * 60) + timerSeconds)}
+            {currentTask &&
+              currentTask.totalFocusTime &&
+              currentTask.totalFocusTime > 0 && (
+                <div className="mt-2 text-center">
+                  <p className="text-xs text-slate-500 mb-1">Total Time</p>
+                  <div className="text-lg font-mono text-slate-400">
+                    {formatTime(currentTask.totalFocusTime * 60 + timerSeconds)}
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    {currentTask.totalSessions} session
+                    {currentTask.totalSessions !== 1 ? "s" : ""}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-600">
-                  {currentTask.totalSessions} session{currentTask.totalSessions !== 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
+              )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -563,13 +568,7 @@ const TimeSlotSection: React.FC<{
   onUnschedule: (taskId: string) => void;
   currentTask?: Task | null;
   currentHour: number;
-}> = ({
-  timeSlot,
-  onDrop,
-  onUnschedule,
-  currentTask,
-  currentHour,
-}) => {
+}> = ({ timeSlot, onDrop, onUnschedule, currentTask, currentHour }) => {
   const [dragOver, setDragOver] = useState(false);
   const isActiveTime =
     currentHour >= timeSlot.startHour && currentHour < timeSlot.endHour;
@@ -729,7 +728,7 @@ const FocusTaskCard: React.FC<{
               </span>
             </div>
           )}
-          
+
           {task.dueDate && (
             <span className="text-xs text-slate-500">
               Due: {task.dueDate.toLocaleDateString()}
@@ -1170,7 +1169,7 @@ const WeeklyPlanTaskCard: React.FC<{
         <span className="text-xs px-1.5 py-0.5 bg-slate-700/50 text-slate-300 rounded">
           {task.category}
         </span>
-        
+
         {/* Focus sessions count */}
         {task.totalSessions && task.totalSessions > 0 && (
           <div className="flex items-center text-xs text-cyan-400">
@@ -1186,20 +1185,24 @@ const WeeklyPlanTaskCard: React.FC<{
 };
 
 const TasksView: React.FC = () => {
-  const { tasks, createTask, updateTask, moveTaskToStatus, getTasksByStatus, loadTasks } =
-    useTasks();
-  
+  const {
+    tasks,
+    createTask,
+    updateTask,
+    moveTaskToStatus,
+    getTasksByStatus,
+    loadTasks,
+  } = useTasks();
+
   const {
     currentSession,
     currentDuration,
     startFocusSession,
     endSession,
-    formatTime
+    formatTime,
   } = useFocusSession(loadTasks); // Pass loadTasks to refresh state after session changes
 
-  const [currentView, setCurrentView] = useState<"triage" | "weekly" | "focus">(
-    "triage"
-  );
+  const { currentView, setCurrentView } = useTaskView();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
@@ -1268,7 +1271,9 @@ const TasksView: React.FC = () => {
   });
 
   // Get current task from focus session
-  const currentTask = currentSession ? tasks.find(t => t.id === currentSession.taskId) || null : null;
+  const currentTask = currentSession
+    ? tasks.find((t) => t.id === currentSession.taskId) || null
+    : null;
   const isTimerRunning = !!currentSession; // Session exists = timer running
   const timerSeconds = currentDuration; // currentDuration is already in seconds
 
@@ -1429,16 +1434,16 @@ const TasksView: React.FC = () => {
     if (task) {
       // If there's already a running session, end it first
       if (currentSession && currentTask) {
-        console.log('Ending previous session before starting new task');
+        console.log("Ending previous session before starting new task");
         try {
           await endSession();
           // Small delay to ensure the session is properly ended
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
-          console.error('Error ending previous session:', error);
+          console.error("Error ending previous session:", error);
         }
       }
-      
+
       // Start new task
       await startTask(task);
     }

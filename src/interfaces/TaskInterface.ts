@@ -1,4 +1,4 @@
-import { FocusSession } from './FocusSession';
+import { FocusSession } from "./FocusSession";
 
 export interface Task {
   id: string;
@@ -15,7 +15,7 @@ export interface Task {
   tags?: string[];
   // Simple focus tracking fields
   totalFocusTime?: number; // total minutes across all sessions
-  averageFocusTime?: number; // average session length in minutes  
+  averageFocusTime?: number; // average session length in minutes
   totalSessions?: number; // number of completed focus sessions
   focusSessions?: FocusSession[]; // array of all focus sessions for this task
 }

@@ -486,10 +486,10 @@ class DriveStorageService implements SessionInterface {
     try {
       for (const key of keys) {
         const fileName = `${key}.json`;
-        
+
         // Search for existing file
         const files = await DriveStorageService.listFiles(`name='${fileName}'`);
-        
+
         if (files.length > 0) {
           // Delete the file
           const token = await DriveStorageService.getAuthToken();
@@ -502,7 +502,7 @@ class DriveStorageService implements SessionInterface {
               },
             }
           );
-          
+
           if (!response.ok) {
             throw new Error(`Failed to delete file: ${response.statusText}`);
           }

@@ -163,7 +163,7 @@ export class LocalStorageService implements SessionInterface {
    */
   async remove(keys: string[]): Promise<void> {
     try {
-      keys.forEach(key => {
+      keys.forEach((key) => {
         localStorage.removeItem(key);
       });
     } catch (error) {

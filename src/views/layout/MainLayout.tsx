@@ -10,11 +10,12 @@ import {
   SessionsSidebar,
   BookmarksPanel,
   FavoritesSidebar,
-  TasksSidebar,
 } from "../../components";
 import SettingsView from "../settings/SettingsView";
 import FavouritesView from "../FavouritesView";
 import TasksView from "../TasksView";
+import { TaskViewProvider, useTaskView } from "../../contexts/TaskViewContext";
+import TasksSidebar from "../../components/tasks/TasksSidebar";
 
 // Interface for the component props
 interface FuturisticViewProps {
@@ -26,6 +27,12 @@ interface FuturisticViewProps {
   onRestoreTab?: (savedTab: SavedTab) => Promise<void>;
   onRemoveSavedTab?: (savedTab: SavedTab) => Promise<void>;
 }
+
+// Component that uses the TaskView context to render the appropriate sidebar
+const TasksSidebarWrapper: React.FC = () => {
+  const { currentView } = useTaskView();
+  return <TasksSidebar viewMode={currentView} />;
+};
 
 const MainLayout: React.FC<FuturisticViewProps> = ({
   windowGroups = [],
@@ -296,7 +303,7 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
   const renderRightSidebar = () => {
     switch (activeView) {
       case "tasks":
-        return <TasksSidebar />;
+        return <TasksSidebarWrapper />;
       case "favourites":
         return <FavoritesSidebar />;
       case "windows":
@@ -332,7 +339,8 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
     );
   }
 
-  return (
+  // Wrap the entire layout with TaskViewProvider when in tasks view
+  const mainLayoutContent = (
     <div
       className={`${theme} flex-1 overflow-hidden bg-gradient-to-br from-black to-slate-900 text-slate-100 relative min-h-screen w-full`}
     >
@@ -392,6 +400,12 @@ const MainLayout: React.FC<FuturisticViewProps> = ({
         </div>
       </div>
     </div>
+  );
+
+  return activeView === "tasks" ? (
+    <TaskViewProvider>{mainLayoutContent}</TaskViewProvider>
+  ) : (
+    mainLayoutContent
   );
 };
 

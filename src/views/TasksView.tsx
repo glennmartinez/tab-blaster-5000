@@ -449,6 +449,19 @@ const CurrentTaskSection: React.FC<{
             <p className="text-slate-400 text-sm">
               {isTimerRunning ? "In Progress" : "Paused"}
             </p>
+            
+            {/* Accumulated time from previous sessions */}
+            {currentTask && currentTask.totalFocusTime && currentTask.totalFocusTime > 0 && (
+              <div className="mt-2 text-center">
+                <p className="text-xs text-slate-500 mb-1">Total Time</p>
+                <div className="text-lg font-mono text-slate-400">
+                  {formatTime((currentTask.totalFocusTime * 60) + timerSeconds)}
+                </div>
+                <p className="text-xs text-slate-600">
+                  {currentTask.totalSessions} session{currentTask.totalSessions !== 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -716,7 +729,17 @@ const FocusTaskCard: React.FC<{
         <span className="text-xs px-2 py-1 bg-slate-700/50 text-slate-300 rounded">
           {task.category}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {/* Focus sessions count */}
+          {task.totalSessions && task.totalSessions > 0 && (
+            <div className="flex items-center text-xs text-cyan-400">
+              <Clock className="mr-0.5 h-2.5 w-2.5" />
+              <span className="bg-cyan-500/20 px-1.5 py-0.5 rounded-full">
+                {task.totalSessions}
+              </span>
+            </div>
+          )}
+          
           {task.dueDate && (
             <span className="text-xs text-slate-500">
               Due: {task.dueDate.toLocaleDateString()}
@@ -1157,21 +1180,32 @@ const WeeklyPlanTaskCard: React.FC<{
         <span className="text-xs px-1.5 py-0.5 bg-slate-700/50 text-slate-300 rounded">
           {task.category}
         </span>
+        
+        {/* Focus sessions count */}
+        {task.totalSessions && task.totalSessions > 0 && (
+          <div className="flex items-center text-xs text-cyan-400">
+            <Clock className="mr-0.5 h-2.5 w-2.5" />
+            <span className="bg-cyan-500/20 px-1.5 py-0.5 rounded-full">
+              {task.totalSessions}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 const TasksView: React.FC = () => {
-  const { tasks, createTask, updateTask, moveTaskToStatus, getTasksByStatus } =
+  const { tasks, createTask, updateTask, moveTaskToStatus, getTasksByStatus, loadTasks } =
     useTasks();
   
   const {
     currentSession,
     currentDuration,
     startFocusSession,
-    endSession
-  } = useFocusSession();
+    endSession,
+    formatTime
+  } = useFocusSession(loadTasks); // Pass loadTasks to refresh state after session changes
 
   const [currentView, setCurrentView] = useState<"triage" | "weekly" | "focus">(
     "triage"
@@ -1310,15 +1344,30 @@ const TasksView: React.FC = () => {
     }
   };
 
-  // Calculate daily progress
-  const getDailyProgress = (): DailyProgress => {
-    const todaysTasks = getTodaysTasks();
-    const completedTasks = todaysTasks.filter(
+  // Calculate daily progress - memoized to update when tasks change
+  const getDailyProgress = useCallback((): DailyProgress => {
+    // Get ALL tasks for today, including completed ones
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const allTodaysTasks = tasks.filter((task: Task) => {
+      // Include tasks due today or tasks with no due date that are not noise
+      return (
+        (task.dueDate &&
+          new Date(task.dueDate) >= today &&
+          new Date(task.dueDate) < tomorrow) ||
+        (!task.dueDate && task.status !== "noise")
+      );
+    });
+
+    const completedTasks = allTodaysTasks.filter(
       (task: Task) => task.status === "done"
     );
     const sizePoints = { S: 1, M: 2, L: 3, XL: 5 };
 
-    const totalSize = todaysTasks.reduce(
+    const totalSize = allTodaysTasks.reduce(
       (sum: number, task: Task) => sum + sizePoints[task.size],
       0
     );
@@ -1328,16 +1377,16 @@ const TasksView: React.FC = () => {
     );
 
     return {
-      totalTasks: todaysTasks.length,
+      totalTasks: allTodaysTasks.length,
       completedTasks: completedTasks.length,
       totalSize,
       completedSize,
       progressPercentage:
-        todaysTasks.length > 0
-          ? (completedTasks.length / todaysTasks.length) * 100
+        allTodaysTasks.length > 0
+          ? (completedTasks.length / allTodaysTasks.length) * 100
           : 0,
     };
-  };
+  }, [tasks]); // Added dependency on tasks array
 
   // Timer control functions - now using simplified focus session service
   const startTask = async (task: Task) => {
@@ -1352,6 +1401,8 @@ const TasksView: React.FC = () => {
     // With simplified system, pausing = ending the current session
     try {
       await endSession();
+      // Refresh tasks to show updated session data immediately
+      await loadTasks();
     } catch (error) {
       console.error("Failed to end session:", error);
     }
@@ -1376,6 +1427,8 @@ const TasksView: React.FC = () => {
       await endSession();
       // Update task status to done
       await updateTask(currentTask.id, { status: "done" });
+      // Refresh tasks to show updated progress immediately
+      await loadTasks();
     } catch (error) {
       console.error("Failed to complete task:", error);
     }
@@ -1386,14 +1439,6 @@ const TasksView: React.FC = () => {
     if (task) {
       startTask(task);
     }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
   };
 
   // Define time slots
@@ -1443,6 +1488,7 @@ const TasksView: React.FC = () => {
     if (draggedTask && draggedTask.status !== targetStatus) {
       try {
         await moveTaskToStatus(draggedTask.id, targetStatus);
+        // State is automatically updated by useTasks hook
       } catch (error) {
         console.error("Failed to move task:", error);
       }
@@ -1562,17 +1608,29 @@ const TasksView: React.FC = () => {
               {task.category}
             </span>
 
-            {task.dueDate && (
-              <div className="flex items-center text-xs text-slate-500 flex-shrink-0 ml-1">
-                <Calendar className="mr-0.5 h-2.5 w-2.5" />
-                <span className="text-xs">
-                  {task.dueDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0 ml-1">
+              {/* Focus sessions count */}
+              {task.totalSessions && task.totalSessions > 0 && (
+                <div className="flex items-center text-xs text-cyan-400">
+                  <Clock className="mr-0.5 h-2.5 w-2.5" />
+                  <span className="bg-cyan-500/20 px-1.5 py-0.5 rounded-full">
+                    {task.totalSessions}
+                  </span>
+                </div>
+              )}
+
+              {task.dueDate && (
+                <div className="flex items-center text-xs text-slate-500">
+                  <Calendar className="mr-0.5 h-2.5 w-2.5" />
+                  <span className="text-xs">
+                    {task.dueDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

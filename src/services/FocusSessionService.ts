@@ -1,4 +1,5 @@
 import { FocusSession, TaskFocusData } from "../interfaces/FocusSession";
+import { Task } from "../interfaces/TaskInterface";
 import { StorageFactory } from "./StorageFactory";
 import { STORAGE_KEYS } from "../constants/storageKeys";
 
@@ -107,8 +108,9 @@ export class FocusSessionService {
 
   /**
    * Add completed session to task's focus sessions
+   * Returns the updated task data for React state updates
    */
-  private async addSessionToHistory(session: FocusSession): Promise<void> {
+  private async addSessionToHistory(session: FocusSession): Promise<Task | null> {
     console.log('📝 Adding session to task history:', session); // Debug log
     try {
       // Get the TasksService dynamically to avoid circular dependency
@@ -120,7 +122,7 @@ export class FocusSessionService {
       const task = tasks.find(t => t.id === session.taskId);
       if (!task) {
         console.error('❌ Task not found for session:', session.taskId);
-        return;
+        return null;
       }
 
       // Add session to task's focusSessions array
@@ -135,13 +137,15 @@ export class FocusSessionService {
       task.averageFocusTime = task.totalFocusTime / task.totalSessions;
 
       // Save the updated task
-      await tasksService.updateTask(task.id, {
+      const updatedTask = await tasksService.updateTask(task.id, {
         focusSessions: task.focusSessions,
         totalSessions: task.totalSessions,
         totalFocusTime: task.totalFocusTime,
         averageFocusTime: task.averageFocusTime
       });
+      
       console.log('✅ Session added to task history. Task total sessions:', task.totalSessions); // Debug log
+      return updatedTask;
     } catch (error) {
       console.error("❌ Error saving focus session to task:", error);
       throw error;

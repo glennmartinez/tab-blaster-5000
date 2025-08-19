@@ -3,7 +3,7 @@ import { FocusSession } from '../interfaces/FocusSession';
 import { FocusSessionService } from '../services/FocusSessionService';
 import { Task } from '../interfaces/TaskInterface';
 
-export const useFocusSession = () => {
+export const useFocusSession = (onTaskUpdate?: () => Promise<void>) => {
   const [currentSession, setCurrentSession] = useState<FocusSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,13 +76,19 @@ export const useFocusSession = () => {
       const session = await focusService.endCurrentActiveSession();
       console.log('Session ended:', session); // Debug log
       setCurrentSession(null);
+      
+      // Trigger task refresh to update UI with new session data
+      if (onTaskUpdate) {
+        await onTaskUpdate();
+      }
+      
       return session;
     } catch (err) {
       console.error('Error ending session:', err);
       setError('Failed to end session');
       throw err;
     }
-  }, [focusService]);
+  }, [focusService, onTaskUpdate]);
 
   const getSessionsForTask = useCallback(async (taskId: string): Promise<FocusSession[]> => {
     try {

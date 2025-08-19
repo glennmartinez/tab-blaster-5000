@@ -1,16 +1,20 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
-export type TaskViewMode = 'triage' | 'weekly' | 'focus';
+export type TaskViewMode = "triage" | "weekly" | "focus";
 
 interface TaskViewContextType {
   currentView: TaskViewMode;
   setCurrentView: (view: TaskViewMode) => void;
 }
 
-const TaskViewContext = createContext<TaskViewContextType | undefined>(undefined);
+const TaskViewContext = createContext<TaskViewContextType | undefined>(
+  undefined
+);
 
-export const TaskViewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<TaskViewMode>('triage');
+export const TaskViewProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [currentView, setCurrentView] = useState<TaskViewMode>("triage");
 
   return (
     <TaskViewContext.Provider value={{ currentView, setCurrentView }}>
@@ -22,7 +26,7 @@ export const TaskViewProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useTaskView = (): TaskViewContextType => {
   const context = useContext(TaskViewContext);
   if (context === undefined) {
-    throw new Error('useTaskView must be used within a TaskViewProvider');
+    throw new Error("useTaskView must be used within a TaskViewProvider");
   }
   return context;
 };

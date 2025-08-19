@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
-  CheckSquare,
-  TrendingUp,
-  Filter,
-  Target,
-  BarChart3,
-  Zap,
   Clock,
   Plus,
   AlertTriangle,
   Coffee,
   Users,
+  Zap,
   MessageCircle,
+  Target,
+  TrendingUp,
   Save,
   X,
 } from "lucide-react";
@@ -19,8 +16,8 @@ import { useDisruptions } from "../../hooks/useDisruptions";
 import { useFocusSession } from "../../hooks/useFocusSession";
 import { Disruption } from "../../interfaces/DisruptionInterface";
 
-interface TasksSidebarProps {
-  viewMode?: "triage" | "weekly" | "focus";
+interface FocusSidebarProps {
+  className?: string;
 }
 
 interface DisruptionFormProps {
@@ -232,8 +229,7 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({
   );
 };
 
-const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
-  // Focus mode specific hooks and state
+const FocusSidebar: React.FC<FocusSidebarProps> = ({ className = "" }) => {
   const {
     activeDisruption,
     todaysDisruptions,
@@ -250,10 +246,8 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [activeDisruptionTimer, setActiveDisruptionTimer] = useState("");
 
-  // Update active disruption timer every minute (focus mode only)
+  // Update active disruption timer every minute
   useEffect(() => {
-    if (viewMode !== "focus") return;
-
     const updateTimer = () => {
       setActiveDisruptionTimer(getActiveDisruptionTimer());
     };
@@ -262,7 +256,7 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
     const interval = setInterval(updateTimer, 60000); // Update every minute
 
     return () => clearInterval(interval);
-  }, [activeDisruption, getActiveDisruptionTimer, viewMode]);
+  }, [activeDisruption, getActiveDisruptionTimer]);
 
   const handleStartDisruption = async (
     title: string,
@@ -332,18 +326,19 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
     }
   };
 
-  // Focus Mode Sidebar
-  if (viewMode === "focus") {
-    return (
-      <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-4 h-full flex flex-col">
+  return (
+    <div
+      className={`bg-slate-800/40 backdrop-blur-sm border-l border-slate-600/30 min-h-screen ${className}`}
+    >
+      <div className="p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-slate-700/50 pb-3 mb-4">
+        <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-500/20 rounded-lg">
-            <Target className="h-4 w-4 text-blue-400" />
+            <Target className="h-5 w-5 text-blue-400" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-slate-200">Focus Mode</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-400">
               Track disruptions & stay focused
             </p>
           </div>
@@ -351,21 +346,19 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
 
         {/* Active Disruption */}
         {activeDisruption && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {getCategoryIcon(activeDisruption.category)}
-                <span className="font-medium text-red-400 text-sm">
+                <span className="font-medium text-red-400">
                   Active Disruption
                 </span>
               </div>
-              <span className="text-xs text-slate-300 font-mono">
+              <span className="text-sm text-slate-300 font-mono">
                 {activeDisruptionTimer}
               </span>
             </div>
-            <p className="text-slate-200 text-sm mb-3">
-              {activeDisruption.title}
-            </p>
+            <p className="text-slate-200 mb-3">{activeDisruption.title}</p>
             <button
               onClick={handleEndDisruption}
               className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
@@ -376,7 +369,7 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
         )}
 
         {/* Quick Actions */}
-        <div className="space-y-3 mb-4">
+        <div className="space-y-2">
           <h4 className="text-sm font-medium text-slate-300">Quick Actions</h4>
 
           {!activeDisruption && (
@@ -385,7 +378,7 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
               className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg transition-colors"
             >
               <Plus className="h-4 w-4 text-blue-400" />
-              <span className="text-blue-400 font-medium text-sm">
+              <span className="text-blue-400 font-medium">
                 Track Disruption
               </span>
             </button>
@@ -396,9 +389,7 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
             className="w-full flex items-center gap-3 px-4 py-3 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 rounded-lg transition-colors"
           >
             <Save className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 font-medium text-sm">
-              Manual Entry
-            </span>
+            <span className="text-green-400 font-medium">Manual Entry</span>
           </button>
         </div>
 
@@ -417,7 +408,7 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
 
         {/* Today's Summary */}
         {disruptionSummary && (
-          <div className="space-y-3 mb-4">
+          <div className="space-y-3">
             <h4 className="text-sm font-medium text-slate-300">
               Today's Summary
             </h4>
@@ -439,15 +430,15 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
             {disruptionSummary.averageDisruptionLength > 0 && (
               <div className="bg-slate-700/30 rounded-lg p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300">Avg Length</span>
-                  <span className="text-xs font-medium text-slate-200">
+                  <span className="text-sm text-slate-300">Avg Length</span>
+                  <span className="text-sm font-medium text-slate-200">
                     {Math.round(disruptionSummary.averageDisruptionLength)}m
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-slate-300">Most Common</span>
+                  <span className="text-sm text-slate-300">Most Common</span>
                   <span
-                    className={`text-xs font-medium capitalize ${getCategoryColor(
+                    className={`text-sm font-medium capitalize ${getCategoryColor(
                       disruptionSummary.mostCommonCategory
                     )}`}
                   >
@@ -461,32 +452,32 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
 
         {/* Recent Disruptions */}
         {todaysDisruptions.length > 0 && (
-          <div className="space-y-3 mb-4">
+          <div className="space-y-3">
             <h4 className="text-sm font-medium text-slate-300">
               Recent Disruptions
             </h4>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {todaysDisruptions
                 .filter((d) => d.endTime) // Only show completed disruptions
-                .slice(-3) // Last 3
+                .slice(-5) // Last 5
                 .reverse() // Most recent first
                 .map((disruption) => (
                   <div
                     key={disruption.id}
-                    className="bg-slate-700/20 rounded-lg p-2"
+                    className="bg-slate-700/20 rounded-lg p-3"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className={getCategoryColor(disruption.category)}>
                         {getCategoryIcon(disruption.category)}
                       </span>
-                      <span className="text-xs font-medium text-slate-200 flex-1">
+                      <span className="text-sm font-medium text-slate-200 flex-1">
                         {disruption.title}
                       </span>
                       <span className="text-xs text-slate-400 font-mono">
                         {disruption.duration}m
                       </span>
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-400">
                       {disruption.startTime.toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -498,11 +489,11 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
           </div>
         )}
 
-        {/* Focus Tip */}
-        <div className="mt-auto bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-3">
+        {/* Focus Tips */}
+        <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-blue-400" />
-            <span className="text-xs font-medium text-blue-400">Focus Tip</span>
+            <span className="text-sm font-medium text-blue-400">Focus Tip</span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
             {disruptionSummary?.totalDisruptions &&
@@ -512,167 +503,8 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
           </p>
         </div>
       </div>
-    );
-  }
-
-  // Task Analytics Sidebar (for triage and weekly views)
-  return (
-    <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-4 h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-slate-700/50 pb-3 mb-4">
-        <h3 className="text-slate-200 font-medium flex items-center">
-          <CheckSquare className="mr-2 h-4 w-4 text-cyan-400" />
-          Task Analytics
-        </h3>
-      </div>
-
-      {/* 80/20 Ratio Display */}
-      <div className="mb-6">
-        <div className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 rounded-lg p-3 mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-300 text-sm font-medium">
-              Signal vs Noise
-            </span>
-            <Target className="h-4 w-4 text-cyan-400" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-slate-800/50 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-cyan-400 to-cyan-500 h-full rounded-full"
-                style={{ width: "75%" }}
-              ></div>
-            </div>
-            <span className="text-xs text-slate-400">75/25</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Task Statistics */}
-      <div className="space-y-3 mb-6">
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Total Tasks</span>
-            <span className="text-cyan-400 font-medium">12</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Signal Tasks</span>
-            <span className="text-green-400 font-medium">9</span>
-          </div>
-        </div>
-
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Noise Tasks</span>
-            <span className="text-red-400 font-medium">3</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Task Categories */}
-      <div className="mb-6">
-        <h4 className="text-slate-300 text-sm font-medium mb-3">Categories</h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-2 bg-slate-800/20 rounded">
-            <span className="text-slate-400 text-sm">Development</span>
-            <span className="text-blue-400 text-xs">5</span>
-          </div>
-          <div className="flex items-center justify-between p-2 bg-slate-800/20 rounded">
-            <span className="text-slate-400 text-sm">Design</span>
-            <span className="text-purple-400 text-xs">2</span>
-          </div>
-          <div className="flex items-center justify-between p-2 bg-slate-800/20 rounded">
-            <span className="text-slate-400 text-sm">Research</span>
-            <span className="text-green-400 text-xs">2</span>
-          </div>
-          <div className="flex items-center justify-between p-2 bg-slate-800/20 rounded">
-            <span className="text-slate-400 text-sm">Meeting</span>
-            <span className="text-yellow-400 text-xs">3</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Productivity Metrics */}
-      <div className="mb-6">
-        <h4 className="text-slate-300 text-sm font-medium mb-3 flex items-center">
-          <BarChart3 className="mr-2 h-4 w-4" />
-          Metrics
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Focus Score</span>
-            <span className="text-green-400 font-medium">85%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Completion Rate</span>
-            <span className="text-cyan-400 font-medium">72%</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Avg. Task Size</span>
-            <span className="text-slate-300 font-medium">Medium</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="mb-6">
-        <h4 className="text-slate-300 text-sm font-medium mb-3">
-          Recent Activity
-        </h4>
-        <div className="space-y-2">
-          <div className="flex items-center p-2 bg-slate-800/20 rounded">
-            <div className="w-2 h-2 bg-green-400 rounded-full mr-3"></div>
-            <span className="text-slate-400 text-xs">
-              Completed API integration
-            </span>
-          </div>
-          <div className="flex items-center p-2 bg-slate-800/20 rounded">
-            <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-            <span className="text-slate-400 text-xs">Started UI redesign</span>
-          </div>
-          <div className="flex items-center p-2 bg-slate-800/20 rounded">
-            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></div>
-            <span className="text-slate-400 text-xs">
-              Scheduled team meeting
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-auto">
-        <h4 className="text-slate-300 text-sm font-medium mb-3">
-          Quick Actions
-        </h4>
-        <div className="space-y-2">
-          <button className="w-full flex items-center justify-center px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-lg transition-colors">
-            <Filter className="mr-2 h-4 w-4 text-cyan-400" />
-            <span className="text-cyan-400 text-sm">Filter Tasks</span>
-          </button>
-          <button className="w-full flex items-center justify-center px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-lg transition-colors">
-            <TrendingUp className="mr-2 h-4 w-4 text-purple-400" />
-            <span className="text-purple-400 text-sm">View Trends</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Signal Focus Reminder */}
-      <div className="mt-4 bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/30 rounded-lg p-3">
-        <div className="flex items-center mb-2">
-          <Zap className="mr-2 h-4 w-4 text-green-400" />
-          <span className="text-green-400 text-sm font-medium">
-            Signal Focus
-          </span>
-        </div>
-        <p className="text-slate-400 text-xs">
-          Prioritize high-impact tasks that align with your core objectives.
-        </p>
-        <p className="text-slate-500 text-xs mt-1">Focus on Signal tasks</p>
-      </div>
     </div>
   );
 };
 
-export default TasksSidebar;
+export default FocusSidebar;

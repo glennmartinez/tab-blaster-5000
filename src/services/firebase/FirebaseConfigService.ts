@@ -21,6 +21,7 @@ const STORAGE_KEYS = {
 export class FirebaseConfigService {
   private static sessionKey: CryptoKey | null = null;
   private static configCache: UserFirebaseConfig | null = null;
+  private static readonly SESSION_KEY_STORAGE = 'firebase_session_key';
 
   /**
    * Check if Firebase configuration exists and is valid
@@ -98,20 +99,26 @@ export class FirebaseConfigService {
    * Get Firebase configuration (prompts for password if expired)
    */
   static async getConfig(): Promise<UserFirebaseConfig> {
+    console.log("FirebaseConfigService.getConfig() called");
+
     // Return cached config if available
     if (this.configCache && this.sessionKey) {
+      console.log("Returning cached Firebase config");
       return this.configCache;
     }
 
     // Check if we have a valid password session
     const hasValidSession = await this.hasValidPasswordSession();
+    console.log("Valid session check result:", hasValidSession);
 
     if (!hasValidSession) {
       // Need to prompt for password
+      console.log("Password required for Firebase access");
       throw new Error("PASSWORD_REQUIRED");
     }
 
     // Load and decrypt config
+    console.log("Loading and decrypting Firebase config");
     return await this.loadAndDecryptConfig();
   }
 
@@ -126,6 +133,7 @@ export class FirebaseConfigService {
       const session: PasswordSession = result[STORAGE_KEYS.FIREBASE_SESSION];
 
       if (!session) {
+        console.log("No password session found");
         return false;
       }
 
@@ -133,11 +141,29 @@ export class FirebaseConfigService {
       const isExpired = now > session.expiresAt;
 
       if (isExpired) {
+        console.log("Password session expired");
         // Clean up expired session
         await this.clearPasswordSession();
         return false;
       }
 
+      // Check if we have the session key in memory
+      if (!this.sessionKey) {
+        console.log("No session key in memory - attempting to restore from localStorage");
+        // Try to restore the session key from localStorage
+        this.sessionKey = await this.restoreSessionKey();
+        
+        if (!this.sessionKey) {
+          console.log("Could not restore session key - session invalid after refresh");
+          // Clear the session since we can't use it without the key
+          await this.clearPasswordSession();
+          return false;
+        }
+        
+        console.log("Successfully restored session key from localStorage");
+      }
+
+      console.log("Password session is valid");
       return true;
     } catch (error) {
       console.error("Error checking password session:", error);
@@ -265,6 +291,105 @@ export class FirebaseConfigService {
   }
 
   /**
+   * Store session key in localStorage (encrypted with device-specific key)
+   */
+  private static async storeSessionKey(key: CryptoKey): Promise<void> {
+    try {
+      console.log("🔑 Storing session key in localStorage...");
+      // Export the key as raw bytes
+      const keyBuffer = await crypto.subtle.exportKey("raw", key);
+      
+      // Create a simple device-specific encryption key from extension ID
+      const deviceKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(chrome.runtime.id.padEnd(32, '0')), // Pad to 32 bytes
+        "AES-GCM",
+        false,
+        ["encrypt"]
+      );
+
+      // Encrypt the session key
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encryptedKey = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        deviceKey,
+        keyBuffer
+      );
+
+      // Store in localStorage
+      const sessionData = {
+        encryptedKey: Array.from(new Uint8Array(encryptedKey)),
+        iv: Array.from(iv)
+      };
+      
+      localStorage.setItem(this.SESSION_KEY_STORAGE, JSON.stringify(sessionData));
+      console.log("🔑 Session key stored successfully in localStorage");
+    } catch (error) {
+      console.error("🔑 Error storing session key:", error);
+    }
+  }
+
+  /**
+   * Restore session key from localStorage
+   */
+  private static async restoreSessionKey(): Promise<CryptoKey | null> {
+    try {
+      console.log("🔑 Attempting to restore session key from localStorage...");
+      const sessionDataStr = localStorage.getItem(this.SESSION_KEY_STORAGE);
+      if (!sessionDataStr) {
+        console.log("🔑 No session key found in localStorage");
+        return null;
+      }
+
+      const sessionData = JSON.parse(sessionDataStr);
+      console.log("🔑 Found encrypted session key in localStorage");
+      
+      // Create the same device-specific decryption key
+      const deviceKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(chrome.runtime.id.padEnd(32, '0')), // Pad to 32 bytes
+        "AES-GCM",
+        false,
+        ["decrypt"]
+      );
+
+      // Decrypt the session key
+      const iv = new Uint8Array(sessionData.iv);
+      const encryptedKey = new Uint8Array(sessionData.encryptedKey);
+      
+      const decryptedKeyBuffer = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        deviceKey,
+        encryptedKey
+      );
+
+      // Import the decrypted key back as a CryptoKey
+      const restoredKey = await crypto.subtle.importKey(
+        "raw",
+        decryptedKeyBuffer,
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      
+      console.log("🔑 Successfully restored session key from localStorage");
+      return restoredKey;
+    } catch (error) {
+      console.error("🔑 Error restoring session key:", error);
+      // Clean up corrupted session data
+      localStorage.removeItem(this.SESSION_KEY_STORAGE);
+      return null;
+    }
+  }
+
+  /**
+   * Clear session key from localStorage
+   */
+  private static clearSessionKey(): void {
+    localStorage.removeItem(this.SESSION_KEY_STORAGE);
+  }
+
+  /**
    * Create a password session
    */
   private static async createPasswordSession(
@@ -286,6 +411,9 @@ export class FirebaseConfigService {
     await chrome.storage.local.set({
       [STORAGE_KEYS.FIREBASE_SESSION]: session,
     });
+
+    // Also store the session key in localStorage for persistence across refreshes
+    await this.storeSessionKey(key);
   }
 
   /**
@@ -324,6 +452,7 @@ export class FirebaseConfigService {
    */
   static async clearPasswordSession(): Promise<void> {
     await chrome.storage.local.remove([STORAGE_KEYS.FIREBASE_SESSION]);
+    this.clearSessionKey(); // Clear from localStorage too
     this.sessionKey = null;
     this.configCache = null;
   }
@@ -337,6 +466,7 @@ export class FirebaseConfigService {
       STORAGE_KEYS.FIREBASE_SESSION,
       STORAGE_KEYS.FIREBASE_SECURITY,
     ]);
+    this.clearSessionKey(); // Clear from localStorage too
     this.sessionKey = null;
     this.configCache = null;
   }

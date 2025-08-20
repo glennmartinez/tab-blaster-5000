@@ -15,21 +15,19 @@ import { SessionInterface } from "../SessionInterface";
 import { Session } from "../../models/Session";
 import { SavedTab } from "../../interfaces/TabInterface";
 import { FirebaseConfigService } from "./FirebaseConfigService";
+import { FirebaseAuthService } from "./FirebaseAuthService";
 import { UserFirebaseConfig } from "./FirebaseTypes";
 
 export class FirebaseStorageService implements SessionInterface {
   private firebaseApp: FirebaseApp | null = null;
   private firestore: Firestore | null = null;
-  private userId: string;
+  private userId: string | null = null;
   private isConfigured: boolean = false;
   private configurationError: string | null = null;
 
   constructor() {
-    // Generate a unique user ID for data isolation
-    this.userId = this.generateUserId();
-    console.log(
-      `🆔 FirebaseStorageService created with userId: ${this.userId}`
-    );
+    // User ID will be set after Firebase Auth initialization
+    console.log("🆔 FirebaseStorageService created - waiting for authentication");
   }
 
   /**
@@ -38,7 +36,7 @@ export class FirebaseStorageService implements SessionInterface {
   async initialize(): Promise<void> {
     console.log("🔧 FirebaseStorageService.initialize() called");
 
-    if (this.isConfigured && this.firestore) {
+    if (this.isConfigured && this.firestore && this.userId) {
       console.log("✅ Firebase already configured and initialized");
       return;
     }
@@ -46,6 +44,36 @@ export class FirebaseStorageService implements SessionInterface {
     try {
       const config = await FirebaseConfigService.getConfig();
       console.log("✅ Retrieved Firebase config successfully");
+      
+      // Initialize Firebase Auth first
+      await FirebaseAuthService.initialize(config);
+      
+      // Attempt to sign in with stored credentials
+      const signInSuccessful = await FirebaseAuthService.attemptAutoSignIn(
+        config.userEmail, 
+        config.userPassword
+      );
+      
+      if (!signInSuccessful) {
+        // If auto sign-in fails, try to create account or throw error for manual sign-in
+        try {
+          await FirebaseAuthService.createAccount(config.userEmail, config.userPassword);
+          console.log("🆔 Created new Firebase Auth account");
+        } catch {
+          console.log("🆔 Account creation failed, user needs to sign in manually");
+          throw new Error("AUTHENTICATION_REQUIRED");
+        }
+      }
+      
+      // Get the authenticated user ID
+      this.userId = FirebaseAuthService.getCurrentUserId();
+      if (!this.userId) {
+        throw new Error("Failed to get authenticated user ID");
+      }
+      
+      console.log(`🆔 Authenticated with Firebase Auth userId: ${this.userId}`);
+      console.log(`📍 Your Firebase data path: users/${this.userId}/data/`);
+      
       await this.initializeFirebase(config);
       this.isConfigured = true;
       this.configurationError = null;
@@ -200,7 +228,7 @@ export class FirebaseStorageService implements SessionInterface {
       const sessionsRef = collection(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "sessions"
       );
       const q = query(sessionsRef, orderBy("createdAt", "desc"));
@@ -258,7 +286,7 @@ export class FirebaseStorageService implements SessionInterface {
       const sessionRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "sessions",
         session.id
       );
@@ -317,7 +345,7 @@ export class FirebaseStorageService implements SessionInterface {
       const sessionRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "sessions",
         sessionId
       );
@@ -340,7 +368,7 @@ export class FirebaseStorageService implements SessionInterface {
       const sessionRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "sessions",
         sessionId
       );
@@ -375,7 +403,7 @@ export class FirebaseStorageService implements SessionInterface {
       const tabsRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "data",
         "savedTabs"
       );
@@ -403,7 +431,7 @@ export class FirebaseStorageService implements SessionInterface {
       const tabsRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "data",
         "savedTabs"
       );
@@ -429,7 +457,7 @@ export class FirebaseStorageService implements SessionInterface {
       const settingsRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "data",
         "settings"
       );
@@ -457,7 +485,7 @@ export class FirebaseStorageService implements SessionInterface {
       const settingsRef = doc(
         this.firestore!,
         "users",
-        this.userId,
+        this.ensureAuthenticated(),
         "data",
         "settings"
       );
@@ -498,9 +526,10 @@ export class FirebaseStorageService implements SessionInterface {
     }
 
     try {
-      const dataRef = doc(this.firestore!, "users", this.userId, "data", key);
+      const userId = this.ensureAuthenticated();
+      const dataRef = doc(this.firestore!, "users", userId, "data", key);
       console.log(
-        `Fetching from Firestore path: users/${this.userId}/data/${key}`
+        `Fetching from Firestore path: users/${userId}/data/${key}`
       );
 
       const dataDoc = await getDoc(dataRef);
@@ -552,10 +581,11 @@ export class FirebaseStorageService implements SessionInterface {
     }
 
     try {
+      const userId = this.ensureAuthenticated();
       const promises = Object.entries(data).map(async ([key, value]) => {
-        const dataRef = doc(this.firestore!, "users", this.userId, "data", key);
+        const dataRef = doc(this.firestore!, "users", userId, "data", key);
         console.log(
-          `Setting data for key ${key} at path: users/${this.userId}/data/${key}`
+          `Setting data for key ${key} at path: users/${userId}/data/${key}`
         );
         console.log(`Data being stored:`, {
           value,
@@ -626,8 +656,9 @@ export class FirebaseStorageService implements SessionInterface {
     await this.ensureInitialized();
 
     try {
+      const userId = this.ensureAuthenticated();
       const promises = keys.map((key) => {
-        const dataRef = doc(this.firestore!, "users", this.userId, "data", key);
+        const dataRef = doc(this.firestore!, "users", userId, "data", key);
         return deleteDoc(dataRef);
       });
 
@@ -640,27 +671,20 @@ export class FirebaseStorageService implements SessionInterface {
   }
 
   /**
-   * Generate a unique user ID for data isolation
+   * Ensure user is authenticated and userId is available
    */
-  private generateUserId(): string {
-    // Try to get existing user ID from local storage
-    const existingId = localStorage.getItem("firebase_user_id");
-    if (existingId) {
-      return existingId;
+  private ensureAuthenticated(): string {
+    if (!this.userId) {
+      throw new Error("User not authenticated. Please initialize Firebase Auth first.");
     }
-
-    // Generate new unique ID
-    const userId =
-      "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem("firebase_user_id", userId);
-    return userId;
+    return this.userId;
   }
 
   /**
    * Get current user ID
    */
   getUserId(): string {
-    return this.userId;
+    return this.ensureAuthenticated();
   }
 
   /**

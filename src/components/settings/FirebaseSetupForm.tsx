@@ -19,6 +19,8 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
     storageBucket: "",
     messagingSenderId: "",
     appId: "",
+    userEmail: "",
+    userPassword: "",
   });
 
   const [password, setPassword] = useState("");
@@ -69,13 +71,31 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate required fields
+    if (!config.userEmail || !config.userPassword) {
+      setError("Email and account password are required");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(config.userEmail)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (config.userPassword.length < 6) {
+      setError("Account password must be at least 6 characters");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Encryption passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Encryption password must be at least 6 characters");
       return;
     }
 
@@ -190,6 +210,42 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
             />
           </div>
 
+          {/* User Authentication Section */}
+          <div className="border-t border-slate-700 pt-4 mt-6">
+            <h4 className="text-lg font-medium text-white mb-3">
+              User Authentication (for cross-browser sync)
+            </h4>
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="email"
+                  placeholder="Your Email *"
+                  value={config.userEmail}
+                  onChange={(e) => updateConfig("userEmail", e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="password"
+                  placeholder="Account Password *"
+                  value={config.userPassword}
+                  onChange={(e) => updateConfig("userPassword", e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Encryption Section */}
+          <div className="border-t border-slate-700 pt-4 mt-6">
+            <h4 className="text-lg font-medium text-white mb-3">
+              Local Encryption Password
+            </h4>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="password"
@@ -210,6 +266,7 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
               minLength={6}
               className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
+          </div>
           </div>
         </div>
 

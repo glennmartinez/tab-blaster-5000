@@ -25,8 +25,8 @@ export class StorageFactory {
     if (this.initialized) {
       return;
     }
-    
-    console.log('🔧 StorageFactory.initialize() - Loading storage preferences');
+
+    console.log("🔧 StorageFactory.initialize() - Loading storage preferences");
     const preferredType = this.getPreferredStorageType();
     this.currentType = preferredType;
     console.log(`📋 Storage factory initialized with type: ${preferredType}`);
@@ -36,7 +36,7 @@ export class StorageFactory {
   static getStorageService(): SessionInterface {
     // Ensure factory is initialized
     this.initialize();
-    
+
     console.log(
       `StorageFactory.getStorageService() called - current instance exists: ${!!this
         .instance}, current type: ${this.currentType}`

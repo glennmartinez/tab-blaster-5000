@@ -25,14 +25,15 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for tab events to manage tabs
 chrome.tabs.onCreated.addListener((tab) => {
-  // Handle new tab creation
-  console.log('New tab created:', tab.id);
+  // Handle new tab creation - only log for debugging if needed
+  // console.log('New tab created:', tab.id);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // Handle tab updates
   if (changeInfo.status === 'complete' && tab.url) {
-    console.log('Tab updated:', tabId, tab.url);
+    // Only log for debugging if needed - comment out to reduce console noise
+    // console.log('Tab updated:', tabId, tab.url);
     
     // Track visit for both favorites and session tabs
     trackVisit(tab.url);
@@ -58,7 +59,7 @@ async function trackVisit(url) {
       favorites[favoriteIndex].usage.lastAccess = new Date().toISOString();
       updated = true;
       
-      console.log('Updated favorite visit for:', url);
+      // console.log('Updated favorite visit for:', url);
     }
 
     // Track visit for tabs in sessions
@@ -72,7 +73,7 @@ async function trackVisit(url) {
             tab.usage.lastAccess = new Date().toISOString();
             updated = true;
             
-            console.log('Updated session tab visit for:', url, 'in session:', session.name);
+            // console.log('Updated session tab visit for:', url, 'in session:', session.name);
           }
         });
       }
@@ -166,11 +167,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Listen for messages from the extension popup
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   console.log("Background script received message:", request);
-  
+
   if (request.action === "saveAndCloseTabs") {
-    console.log("Handling saveAndCloseTabs action");
-    
-    // Immediately send a response to prevent connection issues
+    // Only log for debugging if needed
+    // console.log("Handling saveAndCloseTabs action");    // Immediately send a response to prevent connection issues
     sendResponse({ status: "processing" });
     
     // Handle the tab operations independently of the popup

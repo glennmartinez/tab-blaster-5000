@@ -77,7 +77,9 @@ export class FocusSessionService {
   async getCurrentSession(): Promise<FocusSession | null> {
     console.log("📊 Getting current session..."); // Debug log
     try {
-      const data = await this.getStorage().get(STORAGE_KEYS.CURRENT_FOCUS_SESSION);
+      const data = await this.getStorage().get(
+        STORAGE_KEYS.CURRENT_FOCUS_SESSION
+      );
       const session = data[STORAGE_KEYS.CURRENT_FOCUS_SESSION] as FocusSession;
       console.log("📊 Current session retrieved:", session); // Debug log
 

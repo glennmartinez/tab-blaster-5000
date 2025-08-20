@@ -1,6 +1,11 @@
 import { Task, TaskFilters, TaskStats } from "../interfaces/TaskInterface";
 import { StorageFactory } from "./StorageFactory";
 import { STORAGE_KEYS } from "../constants/storageKeys";
+import { FirebaseStorageService } from "./firebase/FirebaseStorageService";
+import {
+  serializeTaskForFirebase,
+  deserializeTaskFromFirebase,
+} from "./firebase/FirebaseSerializer";
 
 export class TasksService {
   /**
@@ -16,24 +21,106 @@ export class TasksService {
   async getTasks(): Promise<Task[]> {
     try {
       const storage = this.getStorage();
-      console.log(`TasksService.getTasks() using storage: ${storage.constructor.name}`);
-      
-      const data = await storage.get(STORAGE_KEYS.TASKS);
-      const tasks = (data[STORAGE_KEYS.TASKS] as Task[]) || [];
+      console.log(
+        `TasksService.getTasks() using storage: ${storage.constructor.name}`
+      );
 
-      console.log(`Retrieved ${tasks.length} tasks from storage`);
-      
-      // Convert date strings back to Date objects
-      return tasks.map((task) => ({
-        ...task,
-        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-        createdAt: new Date(task.createdAt),
-        updatedAt: new Date(task.updatedAt),
-      }));
+      const data = await storage.get(STORAGE_KEYS.TASKS);
+      const tasksData = (data[STORAGE_KEYS.TASKS] as unknown[]) || [];
+
+      console.log(
+        `Retrieved ${tasksData.length} raw task records from storage`
+      );
+
+      // Handle different storage types
+      if (storage instanceof FirebaseStorageService) {
+        // Use Firebase deserializer for Firebase storage
+        const tasks = tasksData
+          .map((taskData) => {
+            try {
+              return deserializeTaskFromFirebase(
+                taskData as Record<string, unknown>
+              );
+            } catch (error) {
+              console.error(
+                "Error deserializing task from Firebase:",
+                error,
+                taskData
+              );
+              return null;
+            }
+          })
+          .filter((task): task is Task => task !== null);
+
+        console.log(
+          `Successfully deserialized ${tasks.length} tasks from Firebase`
+        );
+        return tasks;
+      } else {
+        // Handle other storage types with legacy date parsing
+        const tasks = tasksData
+          .map((taskData) => {
+            try {
+              const task = taskData as Task;
+              // Convert date strings back to Date objects for non-Firebase storage
+              const parsedTask: Task = {
+                ...task,
+                dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+                createdAt: new Date(task.createdAt),
+                updatedAt: new Date(task.updatedAt),
+              };
+              return parsedTask;
+            } catch (error) {
+              console.error("Error parsing task dates:", error, taskData);
+              return null;
+            }
+          })
+          .filter((task): task is Task => task !== null);
+
+        console.log(
+          `Successfully parsed ${tasks.length} tasks from ${storage.constructor.name}`
+        );
+        return tasks;
+      }
     } catch (error) {
       console.error("Error fetching tasks:", error);
       return [];
     }
+  }
+
+  /**
+   * Validate and sanitize a task's dates
+   */
+  private validateTaskDates(task: Task): Task {
+    const now = new Date();
+
+    // Ensure createdAt is valid
+    let createdAt = task.createdAt;
+    if (!createdAt || isNaN(new Date(createdAt).getTime())) {
+      console.warn(`Invalid createdAt for task ${task.id}, using current time`);
+      createdAt = now;
+    }
+
+    // Ensure updatedAt is valid
+    let updatedAt = task.updatedAt;
+    if (!updatedAt || isNaN(new Date(updatedAt).getTime())) {
+      console.warn(`Invalid updatedAt for task ${task.id}, using current time`);
+      updatedAt = now;
+    }
+
+    // Validate dueDate if it exists
+    let dueDate = task.dueDate;
+    if (dueDate && isNaN(new Date(dueDate).getTime())) {
+      console.warn(`Invalid dueDate for task ${task.id}, removing dueDate`);
+      dueDate = undefined;
+    }
+
+    return {
+      ...task,
+      createdAt,
+      updatedAt,
+      dueDate,
+    };
   }
 
   /**
@@ -42,15 +129,74 @@ export class TasksService {
   async saveTasks(tasks: Task[]): Promise<void> {
     try {
       const storage = this.getStorage();
-      console.log(`TasksService.saveTasks() saving ${tasks.length} tasks using storage: ${storage.constructor.name}`);
-      
+      console.log(
+        `TasksService.saveTasks() saving ${tasks.length} tasks using storage: ${storage.constructor.name}`
+      );
+
+      // Validate dates first
+      const validatedTasks = tasks.map((task) => this.validateTaskDates(task));
+
+      // Handle serialization based on storage type
+      let tasksToStore: unknown[];
+
+      if (storage instanceof FirebaseStorageService) {
+        // Use Firebase serializer for proper data formatting
+        console.log(
+          "Using Firebase storage - serializing with Firebase serializer"
+        );
+        tasksToStore = validatedTasks.map((task) => {
+          try {
+            return serializeTaskForFirebase(task);
+          } catch (error) {
+            console.error("Error serializing task for Firebase:", error, task);
+            throw error;
+          }
+        });
+      } else {
+        // For other storage types, serialize to ISO strings
+        console.log(
+          "Using non-Firebase storage - serializing dates to ISO strings"
+        );
+        tasksToStore = validatedTasks.map((task) => ({
+          ...task,
+          dueDate: task.dueDate
+            ? new Date(task.dueDate).toISOString()
+            : undefined,
+          createdAt: new Date(task.createdAt).toISOString(),
+          updatedAt: new Date(task.updatedAt).toISOString(),
+        }));
+      }
+
+      console.log(
+        "Task data sample being stored:",
+        tasksToStore[0]
+          ? {
+              id: (tasksToStore[0] as Record<string, unknown>).id,
+              title: (tasksToStore[0] as Record<string, unknown>).title,
+              createdAt: (tasksToStore[0] as Record<string, unknown>).createdAt,
+              updatedAt: (tasksToStore[0] as Record<string, unknown>).updatedAt,
+              dueDate: (tasksToStore[0] as Record<string, unknown>).dueDate,
+              storageType: storage.constructor.name,
+            }
+          : "No tasks to store"
+      );
+
       await storage.set({
-        [STORAGE_KEYS.TASKS]: tasks,
+        [STORAGE_KEYS.TASKS]: tasksToStore,
       });
-      
-      console.log(`✅ Successfully saved ${tasks.length} tasks to storage`);
+
+      console.log(
+        `✅ Successfully saved ${tasks.length} tasks to ${storage.constructor.name}`
+      );
     } catch (error) {
       console.error("Error saving tasks:", error);
+      if (error instanceof Error) {
+        console.error("TasksService save error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
+      }
       throw error;
     }
   }

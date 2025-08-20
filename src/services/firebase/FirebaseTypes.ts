@@ -5,6 +5,9 @@ export interface UserFirebaseConfig {
   storageBucket: string;
   messagingSenderId: string;
   appId: string;
+  // Authentication credentials for cross-browser sync
+  userEmail: string;
+  userPassword: string; // Will be encrypted when stored
 }
 
 export interface EncryptedFirebaseConfig {
@@ -26,4 +29,11 @@ export interface PasswordSession {
   keyHash: string; // Hash of derived key for validation
   expiresAt: number; // When this session expires
   createdAt: number; // When session was created
+}
+
+export interface FirebaseAuthState {
+  isAuthenticated: boolean;
+  userId: string | null; // Firebase Auth UID
+  email: string | null;
+  lastSignIn: number;
 }

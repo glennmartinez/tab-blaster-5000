@@ -13,7 +13,7 @@ export class DisruptionService {
   private getStorage() {
     return StorageFactory.getStorageService();
   }
-  
+
   private readonly DISRUPTION_IDS_KEY = "disruption_ids";
 
   /**
@@ -67,7 +67,9 @@ export class DisruptionService {
       isManualEntry: false,
     };
 
-    await this.getStorage().set({ [`disruption_${disruption.id}`]: disruption });
+    await this.getStorage().set({
+      [`disruption_${disruption.id}`]: disruption,
+    });
     await this.addDisruptionId(disruption.id);
     return disruption;
   }
@@ -120,7 +122,9 @@ export class DisruptionService {
       isManualEntry: true,
     };
 
-    await this.getStorage().set({ [`disruption_${disruption.id}`]: disruption });
+    await this.getStorage().set({
+      [`disruption_${disruption.id}`]: disruption,
+    });
     await this.addDisruptionId(disruption.id);
     return disruption;
   }
@@ -155,7 +159,9 @@ export class DisruptionService {
       const disruptions: Disruption[] = [];
 
       for (const disruptionId of disruptionIds) {
-        const result = await this.getStorage().get(`disruption_${disruptionId}`);
+        const result = await this.getStorage().get(
+          `disruption_${disruptionId}`
+        );
         const disruption = result[`disruption_${disruptionId}`] as Disruption;
 
         if (disruption && disruption.date === date) {
@@ -275,7 +281,9 @@ export class DisruptionService {
       const disruptionIds = await this.getDisruptionIds();
 
       for (const disruptionId of disruptionIds) {
-        const result = await this.getStorage().get(`disruption_${disruptionId}`);
+        const result = await this.getStorage().get(
+          `disruption_${disruptionId}`
+        );
         const disruption = result[`disruption_${disruptionId}`] as Disruption;
 
         if (disruption && !disruption.endTime) {

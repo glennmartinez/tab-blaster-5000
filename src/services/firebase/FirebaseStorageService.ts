@@ -115,10 +115,27 @@ export class FirebaseStorageService implements SessionInterface {
 
     try {
       // Initialize Firebase app with unique name to avoid conflicts
-      const appName = `tab-blaster-${this.userId}`;
+      const appName = this.userId ? `tab-blaster-${this.userId}` : `tab-blaster-${Date.now()}`;
       console.log(`🚀 Initializing Firebase app with name: ${appName}`);
 
-      this.firebaseApp = initializeApp(config, appName);
+      // Check if an app with this name already exists
+      try {
+        const { getApps } = await import("firebase/app");
+        const existingApps = getApps();
+        const existingApp = existingApps.find(app => app.name === appName);
+        
+        if (existingApp) {
+          console.log(`♻️ Using existing Firebase app: ${appName}`);
+          this.firebaseApp = existingApp;
+        } else {
+          console.log(`🆕 Creating new Firebase app: ${appName}`);
+          this.firebaseApp = initializeApp(config, appName);
+        }
+      } catch {
+        // Fallback: try to create a new app
+        this.firebaseApp = initializeApp(config, appName);
+      }
+      
       console.log("✅ Firebase app initialized");
 
       this.firestore = getFirestore(this.firebaseApp);
@@ -175,12 +192,43 @@ export class FirebaseStorageService implements SessionInterface {
    */
   async testConnection(config: UserFirebaseConfig): Promise<void> {
     console.log("Testing Firebase connection...");
-    await this.initializeFirebase(config);
+    
+    let testApp: FirebaseApp | null = null;
+    let testFirestore: Firestore | null = null;
+    
+    try {
+      // Create a unique app name for testing to avoid conflicts
+      const testAppName = `test-connection-${Date.now()}`;
+      
+      // Import Firebase dynamically to avoid bundle bloat
+      const { initializeApp } = await import("firebase/app");
+      const { getFirestore, collection, getDocs } = await import("firebase/firestore");
 
-    // Try to access Firestore to ensure connection works
-    const testRef = collection(this.firestore!, "test");
-    await getDocs(testRef);
-    console.log("Firebase connection test successful");
+      console.log(`Creating test Firebase app: ${testAppName}`);
+      testApp = initializeApp(config, testAppName);
+      testFirestore = getFirestore(testApp);
+
+      console.log("Testing Firestore access...");
+      // Try to access Firestore to ensure connection works
+      const testRef = collection(testFirestore, "connection-test");
+      await getDocs(testRef);
+      
+      console.log("✅ Firebase connection test successful");
+    } catch (error) {
+      console.error("❌ Firebase connection test failed:", error);
+      throw new Error(`Failed to connect to Firebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      // Clean up the test app
+      if (testApp) {
+        try {
+          console.log("Cleaning up test Firebase app");
+          const { deleteApp } = await import("firebase/app");
+          await deleteApp(testApp);
+        } catch (cleanupError) {
+          console.warn("Warning: Failed to cleanup test app:", cleanupError);
+        }
+      }
+    }
   }
 
   /**

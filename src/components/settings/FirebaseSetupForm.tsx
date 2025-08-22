@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { UserFirebaseConfig } from "../../services/firebase/FirebaseTypes";
 import { FirebaseConfigService } from "../../services/firebase/FirebaseConfigService";
 import { FirebaseStorageService } from "../../services/firebase/FirebaseStorageService";
+import { FirebaseAuthService } from "../../services/firebase/FirebaseAuthService";
 
 interface FirebaseSetupFormProps {
   onConfigured: () => void;
@@ -27,9 +28,13 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isTestingAuth, setIsTestingAuth] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [testResult, setTestResult] = useState<string>("");
+  const [authTestResult, setAuthTestResult] = useState<string>("");
+  const [connectionVerified, setConnectionVerified] = useState(false);
+  const [authVerified, setAuthVerified] = useState(false);
 
   const testConnection = async () => {
     if (!config.apiKey || !config.projectId) {
@@ -49,27 +54,114 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
         apiKey: config.apiKey.substring(0, 10) + "...", // Don't log full API key
       });
 
+      // Test basic Firebase connection without auth
+      const tempConfig = {
+        ...config,
+        userEmail: "test@example.com", // Temporary for connection test
+        userPassword: "testpass123"
+      };
+
       // Create a temporary Firebase storage service to test the connection
       const tempService = new FirebaseStorageService();
-      await tempService.testConnection(config);
+      await tempService.testConnection(tempConfig);
 
       setTestResult(
-        "✅ Connection successful! Firebase configuration is valid."
+        "✅ Firebase connection successful! Configuration is valid."
       );
-      setSuccess("Connection test passed");
+      setConnectionVerified(true);
+      setSuccess("Connection test passed - you can now test authentication");
     } catch (error) {
       console.error("Firebase connection test failed:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       setTestResult(`❌ Connection failed: ${errorMessage}`);
-      setError("Connection test failed");
+      setError("Connection test failed. Please check your Firebase configuration.");
+      setConnectionVerified(false);
     } finally {
       setIsTesting(false);
     }
   };
 
+  const testAuthentication = async () => {
+    if (!config.userEmail || !config.userPassword) {
+      setError("Please enter both email and account password to test authentication");
+      return;
+    }
+
+    if (!connectionVerified) {
+      setError("Please test and verify Firebase connection first");
+      return;
+    }
+
+    setIsTestingAuth(true);
+    setAuthTestResult("");
+    setError("");
+
+    try {
+      // Initialize Firebase Auth with config
+      await FirebaseAuthService.initialize(config);
+      
+      // Try to sign in with provided credentials
+      const authResult = await FirebaseAuthService.signIn(config.userEmail, config.userPassword);
+      
+      setAuthTestResult(
+        `✅ Authentication successful! Signed in as: ${authResult.email}`
+      );
+      setAuthVerified(true);
+      setSuccess("Authentication verified - ready to save configuration");
+      
+    } catch (error: unknown) {
+      console.error("Firebase authentication test failed:", error);
+      
+      // Handle specific auth errors
+      const firebaseError = error as { code?: string; message?: string };
+      if (firebaseError.code === 'auth/user-not-found') {
+        // Try to create the account
+        try {
+          const createResult = await FirebaseAuthService.createAccount(config.userEmail, config.userPassword);
+          setAuthTestResult(
+            `✅ New account created and authenticated! User: ${createResult.email}`
+          );
+          setAuthVerified(true);
+          setSuccess("New account created - ready to save configuration");
+        } catch (createError: unknown) {
+          const createFirebaseError = createError as { message?: string };
+          setAuthTestResult(`❌ Account creation failed: ${createFirebaseError.message || 'Unknown error'}`);
+          setError("Failed to create Firebase Auth account");
+          setAuthVerified(false);
+        }
+      } else if (firebaseError.code === 'auth/wrong-password') {
+        setAuthTestResult("❌ Authentication failed: Incorrect password for this email");
+        setError("The password is incorrect for this email address");
+        setAuthVerified(false);
+      } else if (firebaseError.code === 'auth/invalid-email') {
+        setAuthTestResult("❌ Authentication failed: Invalid email format");
+        setError("Please enter a valid email address");
+        setAuthVerified(false);
+      } else {
+        const errorMessage = firebaseError.message || "Unknown authentication error";
+        setAuthTestResult(`❌ Authentication failed: ${errorMessage}`);
+        setError("Authentication test failed");
+        setAuthVerified(false);
+      }
+    } finally {
+      setIsTestingAuth(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate that both tests have passed
+    if (!connectionVerified) {
+      setError("Please test and verify Firebase connection first");
+      return;
+    }
+
+    if (!authVerified) {
+      setError("Please test and verify Firebase authentication first");
+      return;
+    }
 
     // Validate required fields
     if (!config.userEmail || !config.userPassword) {
@@ -282,6 +374,18 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
           </div>
         )}
 
+        {authTestResult && (
+          <div
+            className={`p-3 rounded-lg border font-medium ${
+              authTestResult.includes("✅")
+                ? "bg-green-900/30 border-green-600/50 text-green-400"
+                : "bg-red-900/30 border-red-600/50 text-red-400"
+            }`}
+          >
+            {authTestResult}
+          </div>
+        )}
+
         {error && (
           <div className="p-3 rounded-lg bg-red-900/30 border border-red-600/50 text-red-400 font-medium">
             ❌ {error}
@@ -295,21 +399,41 @@ export const FirebaseSetupForm: React.FC<FirebaseSetupFormProps> = ({
         )}
 
         <div className="flex flex-wrap gap-3 justify-center pt-4">
+          {/* Step 1: Test Connection */}
           <button
             type="button"
             onClick={testConnection}
             disabled={isTesting || !config.apiKey || !config.projectId}
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none"
+            className={`px-6 py-3 font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none ${
+              connectionVerified 
+                ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800" 
+                : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800"
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isTesting ? "Testing..." : "Test Connection"}
+            {isTesting ? "Testing..." : connectionVerified ? "✅ Connection Verified" : "1. Test Connection"}
           </button>
 
+          {/* Step 2: Test Authentication */}
+          <button
+            type="button"
+            onClick={testAuthentication}
+            disabled={isTestingAuth || !connectionVerified || !config.userEmail || !config.userPassword}
+            className={`px-6 py-3 font-medium rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none ${
+              authVerified 
+                ? "bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800" 
+                : "bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800"
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {isTestingAuth ? "Authenticating..." : authVerified ? "✅ Auth Verified" : "2. Test Authentication"}
+          </button>
+
+          {/* Step 3: Save Configuration */}
           <button
             type="submit"
-            disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none"
+            disabled={isLoading || !connectionVerified || !authVerified}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 disabled:transform-none"
           >
-            {isLoading ? "Saving..." : "Save Configuration"}
+            {isLoading ? "Saving..." : "3. Save Configuration"}
           </button>
 
           <button

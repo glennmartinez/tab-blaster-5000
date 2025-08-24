@@ -21,7 +21,7 @@ const STORAGE_KEYS = {
 export class FirebaseConfigService {
   private static sessionKey: CryptoKey | null = null;
   private static configCache: UserFirebaseConfig | null = null;
-  private static readonly SESSION_KEY_STORAGE = 'firebase_session_key';
+  private static readonly SESSION_KEY_STORAGE = "firebase_session_key";
 
   /**
    * Check if Firebase configuration exists and is valid
@@ -149,17 +149,21 @@ export class FirebaseConfigService {
 
       // Check if we have the session key in memory
       if (!this.sessionKey) {
-        console.log("No session key in memory - attempting to restore from localStorage");
+        console.log(
+          "No session key in memory - attempting to restore from localStorage"
+        );
         // Try to restore the session key from localStorage
         this.sessionKey = await this.restoreSessionKey();
-        
+
         if (!this.sessionKey) {
-          console.log("Could not restore session key - session invalid after refresh");
+          console.log(
+            "Could not restore session key - session invalid after refresh"
+          );
           // Clear the session since we can't use it without the key
           await this.clearPasswordSession();
           return false;
         }
-        
+
         console.log("Successfully restored session key from localStorage");
       }
 
@@ -298,11 +302,11 @@ export class FirebaseConfigService {
       console.log("🔑 Storing session key in localStorage...");
       // Export the key as raw bytes
       const keyBuffer = await crypto.subtle.exportKey("raw", key);
-      
+
       // Create a simple device-specific encryption key from extension ID
       const deviceKey = await crypto.subtle.importKey(
         "raw",
-        new TextEncoder().encode(chrome.runtime.id.padEnd(32, '0')), // Pad to 32 bytes
+        new TextEncoder().encode(chrome.runtime.id.padEnd(32, "0")), // Pad to 32 bytes
         "AES-GCM",
         false,
         ["encrypt"]
@@ -319,10 +323,13 @@ export class FirebaseConfigService {
       // Store in localStorage
       const sessionData = {
         encryptedKey: Array.from(new Uint8Array(encryptedKey)),
-        iv: Array.from(iv)
+        iv: Array.from(iv),
       };
-      
-      localStorage.setItem(this.SESSION_KEY_STORAGE, JSON.stringify(sessionData));
+
+      localStorage.setItem(
+        this.SESSION_KEY_STORAGE,
+        JSON.stringify(sessionData)
+      );
       console.log("🔑 Session key stored successfully in localStorage");
     } catch (error) {
       console.error("🔑 Error storing session key:", error);
@@ -343,11 +350,11 @@ export class FirebaseConfigService {
 
       const sessionData = JSON.parse(sessionDataStr);
       console.log("🔑 Found encrypted session key in localStorage");
-      
+
       // Create the same device-specific decryption key
       const deviceKey = await crypto.subtle.importKey(
         "raw",
-        new TextEncoder().encode(chrome.runtime.id.padEnd(32, '0')), // Pad to 32 bytes
+        new TextEncoder().encode(chrome.runtime.id.padEnd(32, "0")), // Pad to 32 bytes
         "AES-GCM",
         false,
         ["decrypt"]
@@ -356,7 +363,7 @@ export class FirebaseConfigService {
       // Decrypt the session key
       const iv = new Uint8Array(sessionData.iv);
       const encryptedKey = new Uint8Array(sessionData.encryptedKey);
-      
+
       const decryptedKeyBuffer = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv },
         deviceKey,
@@ -371,7 +378,7 @@ export class FirebaseConfigService {
         true,
         ["encrypt", "decrypt"]
       );
-      
+
       console.log("🔑 Successfully restored session key from localStorage");
       return restoredKey;
     } catch (error) {

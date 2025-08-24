@@ -1,0 +1,45 @@
+# Binaries
+
+_.exe
+_.exe~
+\_# Docker (keep Dockerfile for build context)
+docker-compose.yml
+.dockerignore
+
+# Documentation
+
+README.md\*.dylib
+main
+
+# Test binary, built with `go test -c`
+
+\*.test
+
+# Output of the go coverage tool
+
+\*.out
+
+# Go workspace file
+
+go.work
+
+# IDE files
+
+.vscode/
+.idea/
+
+# Docker
+
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+
+\*.md
+README.md
+
+# Git
+
+.git/
+.gitignore

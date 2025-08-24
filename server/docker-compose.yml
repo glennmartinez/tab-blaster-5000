@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  tab-blaster-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
+      - FIREBASE_CREDENTIALS_FILE=/app/firebase-credentials.json
+    env_file:
+      - .env
+    volumes:
+      # For development - mount source code for hot reload (optional)
+      - .:/app
+      # Mount Firebase credentials file
+      - ./my-apps-gmoney-firebase-adminsdk-tx7fe-4c0600fe18.json:/app/firebase-credentials.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a database service if needed in the future
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     POSTGRES_DB: tab_blaster
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+# volumes:
+#   postgres_data:

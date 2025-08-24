@@ -27,7 +27,9 @@ export class FirebaseStorageService implements SessionInterface {
 
   constructor() {
     // User ID will be set after Firebase Auth initialization
-    console.log("🆔 FirebaseStorageService created - waiting for authentication");
+    console.log(
+      "🆔 FirebaseStorageService created - waiting for authentication"
+    );
   }
 
   /**
@@ -44,36 +46,41 @@ export class FirebaseStorageService implements SessionInterface {
     try {
       const config = await FirebaseConfigService.getConfig();
       console.log("✅ Retrieved Firebase config successfully");
-      
+
       // Initialize Firebase Auth first
       await FirebaseAuthService.initialize(config);
-      
+
       // Attempt to sign in with stored credentials
       const signInSuccessful = await FirebaseAuthService.attemptAutoSignIn(
-        config.userEmail, 
+        config.userEmail,
         config.userPassword
       );
-      
+
       if (!signInSuccessful) {
         // If auto sign-in fails, try to create account or throw error for manual sign-in
         try {
-          await FirebaseAuthService.createAccount(config.userEmail, config.userPassword);
+          await FirebaseAuthService.createAccount(
+            config.userEmail,
+            config.userPassword
+          );
           console.log("🆔 Created new Firebase Auth account");
         } catch {
-          console.log("🆔 Account creation failed, user needs to sign in manually");
+          console.log(
+            "🆔 Account creation failed, user needs to sign in manually"
+          );
           throw new Error("AUTHENTICATION_REQUIRED");
         }
       }
-      
+
       // Get the authenticated user ID
       this.userId = FirebaseAuthService.getCurrentUserId();
       if (!this.userId) {
         throw new Error("Failed to get authenticated user ID");
       }
-      
+
       console.log(`🆔 Authenticated with Firebase Auth userId: ${this.userId}`);
       console.log(`📍 Your Firebase data path: users/${this.userId}/data/`);
-      
+
       await this.initializeFirebase(config);
       this.isConfigured = true;
       this.configurationError = null;
@@ -115,15 +122,17 @@ export class FirebaseStorageService implements SessionInterface {
 
     try {
       // Initialize Firebase app with unique name to avoid conflicts
-      const appName = this.userId ? `tab-blaster-${this.userId}` : `tab-blaster-${Date.now()}`;
+      const appName = this.userId
+        ? `tab-blaster-${this.userId}`
+        : `tab-blaster-${Date.now()}`;
       console.log(`🚀 Initializing Firebase app with name: ${appName}`);
 
       // Check if an app with this name already exists
       try {
         const { getApps } = await import("firebase/app");
         const existingApps = getApps();
-        const existingApp = existingApps.find(app => app.name === appName);
-        
+        const existingApp = existingApps.find((app) => app.name === appName);
+
         if (existingApp) {
           console.log(`♻️ Using existing Firebase app: ${appName}`);
           this.firebaseApp = existingApp;
@@ -135,7 +144,7 @@ export class FirebaseStorageService implements SessionInterface {
         // Fallback: try to create a new app
         this.firebaseApp = initializeApp(config, appName);
       }
-      
+
       console.log("✅ Firebase app initialized");
 
       this.firestore = getFirestore(this.firebaseApp);
@@ -192,17 +201,19 @@ export class FirebaseStorageService implements SessionInterface {
    */
   async testConnection(config: UserFirebaseConfig): Promise<void> {
     console.log("Testing Firebase connection...");
-    
+
     let testApp: FirebaseApp | null = null;
     let testFirestore: Firestore | null = null;
-    
+
     try {
       // Create a unique app name for testing to avoid conflicts
       const testAppName = `test-connection-${Date.now()}`;
-      
+
       // Import Firebase dynamically to avoid bundle bloat
       const { initializeApp } = await import("firebase/app");
-      const { getFirestore, collection, getDocs } = await import("firebase/firestore");
+      const { getFirestore, collection, getDocs } = await import(
+        "firebase/firestore"
+      );
 
       console.log(`Creating test Firebase app: ${testAppName}`);
       testApp = initializeApp(config, testAppName);
@@ -212,11 +223,15 @@ export class FirebaseStorageService implements SessionInterface {
       // Try to access Firestore to ensure connection works
       const testRef = collection(testFirestore, "connection-test");
       await getDocs(testRef);
-      
+
       console.log("✅ Firebase connection test successful");
     } catch (error) {
       console.error("❌ Firebase connection test failed:", error);
-      throw new Error(`Failed to connect to Firebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to connect to Firebase: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       // Clean up the test app
       if (testApp) {
@@ -576,9 +591,7 @@ export class FirebaseStorageService implements SessionInterface {
     try {
       const userId = this.ensureAuthenticated();
       const dataRef = doc(this.firestore!, "users", userId, "data", key);
-      console.log(
-        `Fetching from Firestore path: users/${userId}/data/${key}`
-      );
+      console.log(`Fetching from Firestore path: users/${userId}/data/${key}`);
 
       const dataDoc = await getDoc(dataRef);
 
@@ -723,7 +736,9 @@ export class FirebaseStorageService implements SessionInterface {
    */
   private ensureAuthenticated(): string {
     if (!this.userId) {
-      throw new Error("User not authenticated. Please initialize Firebase Auth first.");
+      throw new Error(
+        "User not authenticated. Please initialize Firebase Auth first."
+      );
     }
     return this.userId;
   }

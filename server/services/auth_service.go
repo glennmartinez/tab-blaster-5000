@@ -228,8 +228,8 @@ func (as *AuthService) VerifyToken(ctx context.Context, tokenString string) (str
 func (as *AuthService) getFirebaseAPIKey() string {
 	apiKey := os.Getenv("FIREBASE_API_KEY")
 	if apiKey == "" {
-		log.Println("WARNING: FIREBASE_API_KEY not set in environment")
-		return "AIzaSyDbstc4ULwozJLhIqJrLKMqfhL9tKGp3Yg" // Fallback for development
+		log.Println("ERROR: FIREBASE_API_KEY not set in environment")
+		return ""
 	}
 	return apiKey
 }

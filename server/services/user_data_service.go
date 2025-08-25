@@ -1,0 +1,327 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"sync"
+
+	"cloud.google.com/go/firestore"
+	"google.golang.org/api/iterator"
+)
+
+// Session represents a user session
+type Session struct {
+	ID          string            `json:"id" firestore:"id"`
+	Name        string            `json:"name" firestore:"name"`
+	CreatedAt   int64             `json:"created_at" firestore:"created_at"`
+	UpdatedAt   int64             `json:"updated_at" firestore:"updated_at"`
+	Tabs        []Tab             `json:"tabs" firestore:"tabs"`
+	WindowCount int               `json:"window_count" firestore:"window_count"`
+	TabCount    int               `json:"tab_count" firestore:"tab_count"`
+	Tags        []string          `json:"tags" firestore:"tags"`
+	Metadata    map[string]string `json:"metadata" firestore:"metadata"`
+}
+
+// Tab represents a browser tab
+type Tab struct {
+	ID         string `json:"id" firestore:"id"`
+	URL        string `json:"url" firestore:"url"`
+	Title      string `json:"title" firestore:"title"`
+	WindowID   int    `json:"window_id" firestore:"window_id"`
+	Index      int    `json:"index" firestore:"index"`
+	Active     bool   `json:"active" firestore:"active"`
+	Pinned     bool   `json:"pinned" firestore:"pinned"`
+	FaviconURL string `json:"favicon_url,omitempty" firestore:"favicon_url,omitempty"`
+}
+
+// SavedTab represents a saved tab
+type SavedTab struct {
+	ID         string            `json:"id" firestore:"id"`
+	URL        string            `json:"url" firestore:"url"`
+	Title      string            `json:"title" firestore:"title"`
+	SavedAt    int64             `json:"saved_at" firestore:"saved_at"`
+	Tags       []string          `json:"tags" firestore:"tags"`
+	Notes      string            `json:"notes" firestore:"notes"`
+	FaviconURL string            `json:"favicon_url,omitempty" firestore:"favicon_url,omitempty"`
+	Metadata   map[string]string `json:"metadata" firestore:"metadata"`
+}
+
+// UserDataService handles user data operations
+type UserDataService struct {
+	firebaseService *FirebaseService
+	mu              sync.RWMutex
+}
+
+var (
+	userDataService *UserDataService
+	userDataOnce    sync.Once
+	userDataErr     error
+)
+
+// NewUserDataService creates a new user data service instance
+func NewUserDataService() (*UserDataService, error) {
+	userDataOnce.Do(func() {
+		userDataService, userDataErr = initializeUserDataService()
+	})
+	return userDataService, userDataErr
+}
+
+// initializeUserDataService initializes the user data service
+func initializeUserDataService() (*UserDataService, error) {
+	firebaseService, err := NewFirebaseService()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Firebase service: %w", err)
+	}
+
+	service := &UserDataService{
+		firebaseService: firebaseService,
+	}
+
+	log.Println("User data service initialized successfully")
+	return service, nil
+}
+
+// Session Management Methods
+
+func (uds *UserDataService) GetUserSessions(ctx context.Context, userID string) ([]*Session, error) {
+	uds.mu.RLock()
+	defer uds.mu.RUnlock()
+
+	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions")
+	iter := collection.Documents(ctx)
+	defer iter.Stop()
+
+	var sessions []*Session
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate sessions: %w", err)
+		}
+
+		var session Session
+		if err := doc.DataTo(&session); err != nil {
+			log.Printf("Failed to parse session %s: %v", doc.Ref.ID, err)
+			continue
+		}
+
+		sessions = append(sessions, &session)
+	}
+
+	log.Printf("Retrieved %d sessions for user %s", len(sessions), userID)
+	return sessions, nil
+}
+
+func (uds *UserDataService) StoreUserSession(ctx context.Context, userID string, session *Session) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions")
+
+	var docRef *firestore.DocumentRef
+	if session.ID != "" {
+		docRef = collection.Doc(session.ID)
+	} else {
+		docRef = collection.NewDoc()
+		session.ID = docRef.ID
+	}
+
+	_, err := docRef.Set(ctx, session)
+	if err != nil {
+		return fmt.Errorf("failed to store session: %w", err)
+	}
+
+	log.Printf("Stored session %s for user %s", session.ID, userID)
+	return nil
+}
+
+func (uds *UserDataService) DeleteUserSession(ctx context.Context, userID string, sessionID string) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions").Doc(sessionID)
+	_, err := docRef.Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete session: %w", err)
+	}
+
+	log.Printf("Deleted session %s for user %s", sessionID, userID)
+	return nil
+}
+
+func (uds *UserDataService) GetUserSession(ctx context.Context, userID string, sessionID string) (*Session, error) {
+	uds.mu.RLock()
+	defer uds.mu.RUnlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions").Doc(sessionID)
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session: %w", err)
+	}
+
+	var session Session
+	if err := doc.DataTo(&session); err != nil {
+		return nil, fmt.Errorf("failed to parse session: %w", err)
+	}
+
+	return &session, nil
+}
+
+// Saved Tabs Management Methods
+
+func (uds *UserDataService) GetUserSavedTabs(ctx context.Context, userID string) ([]*SavedTab, error) {
+	uds.mu.RLock()
+	defer uds.mu.RUnlock()
+
+	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("saved_tabs")
+	iter := collection.Documents(ctx)
+	defer iter.Stop()
+
+	var tabs []*SavedTab
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate saved tabs: %w", err)
+		}
+
+		var tab SavedTab
+		if err := doc.DataTo(&tab); err != nil {
+			log.Printf("Failed to parse saved tab %s: %v", doc.Ref.ID, err)
+			continue
+		}
+
+		tabs = append(tabs, &tab)
+	}
+
+	log.Printf("Retrieved %d saved tabs for user %s", len(tabs), userID)
+	return tabs, nil
+}
+
+func (uds *UserDataService) StoreSavedTabs(ctx context.Context, userID string, tabs []*SavedTab) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	batch := uds.firebaseService.firestore.Batch()
+	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("saved_tabs")
+
+	for _, tab := range tabs {
+		var docRef *firestore.DocumentRef
+		if tab.ID != "" {
+			docRef = collection.Doc(tab.ID)
+		} else {
+			docRef = collection.NewDoc()
+			tab.ID = docRef.ID
+		}
+		batch.Set(docRef, tab)
+	}
+
+	_, err := batch.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to store saved tabs: %w", err)
+	}
+
+	log.Printf("Stored %d saved tabs for user %s", len(tabs), userID)
+	return nil
+}
+
+// Settings Management Methods
+
+func (uds *UserDataService) GetUserSettings(ctx context.Context, userID string) (map[string]interface{}, error) {
+	uds.mu.RLock()
+	defer uds.mu.RUnlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc("settings")
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		// Return empty settings if document doesn't exist
+		return make(map[string]interface{}), nil
+	}
+
+	settings := doc.Data()
+	log.Printf("Retrieved settings for user %s", userID)
+	return settings, nil
+}
+
+func (uds *UserDataService) SaveUserSettings(ctx context.Context, userID string, settings map[string]interface{}) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc("settings")
+	_, err := docRef.Set(ctx, settings)
+	if err != nil {
+		return fmt.Errorf("failed to save settings: %w", err)
+	}
+
+	log.Printf("Saved settings for user %s", userID)
+	return nil
+}
+
+// Generic Storage Methods
+
+func (uds *UserDataService) GetUserData(ctx context.Context, userID string, key string) (interface{}, error) {
+	uds.mu.RLock()
+	defer uds.mu.RUnlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	doc, err := docRef.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get data for key %s: %w", key, err)
+	}
+
+	data := doc.Data()
+	if value, exists := data["value"]; exists {
+		return value, nil
+	}
+
+	return data, nil
+}
+
+func (uds *UserDataService) SetUserData(ctx context.Context, userID string, key string, value interface{}) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	_, err := docRef.Set(ctx, map[string]interface{}{
+		"value":     value,
+		"timestamp": firestore.ServerTimestamp,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set data for key %s: %w", key, err)
+	}
+
+	log.Printf("Saved data for key %s for user %s", key, userID)
+	return nil
+}
+
+func (uds *UserDataService) DeleteUserData(ctx context.Context, userID string, key string) error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	_, err := docRef.Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete data for key %s: %w", key, err)
+	}
+
+	log.Printf("Deleted data for key %s for user %s", key, userID)
+	return nil
+}
+
+// Close cleans up resources
+func (uds *UserDataService) Close() error {
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
+
+	if uds.firebaseService != nil {
+		return uds.firebaseService.Close()
+	}
+
+	log.Println("User data service closed")
+	return nil
+}

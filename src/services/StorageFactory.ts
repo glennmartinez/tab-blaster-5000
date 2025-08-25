@@ -4,6 +4,7 @@ import DriveStorageService from "./DriveStorageService";
 import { LocalStorageService } from "./LocalStorageService";
 import { SessionInterface } from "./SessionInterface";
 import { FirebaseStorageService } from "./firebase/FirebaseStorageService";
+import { ServerStorageService } from "./ServerStorageService";
 
 export enum StorageType {
   LOCAL_STORAGE = "localStorage",
@@ -11,6 +12,7 @@ export enum StorageType {
   CHROME_SYNC = "sync",
   DRIVE = "drive",
   FIREBASE = "firebase",
+  SERVER = "server",
 }
 
 export class StorageFactory {
@@ -76,6 +78,11 @@ export class StorageFactory {
         this.instance = new FirebaseStorageService();
         break;
 
+      case StorageType.SERVER:
+        console.log("Creating ServerStorageService instance");
+        this.instance = new ServerStorageService();
+        break;
+
       case StorageType.LOCAL_STORAGE:
       default:
         console.log("Creating LocalStorageService instance");
@@ -128,6 +135,9 @@ export class StorageFactory {
           break;
         case StorageType.FIREBASE:
           storageProvider = "firebase";
+          break;
+        case StorageType.SERVER:
+          storageProvider = "auth";
           break;
         case StorageType.LOCAL_STORAGE:
         default:
@@ -183,6 +193,8 @@ export class StorageFactory {
                 return StorageType.DRIVE;
               case "firebase":
                 return StorageType.FIREBASE;
+              case "auth":
+                return StorageType.SERVER;
               case "local":
                 return StorageType.LOCAL_STORAGE;
               default:

@@ -6,9 +6,16 @@ import (
 	"net/http"
 	"os"
 	"tab-blaster-server/routes"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
+
 	// Get port from environment variable or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {

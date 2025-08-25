@@ -22,8 +22,8 @@ FROM alpine:latest
 # Install ca-certificates for HTTPS requests
 RUN apk --no-cache add ca-certificates
 
-# Set working directory
-WORKDIR /root/
+# Set working directory to /app to match docker-compose volumes
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .

@@ -9,41 +9,24 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
-	"firebase.google.com/go/v4/db"
-	"cloud.google.com/go/firestore"
 	"google.golang.org/api/option"
-)
 
-// FirebaseConfig holds the Firebase configuration
-type FirebaseConfig struct {
-	ProjectID      string `json:"project_id"`
-	DatabaseURL    string `json:"database_url"`
-	CredentialsFile string `json:"credentials_file"`
-}
+	firebasemodel "tab-blaster-server/models/firebase_model" // Add this line
+)
 
 // FirebaseService provides Firebase operations
 type FirebaseService struct {
 	app       *firebase.App
 	auth      *auth.Client
-	db        *db.Client
 	firestore *firestore.Client
-	config    *FirebaseConfig
+	config    *firebasemodel.FirebaseConfig
 	mu        sync.RWMutex
 }
 
-// FirebaseServiceInterface defines the contract for Firebase operations
-type FirebaseServiceInterface interface {
-	TestConnection() error
-	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
-	CreateUser(ctx context.Context, email, password string) (*auth.UserRecord, error)
-	GetUser(ctx context.Context, uid string) (*auth.UserRecord, error)
-	WriteData(ctx context.Context, path string, data interface{}) error
-	ReadData(ctx context.Context, path string) (interface{}, error)
-	GetCollection(ctx context.Context, collectionName string) ([]map[string]interface{}, error)
-	Close() error
-}
+// Removed FirebaseServiceInterface - using consumer-driven interfaces instead
 
 var (
 	firebaseService *FirebaseService
@@ -76,8 +59,7 @@ func initializeFirebaseService() (*FirebaseService, error) {
 	}
 
 	firebaseConfig := &firebase.Config{
-		ProjectID:   config.ProjectID,
-		DatabaseURL: config.DatabaseURL,
+		ProjectID: config.ProjectID,
 	}
 
 	app, err := firebase.NewApp(ctx, firebaseConfig, opts...)
@@ -91,16 +73,6 @@ func initializeFirebaseService() (*FirebaseService, error) {
 		return nil, fmt.Errorf("failed to initialize Auth client: %w", err)
 	}
 
-	// Initialize Database client (optional - only if using Realtime Database)
-	var dbClient *db.Client
-	if config.DatabaseURL != "" {
-		dbClient, err = app.Database(ctx)
-		if err != nil {
-			log.Printf("Warning: failed to initialize Database client: %v", err)
-			// Don't fail completely if database is not configured
-		}
-	}
-
 	// Initialize Firestore client
 	firestoreClient, err := app.Firestore(ctx)
 	if err != nil {
@@ -110,7 +82,6 @@ func initializeFirebaseService() (*FirebaseService, error) {
 	service := &FirebaseService{
 		app:       app,
 		auth:      authClient,
-		db:        dbClient,
 		firestore: firestoreClient,
 		config:    config,
 	}
@@ -120,10 +91,9 @@ func initializeFirebaseService() (*FirebaseService, error) {
 }
 
 // loadFirebaseConfig loads Firebase configuration from environment variables
-func loadFirebaseConfig() (*FirebaseConfig, error) {
-	config := &FirebaseConfig{
+func loadFirebaseConfig() (*firebasemodel.FirebaseConfig, error) {
+	config := &firebasemodel.FirebaseConfig{
 		ProjectID:       os.Getenv("FIREBASE_PROJECT_ID"),
-		DatabaseURL:     os.Getenv("FIREBASE_DATABASE_URL"),
 		CredentialsFile: os.Getenv("FIREBASE_CREDENTIALS_FILE"),
 	}
 
@@ -251,41 +221,6 @@ func (fs *FirebaseService) GetUser(ctx context.Context, uid string) (*auth.UserR
 	return user, nil
 }
 
-// WriteData writes data to Firebase Realtime Database
-func (fs *FirebaseService) WriteData(ctx context.Context, path string, data interface{}) error {
-	if fs == nil || fs.db == nil {
-		return fmt.Errorf("Firebase Database client is not initialized")
-	}
-
-	fs.mu.RLock()
-	defer fs.mu.RUnlock()
-
-	ref := fs.db.NewRef(path)
-	if err := ref.Set(ctx, data); err != nil {
-		return fmt.Errorf("failed to write data: %w", err)
-	}
-
-	return nil
-}
-
-// ReadData reads data from Firebase Realtime Database
-func (fs *FirebaseService) ReadData(ctx context.Context, path string) (interface{}, error) {
-	if fs == nil || fs.db == nil {
-		return nil, fmt.Errorf("Firebase Database client is not initialized")
-	}
-
-	fs.mu.RLock()
-	defer fs.mu.RUnlock()
-
-	ref := fs.db.NewRef(path)
-	var data interface{}
-	if err := ref.Get(ctx, &data); err != nil {
-		return nil, fmt.Errorf("failed to read data: %w", err)
-	}
-
-	return data, nil
-}
-
 // Close closes the Firebase service and cleans up resources
 func (fs *FirebaseService) Close() error {
 	if fs == nil {
@@ -306,8 +241,8 @@ func (fs *FirebaseService) Close() error {
 	if fs.config != nil && fs.config.CredentialsFile != "" {
 		if _, err := os.Stat(fs.config.CredentialsFile); err == nil {
 			// Only remove if it's a temp file (contains "firebase-service-account")
-			if len(fs.config.CredentialsFile) > 0 && 
-			   (fs.config.CredentialsFile[:4] == "/tmp" || fs.config.CredentialsFile[:4] == "\\tmp") {
+			if len(fs.config.CredentialsFile) > 0 &&
+				(fs.config.CredentialsFile[:4] == "/tmp" || fs.config.CredentialsFile[:4] == "\\tmp") {
 				os.Remove(fs.config.CredentialsFile)
 			}
 		}

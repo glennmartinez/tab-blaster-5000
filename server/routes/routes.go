@@ -19,17 +19,25 @@ func SetupRoutes() *http.ServeMux {
 
 	// Health check endpoint
 	mux.HandleFunc("/health", healthHandler)
-	
+
 	// API routes
 	mux.HandleFunc("/api/", apiHandler)
-	mux.HandleFunc("/api/tabs", tabsHandler)
-	mux.HandleFunc("/api/sessions", sessionsHandler)
-	
+
 	// Setup Firebase routes
 	if err := SetupFirebaseRoutes(mux); err != nil {
 		log.Printf("Warning: Failed to setup Firebase routes: %v", err)
 	}
-	
+
+	// Setup Auth routes
+	if err := SetupAuthRoutes(mux); err != nil {
+		log.Printf("Warning: Failed to setup Auth routes: %v", err)
+	}
+
+	// Setup User Data routes
+	if err := SetupUserDataRoutes(mux); err != nil {
+		log.Printf("Warning: Failed to setup User Data routes: %v", err)
+	}
+
 	// Root endpoint
 	mux.HandleFunc("/", rootHandler)
 
@@ -78,8 +86,14 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 					"/health",
 					"/api/tabs",
 					"/api/sessions",
+					"/api/settings",
+					"/api/storage/{key}",
 					"/api/firebase/testconnection",
 					"/api/firebase/auth/verify",
+					"/api/auth/login",
+					"/api/auth/logout",
+					"/api/auth/verify",
+					"/api/auth/me",
 				},
 			},
 		}
@@ -90,64 +104,4 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.NotFound(w, r)
-}
-
-// tabsHandler handles tab-related requests
-func tabsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		response := Response{
-			Message: "Tabs retrieved successfully",
-			Data: []map[string]interface{}{
-				{
-					"id":    1,
-					"title": "Example Tab",
-					"url":   "https://example.com",
-				},
-			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-
-	case http.MethodPost:
-		response := Response{
-			Message: "Tab created successfully",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
-
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-// sessionsHandler handles session-related requests
-func sessionsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		response := Response{
-			Message: "Sessions retrieved successfully",
-			Data: []map[string]interface{}{
-				{
-					"id":   1,
-					"name": "Work Session",
-					"tabs": 5,
-				},
-			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-
-	case http.MethodPost:
-		response := Response{
-			Message: "Session created successfully",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
-
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	}
 }

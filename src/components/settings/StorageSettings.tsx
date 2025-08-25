@@ -4,6 +4,8 @@ import { StorageFactory, StorageType } from "../../services/StorageFactory";
 import { FirebaseConfigService } from "../../services/firebase/FirebaseConfigService";
 import { FirebaseSetupForm } from "./FirebaseSetupForm";
 import { FirebasePasswordPrompt } from "./FirebasePasswordPrompt";
+import { SimpleAuthSetup } from "./SimpleAuthSetup";
+import { SimpleAuthService } from "../../services/SimpleAuthService";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 // Define the settings type - extend to include firebase
@@ -20,7 +22,7 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
   onStorageChange,
 }) => {
   const [storageProvider, setStorageProvider] = useState<
-    StorageProvider | "firebase"
+    StorageProvider | "firebase" | "auth"
   >("local");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -30,6 +32,10 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
   const [showFirebaseSetup, setShowFirebaseSetup] = useState(false);
   const [showFirebasePassword, setShowFirebasePassword] = useState(false);
   const [firebaseConfigured, setFirebaseConfigured] = useState(false);
+
+  // Simple Auth states
+  const [showAuthSetup, setShowAuthSetup] = useState(false);
+  const [authConfigured, setAuthConfigured] = useState(false);
 
   // Load current storage provider on mount
   useEffect(() => {
@@ -41,7 +47,7 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
         console.log("Current preferred storage type:", currentType);
 
         // Map StorageType back to our UI state
-        let provider: StorageProvider | "firebase" = "local";
+        let provider: StorageProvider | "firebase" | "auth" = "local";
         switch (currentType) {
           case StorageType.CHROME_STORAGE:
             provider = "chrome";
@@ -52,20 +58,36 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
           case StorageType.FIREBASE:
             provider = "firebase";
             break;
+          case StorageType.SERVER:
+            provider = "auth";
+            break;
           case StorageType.LOCAL_STORAGE:
           default:
             provider = "local";
             break;
         }
 
+        // Check if auth was previously selected
+        const settings = await StorageService.get(STORAGE_KEYS.SETTINGS);
+        const savedSettings = settings[STORAGE_KEYS.SETTINGS] as
+          | { storageProvider?: string }
+          | undefined;
+        if (savedSettings?.storageProvider === "auth") {
+          provider = "auth";
+        }
+
         console.log("Setting storage provider to:", provider);
         setStorageProvider(provider);
 
-        // Ensure the StorageFactory is using the correct type
+        // Handle specific provider initialization
         if (provider === "firebase") {
           console.log("Initializing Firebase storage");
           StorageFactory.setPreferredStorageType(StorageType.FIREBASE);
           checkFirebaseConfig();
+        } else if (provider === "auth") {
+          console.log("Checking auth status and setting SERVER storage");
+          StorageFactory.setPreferredStorageType(StorageType.SERVER);
+          checkAuthStatus();
         } else {
           // For non-firebase providers, also set the old StorageService
           StorageService.setStorageProvider(provider as StorageProvider);
@@ -104,6 +126,19 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
     }
   };
 
+  // Check Auth configuration
+  const checkAuthStatus = async () => {
+    try {
+      const authService = SimpleAuthService.getInstance();
+      const currentUser = await authService.getCurrentUser();
+      console.log("Auth status check:", { currentUser });
+      setAuthConfigured(!!currentUser);
+    } catch (error) {
+      console.error("Failed to check auth status:", error);
+      setAuthConfigured(false);
+    }
+  };
+
   // Handle Firebase configuration complete
   const handleFirebaseConfigured = () => {
     setShowFirebaseSetup(false);
@@ -119,6 +154,22 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
     if (onStorageChange) {
       onStorageChange("firebase" as StorageProvider);
     }
+  };
+
+  // Handle Simple Auth configuration complete
+  const handleAuthConfigured = () => {
+    setShowAuthSetup(false);
+    setAuthConfigured(true);
+    setStorageProvider("auth");
+
+    // Use SERVER storage type for authenticated users
+    StorageFactory.setPreferredStorageType(StorageType.SERVER);
+
+    // Save to settings
+    saveProviderToSettings("auth");
+
+    // Note: Not calling onStorageChange for backwards compatibility 
+    // as it would interfere with the server storage setup
   };
 
   // Handle Firebase password unlock
@@ -245,10 +296,26 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
   };
 
   const handleStorageChange = async (
-    provider: StorageProvider | "firebase"
+    provider: StorageProvider | "firebase" | "auth"
   ) => {
+    // Handle Simple Auth selection
+    if (provider === "auth") {
+      // Check if user is already authenticated
+      const authService = SimpleAuthService.getInstance();
+      const currentUser = await authService.getCurrentUser();
+
+      if (!currentUser) {
+        // Show auth setup form
+        setShowAuthSetup(true);
+        return;
+      }
+
+      // Auth is ready, user is logged in - use SERVER storage
+      setAuthConfigured(true);
+      StorageFactory.setPreferredStorageType(StorageType.SERVER);
+    }
     // Handle Firebase selection
-    if (provider === "firebase") {
+    else if (provider === "firebase") {
       const hasConfig = await FirebaseConfigService.hasValidConfig();
 
       if (!hasConfig) {
@@ -344,6 +411,25 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
               Data persists even if extension is removed.
             </span>
             Available across all devices and browsers.
+          </p>
+
+          <label className="inline-flex items-center mb-2">
+            <input
+              type="radio"
+              className="form-radio h-4 w-4 text-green-600"
+              name="storage-provider"
+              value="auth"
+              checked={storageProvider === "auth"}
+              onChange={() => handleStorageChange("auth")}
+            />
+            <span className="ml-2 text-gray-200">Server Auth 🚀</span>
+          </label>
+          <p className="text-xs text-gray-400 ml-6 mb-3">
+            Connect to your own authentication server for cloud sync.
+            <span className="text-green-400">
+              Simple setup, secure authentication.
+            </span>
+            Use with your Go server backend.
           </p>
 
           <label className="inline-flex items-center mb-2">
@@ -450,6 +536,68 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
           </div>
         )}
 
+        {storageProvider === "auth" && (
+          <div className="mt-4 p-3 bg-gray-850 rounded border border-gray-700">
+            <h4 className="text-sm font-medium text-white mb-2">
+              Server Authentication Setup
+            </h4>
+
+            {authConfigured ? (
+              <div>
+                <div className="flex items-center text-green-500 mb-3">
+                  <svg
+                    className="w-5 h-5 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Authenticated with Server</span>
+                </div>
+
+                <button
+                  onClick={() => setShowAuthSetup(true)}
+                  className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded mr-2"
+                >
+                  Reconfigure
+                </button>
+
+                <button
+                  onClick={async () => {
+                    const authService = SimpleAuthService.getInstance();
+                    await authService.logout();
+                    setAuthConfigured(false);
+                    setStorageProvider("local");
+                    handleStorageChange("local");
+                  }}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs text-gray-300 mb-3">
+                  Connect to your authentication server for secure cloud sync.
+                </p>
+
+                <button
+                  onClick={() => setShowAuthSetup(true)}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded flex items-center"
+                >
+                  Setup Authentication
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {storageProvider === "firebase" && (
           <div className="mt-4 p-3 bg-gray-850 rounded border border-gray-700">
             <h4 className="text-sm font-medium text-white mb-2">
@@ -536,6 +684,18 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
                 setStorageProvider("local");
                 handleStorageChange("local");
               }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Simple Auth Setup Modal */}
+      {showAuthSetup && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <SimpleAuthSetup
+              onConfigured={handleAuthConfigured}
+              onCancel={() => setShowAuthSetup(false)}
             />
           </div>
         </div>

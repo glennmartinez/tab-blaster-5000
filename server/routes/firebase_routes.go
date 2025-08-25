@@ -5,13 +5,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 	"tab-blaster-server/services"
+	"time"
+
+	"firebase.google.com/go/v4/auth"
 )
+
+// Consumer-driven interfaces - define only what THIS package needs
+type ConnectionTester interface {
+	TestConnection() error
+}
+
+type TokenVerifier interface {
+	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
+}
+
+type CollectionReader interface {
+	GetCollection(ctx context.Context, collectionName string) ([]map[string]interface{}, error)
+}
+
+type ProjectIDGetter interface {
+	GetProjectID() string
+}
+
+// FirebaseService combines the interfaces this handler actually uses
+type FirebaseService interface {
+	ConnectionTester
+	TokenVerifier
+	CollectionReader
+	ProjectIDGetter
+}
 
 // FirebaseHandler handles Firebase-related HTTP requests
 type FirebaseHandler struct {
-	firebaseService services.FirebaseServiceInterface
+	firebaseService FirebaseService // Use our local interface
 }
 
 // NewFirebaseHandler creates a new Firebase handler
@@ -41,9 +68,9 @@ type AuthRequest struct {
 
 // AuthResponse represents an authentication response
 type AuthResponse struct {
-	UID           string            `json:"uid"`
-	Email         string            `json:"email"`
-	EmailVerified bool              `json:"email_verified"`
+	UID           string                 `json:"uid"`
+	Email         string                 `json:"email"`
+	EmailVerified bool                   `json:"email_verified"`
 	Claims        map[string]interface{} `json:"claims,omitempty"`
 }
 
@@ -58,7 +85,7 @@ func SetupFirebaseRoutes(mux *http.ServeMux) error {
 	mux.HandleFunc("/api/firebase/testconnection", handler.TestConnection)
 	mux.HandleFunc("/api/firebase/auth/verify", handler.VerifyToken)
 	mux.HandleFunc("/api/firebase/testdb", handler.TestDatabase)
-	
+
 	return nil
 }
 
@@ -71,7 +98,7 @@ func (fh *FirebaseHandler) TestConnection(w http.ResponseWriter, r *http.Request
 
 	// Test the connection
 	err := fh.firebaseService.TestConnection()
-	
+
 	response := TestConnectionResponse{
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
@@ -79,7 +106,7 @@ func (fh *FirebaseHandler) TestConnection(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		response.Status = "error"
 		response.Message = err.Error()
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(Response{
@@ -91,9 +118,7 @@ func (fh *FirebaseHandler) TestConnection(w http.ResponseWriter, r *http.Request
 	}
 
 	// Get project ID if connection is successful
-	if fs, ok := fh.firebaseService.(*services.FirebaseService); ok {
-		response.ProjectID = fs.GetProjectID()
-	}
+	response.ProjectID = fh.firebaseService.GetProjectID()
 
 	response.Status = "success"
 	response.Message = "Successfully connected to Firebase"
@@ -150,8 +175,8 @@ func (fh *FirebaseHandler) VerifyToken(w http.ResponseWriter, r *http.Request) {
 
 	// Build response
 	authResp := AuthResponse{
-		UID:           token.UID,
-		Claims:        token.Claims,
+		UID:    token.UID,
+		Claims: token.Claims,
 	}
 
 	// Extract email and email verification status from claims

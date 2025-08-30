@@ -8,6 +8,7 @@ services:
     environment:
       - PORT=8080
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_API_KEY=${FIREBASE_API_KEY}
       - FIREBASE_CREDENTIALS_FILE=/app/firebase-credentials.json
     env_file:
       - .env

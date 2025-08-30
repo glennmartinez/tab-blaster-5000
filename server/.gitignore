@@ -29,6 +29,7 @@ tab-blaster-server
 .env
 .env.local
 .env.production
+.env.example
 
 # Firebase credentials (NEVER commit these!)
 *-firebase-adminsdk-*.json

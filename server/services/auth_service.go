@@ -117,13 +117,13 @@ func (as *AuthService) Login(ctx context.Context, req LoginRequest) (*LoginRespo
 		return nil, fmt.Errorf("email and password are required")
 	}
 
-	// First, try to authenticate with Firebase REST API
+		// First, try to authenticate with Firebase REST API
 	apiKey := as.getFirebaseAPIKey()
 	if apiKey == "" {
 		return nil, fmt.Errorf("Firebase API key not configured")
 	}
 
-	log.Printf("DEBUG: Using API key: %s...", apiKey[:10]) // Only show first 10 chars for security
+	log.Printf("DEBUG: Using API key for authentication")
 
 	// Use Firebase REST API to verify credentials
 	signInURL := fmt.Sprintf("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=%s", apiKey)

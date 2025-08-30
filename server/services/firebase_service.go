@@ -101,19 +101,22 @@ func loadFirebaseConfig() (*firebasemodel.FirebaseConfig, error) {
 		return nil, fmt.Errorf("FIREBASE_PROJECT_ID environment variable is required")
 	}
 
-	// If credentials file is not specified, check for service account key JSON
-	if config.CredentialsFile == "" {
-		if serviceAccountKey := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY"); serviceAccountKey != "" {
-			// Create temporary file for service account key
-			tmpFile, err := createTempServiceAccountFile(serviceAccountKey)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create temporary service account file: %w", err)
-			}
-			config.CredentialsFile = tmpFile
-		}
+	// Check for credentials file path first (simplest approach)
+	if config.CredentialsFile != "" {
+		return config, nil
 	}
 
-	return config, nil
+	// Fallback: Check for complete JSON string
+	if serviceAccountKey := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY"); serviceAccountKey != "" {
+		tmpFile, err := createTempServiceAccountFile(serviceAccountKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temporary service account file: %w", err)
+		}
+		config.CredentialsFile = tmpFile
+		return config, nil
+	}
+
+	return nil, fmt.Errorf("no Firebase credentials found. Set FIREBASE_CREDENTIALS_FILE or FIREBASE_SERVICE_ACCOUNT_KEY")
 }
 
 // createTempServiceAccountFile creates a temporary file with the service account key
@@ -136,6 +139,14 @@ func createTempServiceAccountFile(serviceAccountKey string) (string, error) {
 	}
 
 	return tmpFile.Name(), nil
+}
+
+// getEnvOrDefault returns environment variable or default value
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
 
 // TestConnection tests the Firebase connection

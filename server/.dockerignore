@@ -2,13 +2,7 @@
 
 _.exe
 _.exe~
-\_# Docker (keep Dockerfile for build context)
-docker-compose.yml
-.dockerignore
-
-# Documentation
-
-README.md\*.dylib
+\*.dylib
 main
 
 # Test binary, built with `go test -c`
@@ -28,9 +22,8 @@ go.work
 .vscode/
 .idea/
 
-# Docker
+# Docker (keep Dockerfile for build context)
 
-Dockerfile
 docker-compose.yml
 .dockerignore
 
@@ -43,3 +36,21 @@ README.md
 
 .git/
 .gitignore
+
+# SECURITY: Exclude all credential files
+
+\*.json
+firebase-credentials.json
+my-apps-gmoney-firebase-adminsdk-tx7fe-4c0600fe18.json
+!go.mod
+!go.sum
+
+# Environment files
+
+.env
+.env.\*
+
+# Logs and temporary files
+
+\*.log
+tmp/

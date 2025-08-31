@@ -166,7 +166,7 @@ export class SimpleAuthService {
         authUser: this.currentUser,
         customToken: this.customToken,
       };
-      
+
       console.log("Storing auth info:", dataToStore);
       await chrome.storage.local.set(dataToStore);
       console.log("Auth info stored successfully");
@@ -182,7 +182,7 @@ export class SimpleAuthService {
         "customToken",
       ]);
       console.log("Restored auth info:", stored);
-      
+
       if (stored.authUser && stored.customToken) {
         this.currentUser = stored.authUser;
         this.customToken = stored.customToken;

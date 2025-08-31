@@ -117,7 +117,7 @@ func (as *AuthService) Login(ctx context.Context, req LoginRequest) (*LoginRespo
 		return nil, fmt.Errorf("email and password are required")
 	}
 
-		// First, try to authenticate with Firebase REST API
+	// First, try to authenticate with Firebase REST API
 	apiKey := as.getFirebaseAPIKey()
 	if apiKey == "" {
 		return nil, fmt.Errorf("Firebase API key not configured")

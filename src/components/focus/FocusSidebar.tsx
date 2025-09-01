@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useDisruptions } from "../../hooks/useDisruptions";
-import { useFocusSession } from "../../hooks/useFocusSession";
+import { useFocusSession } from "../../views/Tasks/hooks/useFocusSession";
 import { Disruption } from "../../interfaces/DisruptionInterface";
 
 interface FocusSidebarProps {

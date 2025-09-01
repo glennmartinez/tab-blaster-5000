@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FocusSession } from "../interfaces/FocusSession";
+import { FocusSession } from "../../../interfaces/FocusSession";
 import { FocusSessionService } from "../services/FocusSessionService";
-import { Task } from "../interfaces/TaskInterface";
+import { Task } from "../types/TaskInterface";
 
 export const useFocusSession = (onTaskUpdate?: () => Promise<void>) => {
   const [currentSession, setCurrentSession] = useState<FocusSession | null>(

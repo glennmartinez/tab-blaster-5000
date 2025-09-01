@@ -1,7 +1,7 @@
-import { FocusSession, TaskFocusData } from "../interfaces/FocusSession";
-import { Task } from "../interfaces/TaskInterface";
-import { StorageFactory } from "./StorageFactory";
-import { STORAGE_KEYS } from "../constants/storageKeys";
+import { FocusSession, TaskFocusData } from "../../../interfaces/FocusSession";
+ import { StorageFactory } from "../../../services/StorageFactory";
+import { STORAGE_KEYS } from "../../../constants/storageKeys";
+import { Task } from "../types/TaskInterface";
 
 export class FocusSessionService {
   /**

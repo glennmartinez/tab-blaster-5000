@@ -1,11 +1,11 @@
-import { Task, TaskFilters, TaskStats } from "../interfaces/TaskInterface";
-import { StorageFactory } from "./StorageFactory";
-import { STORAGE_KEYS } from "../constants/storageKeys";
-import { FirebaseStorageService } from "./firebase/FirebaseStorageService";
+ import { StorageFactory } from "../../../services/StorageFactory";
+import { STORAGE_KEYS } from "../../../constants/storageKeys";
+import { FirebaseStorageService } from "../../../services/firebase/FirebaseStorageService";
 import {
   serializeTaskForFirebase,
   deserializeTaskFromFirebase,
-} from "./firebase/FirebaseSerializer";
+} from "../../../services/firebase/FirebaseSerializer";
+import { Task, TaskFilters, TaskStats } from "../types/TaskInterface";
 
 export class TasksService {
   /**

@@ -1,6 +1,6 @@
-import { StorageFactory } from "./StorageFactory";
-import { Session } from "../models/Session";
-import { Tab } from "../interfaces/TabInterface";
+import { StorageFactory } from "../../../services/StorageFactory";
+import { Session } from "../../../models/Session";
+import { Tab } from "../../../interfaces/TabInterface";
 
 export interface SessionTabAnalytics {
   url: string;

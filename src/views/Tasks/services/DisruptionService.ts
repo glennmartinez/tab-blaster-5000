@@ -2,9 +2,9 @@ import {
   Disruption,
   DisruptionSummary,
   TimelineEntry,
-} from "../interfaces/DisruptionInterface";
-import { FocusSession } from "../interfaces/FocusSession";
-import { StorageFactory } from "./StorageFactory";
+} from "../../../interfaces/DisruptionInterface";
+import { FocusSession } from "../../../interfaces/FocusSession";
+import { StorageFactory } from "../../../services/StorageFactory";
 
 export class DisruptionService {
   /**

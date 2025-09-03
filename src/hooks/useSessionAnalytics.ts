@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   SessionAnalyticsService,
   SessionTabAnalytics,
-} from "../services/SessionAnalyticsService";
+} from "../views/Tasks/services/SessionAnalyticsService";
 
 export const useSessionAnalytics = () => {
   const [analytics, setAnalytics] = useState<SessionTabAnalytics[]>([]);

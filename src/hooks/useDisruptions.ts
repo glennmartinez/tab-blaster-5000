@@ -4,7 +4,7 @@ import {
   DisruptionSummary,
   TimelineEntry,
 } from "../interfaces/DisruptionInterface";
-import { DisruptionService } from "../services/DisruptionService";
+import { DisruptionService } from "../views/Tasks/services/DisruptionService";
 import { FocusSession } from "../interfaces/FocusSession";
 
 export const useDisruptions = () => {

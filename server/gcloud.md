@@ -28,6 +28,9 @@ gcloud services enable secretmanager.googleapis.com --project tab-blaster-5k
 ## Build and Push Docker Image
 
 ```bash
+# Build docke image - 
+cd server
+docker build -t server-tab-blaster-server .
 # Configure Docker to use gcloud as credential helper
 gcloud auth configure-docker
 

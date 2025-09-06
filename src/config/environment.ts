@@ -7,7 +7,10 @@ export interface AppConfig {
 
 // Default configuration
 const defaultConfig: AppConfig = {
-  serverUrl: import.meta.env.VITE_SERVER_URL || "http://localhost:8080",
+  serverUrl:
+    // import.meta.env.VITE_SERVER_URL ||
+
+    "https://tab-blaster-5k-19786549408.us-central1.run.app",
   apiVersion: import.meta.env.VITE_API_VERSION || "v1",
   isDevelopment: import.meta.env.VITE_IS_DEVELOPMENT === "true" || true,
 };

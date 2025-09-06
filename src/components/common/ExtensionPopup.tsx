@@ -3,7 +3,7 @@ import Button from "./Button";
 import { Tab } from "../../interfaces/TabInterface";
 import { BookmarkCheck } from "lucide-react";
 import ParticleBackground from "./ParticleBackground";
-import { StorageFactory } from "../../services/StorageFactory";
+import { StorageFactory } from "../../services/factories/StorageFactory";
 import { Session } from "../../models/Session";
 
 const ExtensionPopup: React.FC = () => {

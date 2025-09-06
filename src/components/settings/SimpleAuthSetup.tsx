@@ -13,7 +13,9 @@ export const SimpleAuthSetup: React.FC<SimpleAuthSetupProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [serverUrl, setServerUrl] = useState("http://localhost:8080");
+  const [serverUrl, setServerUrl] = useState(
+    "https://tab-blaster-5k-19786549408.us-central1.run.app"
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -23,6 +25,7 @@ export const SimpleAuthSetup: React.FC<SimpleAuthSetupProps> = ({
   useEffect(() => {
     // Load current server URL from config
     const currentConfig = ConfigService.getConfig();
+    console.log("[SIMPLE AUTH SETUP] Current Config is: ", currentConfig);
     setServerUrl(currentConfig.serverUrl);
   }, []);
 

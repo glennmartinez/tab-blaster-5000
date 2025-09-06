@@ -1,4 +1,4 @@
-import { StorageFactory } from "../../../services/StorageFactory";
+import { StorageFactory } from "../../../services/factories/StorageFactory";
 import { Session } from "../../../models/Session";
 import { Tab } from "../../../interfaces/TabInterface";
 

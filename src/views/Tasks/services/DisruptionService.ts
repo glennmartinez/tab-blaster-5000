@@ -4,7 +4,7 @@ import {
   TimelineEntry,
 } from "../../../interfaces/DisruptionInterface";
 import { FocusSession } from "../../../interfaces/FocusSession";
-import { StorageFactory } from "../../../services/StorageFactory";
+import { StorageFactory } from "../../../services/factories/StorageFactory";
 
 export class DisruptionService {
   /**

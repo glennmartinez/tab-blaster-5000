@@ -2,7 +2,10 @@
 // This demonstrates how to integrate Firebase into your existing settings
 
 import React, { useState, useEffect } from "react";
-import { StorageType, StorageFactory } from "../../services/StorageFactory";
+import {
+  StorageType,
+  StorageFactory,
+} from "../../services/factories/StorageFactory";
 import { FirebaseConfigService } from "../../services/firebase/FirebaseConfigService";
 import {
   FirebaseSetupForm,

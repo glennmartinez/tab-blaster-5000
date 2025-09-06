@@ -1,248 +1,217 @@
-import { TaskRepository } from "./TaskRepository";
-import { RepositoryResult } from "./BaseRepository";
+import { TaskRepository, TaskCreateDto } from "../repositories/TaskRepository";
+import {
+  Task,
+  TaskFilters,
+  TaskStats,
+} from "../../views/Tasks/types/TaskInterface";
 
-// Import types from the TaskRepository file
-type Task = {
-  id: string;
-  title: string;
-  description?: string;
-  status: "inbox" | "signal" | "noise" | "done";
-  priority: "low" | "medium" | "high";
-  category: string;
-  size: "small" | "medium" | "large";
-  tags?: string[];
-  dueDate?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  totalSessions?: number;
-  totalFocusTime?: number;
-  averageFocusTime?: number;
-};
-
-type TaskCreateDto = {
-  title: string;
-  description?: string;
-  status?: Task["status"];
-  priority?: Task["priority"];
-  category?: string;
-  size?: Task["size"];
-  tags?: string[];
-  dueDate?: Date;
-};
-
-type TaskFilters = {
-  status?: Task["status"][];
-  category?: string[];
-  size?: Task["size"][];
-  priority?: Task["priority"][];
-  search?: string;
-};
-
-type TaskStats = {
-  total: number;
-  inbox: number;
-  signal: number;
-  noise: number;
-  done: number;
-  overdue: number;
-  dueToday: number;
-  dueThisWeek: number;
-};
-
-import { TaskRepository } from "./TaskRepository";
-import { RepositoryResult } from "./BaseRepository";
-
-// Import types from the TaskRepository file
-type Task = {
-  id: string;
-  title: string;
-  description?: string;
-  status: "inbox" | "signal" | "noise" | "done";
-  priority: "low" | "medium" | "high";
-  category: string;
-  size: "small" | "medium" | "large";
-  tags?: string[];
-  dueDate?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  totalSessions?: number;
-  totalFocusTime?: number;
-  averageFocusTime?: number;
-};
-
-type TaskCreateDto = {
-  title: string;
-  description?: string;
-  status?: Task["status"];
-  priority?: Task["priority"];
-  category?: string;
-  size?: Task["size"];
-  tags?: string[];
-  dueDate?: Date;
-};
-
-type TaskFilters = {
-  status?: Task["status"][];
-  category?: string[];
-  size?: Task["size"][];
-  priority?: Task["priority"][];
-  search?: string;
-};
-
-type TaskStats = {
-  total: number;
-  inbox: number;
-  signal: number;
-  noise: number;
-  done: number;
-  overdue: number;
-  dueToday: number;
-  dueThisWeek: number;
-};
-
-/**
- * Task Service using Repository Pattern
- *
- * This service wraps the repository and provides business logic.
- * It uses the existing TaskRepository which has better error handling
- * and Firebase integration than what I initially created.
- */
 export class NewTasksService {
-  private taskRepository: TaskRepository;
+  private repository: TaskRepository;
 
   constructor() {
-    this.taskRepository = new TaskRepository();
+    this.repository = new TaskRepository();
   }
 
   /**
-   * Get all tasks - with error handling for UI
+   * Get all tasks
    */
   async getTasks(): Promise<Task[]> {
-    const result = await this.taskRepository.findAll();
-
-    if (!result.success) {
-      console.error("Failed to load tasks:", result.error);
-      // For UI consumption, we can return empty array and let UI handle errors
+    try {
+      const result = await this.repository.findAll();
+      if (result.success && result.data) {
+        console.log(
+          `📋 Retrieved ${result.data.length} tasks using ${result.metadata.provider}`
+        );
+        return result.data;
+      } else {
+        console.error("Failed to get tasks:", result.error);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
       return [];
     }
-
-    return result.data || [];
   }
 
   /**
-   * Create a new task - with business logic
+   * Create a new task
    */
   async createTask(taskData: TaskCreateDto): Promise<Task> {
-    // Additional business logic can go here
-    this.logTaskOperation("create", taskData.title);
-
-    const result = await this.taskRepository.create(taskData);
-
-    if (!result.success) {
-      throw new Error(`Failed to create task: ${result.error?.message}`);
+    try {
+      const result = await this.repository.create(taskData);
+      if (result.success && result.data) {
+        console.log(
+          `✅ Created task: ${result.data.title} (${result.data.id})`
+        );
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || "Failed to create task");
+      }
+    } catch (error) {
+      console.error("Error creating task:", error);
+      throw error;
     }
-
-    if (!result.data) {
-      throw new Error("Task creation succeeded but no data returned");
-    }
-
-    return result.data;
   }
 
   /**
-   * Update a task - with validation and business logic
+   * Update an existing task
    */
   async updateTask(
     taskId: string,
     updates: Partial<Task>
   ): Promise<Task | null> {
-    this.logTaskOperation("update", taskId);
+    try {
+      // Add updatedAt timestamp
+      const updatesWithTimestamp = {
+        ...updates,
+        updatedAt: new Date(),
+      };
 
-    const result = await this.taskRepository.update(taskId, updates);
-
-    if (!result.success) {
-      if (result.error?.type === "NOT_FOUND") {
-        console.warn(`Task ${taskId} not found for update`);
-        return null;
+      const result = await this.repository.update(taskId, updatesWithTimestamp);
+      if (result.success) {
+        if (result.data) {
+          console.log(`📝 Updated task: ${taskId}`);
+        } else {
+          console.warn(`⚠️ Task not found for update: ${taskId}`);
+        }
+        return result.data || null;
+      } else {
+        throw new Error(result.error?.message || "Failed to update task");
       }
-      throw new Error(`Failed to update task: ${result.error?.message}`);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      throw error;
     }
-
-    return result.data || null;
   }
 
   /**
-   * Delete a task - with cleanup logic
+   * Delete a task
    */
   async deleteTask(taskId: string): Promise<boolean> {
-    this.logTaskOperation("delete", taskId);
-
-    // Could add cleanup logic here (delete related focus sessions, etc.)
-
-    const result = await this.taskRepository.delete(taskId);
-
-    if (!result.success) {
-      if (result.error?.type === "NOT_FOUND") {
-        console.warn(`Task ${taskId} not found for deletion`);
-        return false;
+    try {
+      const result = await this.repository.delete(taskId);
+      if (result.success && result.data !== undefined) {
+        if (result.data) {
+          console.log(`🗑️ Deleted task: ${taskId}`);
+        } else {
+          console.warn(`⚠️ Task not found for deletion: ${taskId}`);
+        }
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || "Failed to delete task");
       }
-      throw new Error(`Failed to delete task: ${result.error?.message}`);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      throw error;
     }
-
-    return result.data || false;
   }
 
   /**
-   * Get task by ID
+   * Get tasks filtered by criteria
    */
-  async getTaskById(taskId: string): Promise<Task | null> {
-    const result = await this.taskRepository.findById(taskId);
+  async getFilteredTasks(filters: TaskFilters): Promise<Task[]> {
+    try {
+      const tasks = await this.getTasks();
 
-    if (!result.success) {
-      console.error("Failed to load task:", result.error);
-      return null;
-    }
+      return tasks.filter((task) => {
+        // Status filter
+        if (filters.status && !filters.status.includes(task.status)) {
+          return false;
+        }
 
-    return result.data || null;
-  }
+        // Category filter
+        if (filters.category && !filters.category.includes(task.category)) {
+          return false;
+        }
 
-  /**
-   * Get tasks by status - using existing repository method
-   */
-  async getTasksByStatus(status: Task["status"]): Promise<Task[]> {
-    const result = await this.taskRepository.findByStatus(status);
+        // Size filter
+        if (filters.size && !filters.size.includes(task.size)) {
+          return false;
+        }
 
-    if (!result.success) {
-      console.error("Failed to load tasks by status:", result.error);
+        // Priority filter
+        if (filters.priority && !filters.priority.includes(task.priority)) {
+          return false;
+        }
+
+        // Search filter
+        if (filters.search) {
+          const searchTerm = filters.search.toLowerCase();
+          const searchableText = [
+            task.title,
+            task.description,
+            ...(task.tags || []),
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          if (!searchableText.includes(searchTerm)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    } catch (error) {
+      console.error("Error filtering tasks:", error);
       return [];
     }
-
-    return result.data || [];
   }
 
   /**
-   * Get tasks by category - using existing repository method
-   */
-  async getTasksByCategory(category: string): Promise<Task[]> {
-    const result = await this.taskRepository.findByCategory(category);
-
-    if (!result.success) {
-      console.error("Failed to load tasks by category:", result.error);
-      return [];
-    }
-
-    return result.data || [];
-  }
-
-  /**
-   * Calculate task statistics
+   * Get task statistics
    */
   async getTaskStats(): Promise<TaskStats> {
-    const tasksResult = await this.taskRepository.findAll();
+    try {
+      const tasks = await this.getTasks();
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    if (!tasksResult.success || !tasksResult.data) {
-      console.error("Failed to load tasks for stats:", tasksResult.error);
-      // Return empty stats as fallback
+      const stats: TaskStats = {
+        total: tasks.length,
+        inbox: 0,
+        signal: 0,
+        noise: 0,
+        done: 0,
+        overdue: 0,
+        dueToday: 0,
+        dueThisWeek: 0,
+      };
+
+      tasks.forEach((task) => {
+        // Status counts
+        switch (task.status) {
+          case "inbox":
+            stats.inbox++;
+            break;
+          case "signal":
+            stats.signal++;
+            break;
+          case "noise":
+            stats.noise++;
+            break;
+          case "done":
+            stats.done++;
+            break;
+        }
+
+        // Due date counts
+        if (task.dueDate) {
+          const dueDate = new Date(task.dueDate);
+          if (dueDate < today) {
+            stats.overdue++;
+          } else if (dueDate.toDateString() === today.toDateString()) {
+            stats.dueToday++;
+          } else if (dueDate <= weekFromNow) {
+            stats.dueThisWeek++;
+          }
+        }
+      });
+
+      return stats;
+    } catch (error) {
+      console.error("Error calculating task stats:", error);
       return {
         total: 0,
         inbox: 0,
@@ -254,54 +223,6 @@ export class NewTasksService {
         dueThisWeek: 0,
       };
     }
-
-    const tasks = tasksResult.data;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const stats: TaskStats = {
-      total: tasks.length,
-      inbox: 0,
-      signal: 0,
-      noise: 0,
-      done: 0,
-      overdue: 0,
-      dueToday: 0,
-      dueThisWeek: 0,
-    };
-
-    tasks.forEach((task) => {
-      // Status counts
-      switch (task.status) {
-        case "inbox":
-          stats.inbox++;
-          break;
-        case "signal":
-          stats.signal++;
-          break;
-        case "noise":
-          stats.noise++;
-          break;
-        case "done":
-          stats.done++;
-          break;
-      }
-
-      // Due date counts
-      if (task.dueDate) {
-        const dueDate = new Date(task.dueDate);
-        if (dueDate < today) {
-          stats.overdue++;
-        } else if (dueDate.toDateString() === today.toDateString()) {
-          stats.dueToday++;
-        } else if (dueDate <= weekFromNow) {
-          stats.dueThisWeek++;
-        }
-      }
-    });
-
-    return stats;
   }
 
   /**
@@ -320,44 +241,62 @@ export class NewTasksService {
   async bulkUpdateTasks(
     updates: Array<{ id: string; updates: Partial<Task> }>
   ): Promise<Task[]> {
-    const results = await Promise.all(
-      updates.map(({ id, updates: taskUpdates }) =>
-        this.taskRepository.update(id, taskUpdates)
-      )
-    );
+    try {
+      const tasks = await this.getTasks();
+      const updatedTasks = [...tasks];
 
-    // Filter successful updates
-    return results
-      .filter((result) => result.success && result.data)
-      .map((result) => result.data!) as Task[];
+      // Apply updates
+      updates.forEach(({ id, updates: taskUpdates }) => {
+        const taskIndex = updatedTasks.findIndex((task) => task.id === id);
+        if (taskIndex !== -1) {
+          updatedTasks[taskIndex] = {
+            ...updatedTasks[taskIndex],
+            ...taskUpdates,
+            updatedAt: new Date(),
+          };
+        }
+      });
+
+      // Save all updated tasks
+      const saveResult = await this.repository.findAll();
+      if (saveResult.success && saveResult.data) {
+        // Use the repository's saveAll method through the protected interface
+        // For now, we'll update each task individually
+        const promises = updates.map(({ id, updates: taskUpdates }) =>
+          this.updateTask(id, taskUpdates)
+        );
+
+        await Promise.all(promises);
+
+        // Return the updated tasks
+        return await this.getTasks();
+      }
+
+      throw new Error("Failed to bulk update tasks");
+    } catch (error) {
+      console.error("Error bulk updating tasks:", error);
+      throw error;
+    }
   }
 
   /**
-   * Business logic helper methods
+   * Find task by ID
    */
-
-  /**
-   * Check if storage needs to be refreshed (useful when storage type changes)
-   */
-  refreshStorage(): void {
-    // Create a new repository instance to get fresh storage
-    this.taskRepository = new TaskRepository();
-  }
-
-  /**
-   * Get raw repository result for advanced error handling
-   */
-  async getTasksWithMetadata(): Promise<RepositoryResult<Task[]>> {
-    return this.taskRepository.findAll();
-  }
-
-  /**
-   * Private helper for logging
-   */
-  private logTaskOperation(operation: string, identifier: string): void {
-    console.log(`🔨 TaskService.${operation} called for: ${identifier}`);
+  async findTaskById(taskId: string): Promise<Task | null> {
+    try {
+      const result = await this.repository.findById(taskId);
+      if (result.success) {
+        return result.data || null;
+      } else {
+        console.error("Failed to find task by ID:", result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error("Error finding task by ID:", error);
+      return null;
+    }
   }
 }
 
-// Export singleton instance for easy consumption
+// Export singleton instance
 export const newTasksService = new NewTasksService();

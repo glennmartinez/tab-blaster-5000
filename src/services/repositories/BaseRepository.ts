@@ -1,5 +1,5 @@
 import { SessionInterface } from "../SessionInterface";
-import { StorageFactory } from "../StorageFactory";
+import { StorageFactory } from "../factories/StorageFactory";
 
 // Custom error types for better error handling
 export class RepositoryError extends Error {

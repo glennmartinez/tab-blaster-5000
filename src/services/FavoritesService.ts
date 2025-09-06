@@ -1,4 +1,4 @@
-import { StorageFactory } from "./StorageFactory";
+import { StorageFactory } from "./factories/StorageFactory";
 import { STORAGE_KEYS } from "../constants/storageKeys";
 
 export interface FavoriteTab {

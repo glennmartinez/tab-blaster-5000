@@ -2,13 +2,13 @@
 // This folder contains the improved repository pattern for data access
 
 // Base repository class and types
-export * from "./BaseRepository";
+export * from "../repositories/BaseRepository";
 
 // Concrete repository implementations
-export { TaskRepository } from "./TaskRepository";
+export { TaskRepository } from "../repositories/TaskRepository";
 
 // Service implementations using repositories
-export { NewTasksService } from "./NewTasksService";
+export { NewTasksService, newTasksService } from "./NewTasksService";
 
 /**
  * Quick Start Guide:
@@ -31,6 +31,7 @@ export { NewTasksService } from "./NewTasksService";
  * - TaskRepository.ts: Concrete Task repository implementation
  * - SessionRepository.ts: Concrete Session repository implementation
  * - NewTasksService.ts: Service layer using TaskRepository
+ * - NewSessionsService.ts: Service layer using SessionRepository
  * - README_REPOSITORY_PATTERN.md: Usage documentation
  * - DETAILED_EXPLANATION.md: Complete explanation comparing to Java
  */

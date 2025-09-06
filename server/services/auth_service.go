@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -231,7 +232,8 @@ func (as *AuthService) getFirebaseAPIKey() string {
 		log.Println("ERROR: FIREBASE_API_KEY not set in environment")
 		return ""
 	}
-	return apiKey
+	// Trim whitespace and newlines that might come from secrets
+	return strings.TrimSpace(apiKey)
 }
 
 // Logout revokes all refresh tokens for a user (Firebase method)

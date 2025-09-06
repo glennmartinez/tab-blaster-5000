@@ -1,5 +1,5 @@
 import { FocusSession, TaskFocusData } from "../../../interfaces/FocusSession";
- import { StorageFactory } from "../../../services/StorageFactory";
+import { StorageFactory } from "../../../services/factories/StorageFactory";
 import { STORAGE_KEYS } from "../../../constants/storageKeys";
 import { Task } from "../types/TaskInterface";
 
@@ -125,8 +125,11 @@ export class FocusSessionService {
     console.log("📝 Adding session to task history:", session); // Debug log
     try {
       // Get the TasksService dynamically to avoid circular dependency
-      const { TasksService } = await import("./TasksService");
-      const tasksService = new TasksService();
+      // const { TasksService } = await import("./TasksService");
+      const { NewTasksService } = await import(
+        "../../../services/NEWSERVICE/NewTasksService"
+      );
+      const tasksService = new NewTasksService();
 
       // Get all tasks and find the one we need
       const tasks = await tasksService.getTasks();
@@ -173,9 +176,12 @@ export class FocusSessionService {
     console.log("📊 Getting all sessions from tasks..."); // Debug log
     try {
       // Get the TasksService dynamically to avoid circular dependency
-      const { TasksService } = await import("./TasksService");
-      const tasksService = new TasksService();
-
+      // const { TasksService } = await import("./TasksService");
+      // const tasksService = new TasksService();
+      const { NewTasksService } = await import(
+        "../../../services/NEWSERVICE/NewTasksService"
+      );
+      const tasksService = new NewTasksService();
       const tasks = await tasksService.getTasks();
       const allSessions: FocusSession[] = [];
 
@@ -231,8 +237,13 @@ export class FocusSessionService {
       await this.saveTaskFocusData(taskFocusData);
 
       // Also update the task itself via TasksService
-      const { TasksService } = await import("./TasksService");
-      const tasksService = new TasksService();
+      // const { TasksService } = await import("./TasksService");
+      // const tasksService = new TasksService();
+
+      const { NewTasksService } = await import(
+        "../../../services/NEWSERVICE/NewTasksService"
+      );
+      const tasksService = new NewTasksService();
       await tasksService.updateTask(session.taskId, {
         totalFocusTime: taskFocusData.totalFocusTime,
         averageFocusTime: taskFocusData.averageFocusTime,

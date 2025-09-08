@@ -77,6 +77,8 @@ func initializeAuthService() (*AuthService, error) {
 		}
 		jwtSecret = hex.EncodeToString(secretBytes)
 		log.Printf("Generated JWT secret: %s", jwtSecret)
+	} else {
+		log.Println("Using JWT_SECRET from environment")
 	}
 
 	service := &AuthService{

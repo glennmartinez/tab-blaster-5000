@@ -125,6 +125,9 @@ gcloud run services describe tab-blaster-5k \
 # List all secrets
 gcloud secrets list --project tab-blaster-5k
 
+#create secret
+echo -n "your-jwt-secret-value" | gcloud secrets create jwt-secret --data-file=-
+
 # View secret metadata (not the actual value)
 gcloud secrets describe FIREBASE_API_KEY --project tab-blaster-5k
 gcloud secrets describe FIREBASE_SERVICE_ACCOUNT_KEY --project tab-blaster-5k

@@ -4,7 +4,7 @@ import {
   DisruptionSummary,
   TimelineEntry,
 } from "../interfaces/DisruptionInterface";
-import { DisruptionService } from "../views/Tasks/services/DisruptionService";
+import { NewDisruptionService } from "../services/domain/NewDisruptionService";
 import { FocusSession } from "../interfaces/FocusSession";
 
 export const useDisruptions = () => {
@@ -18,7 +18,7 @@ export const useDisruptions = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Create service instance once
-  const disruptionService = useMemo(() => new DisruptionService(), []);
+  const disruptionService = useMemo(() => new NewDisruptionService(), []);
 
   /**
    * Get today's date string

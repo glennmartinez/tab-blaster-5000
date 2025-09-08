@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 // import { tasksService } from "../services/TasksService";
-import { newTasksService as tasksService } from "../../../services/NEWSERVICE/NewTasksService";
+import { newTasksService as tasksService } from "../../../services/domain/NewTasksService";
 import { Task, TaskFilters, TaskStats } from "../types/TaskInterface";
 
 export const useTasks = () => {

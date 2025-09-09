@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { FocusSession } from "../interfaces/FocusSession";
-import { FocusSessionService } from "../services/FocusSessionService";
-import { Task } from "../interfaces/TaskInterface";
+import { FocusSession } from "../../../interfaces/FocusSession";
+import { NewFocusSessionService } from "../../../services/domain/NewFocusSessionService";
+import { Task } from "../types/TaskInterface";
 
 export const useFocusSession = (onTaskUpdate?: () => Promise<void>) => {
   const [currentSession, setCurrentSession] = useState<FocusSession | null>(
@@ -11,7 +11,7 @@ export const useFocusSession = (onTaskUpdate?: () => Promise<void>) => {
   const [error, setError] = useState<string | null>(null);
   const [currentDuration, setCurrentDuration] = useState(0);
 
-  const focusService = useMemo(() => new FocusSessionService(), []);
+  const focusService = useMemo(() => new NewFocusSessionService(), []);
 
   // Real-time timer update
   useEffect(() => {

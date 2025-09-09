@@ -28,6 +28,9 @@ gcloud services enable secretmanager.googleapis.com --project tab-blaster-5k
 ## Build and Push Docker Image
 
 ```bash
+# Build docke image -
+cd server
+docker build -t server-tab-blaster-server .
 # Configure Docker to use gcloud as credential helper
 gcloud auth configure-docker
 
@@ -55,10 +58,15 @@ echo '{"type":"service_account","project_id":"YOUR_PROJECT_ID","private_key_id":
 ## Grant Secret Access Permissions
 
 ```bash
+#fetch project number
+gcloud projects describe tab-blaster-5k --format='value(projectNumber)'
+```
+
+```bash
 # Grant access to FIREBASE_API_KEY secret
 gcloud secrets add-iam-policy-binding FIREBASE_API_KEY \
   --project tab-blaster-5k \
-  --member "serviceAccount:YOUR_PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --member "serviceAccount:19786549408-compute@developer.gserviceaccount.com" \
   --role "roles/secretmanager.secretAccessor"
 
 # Grant access to FIREBASE_SERVICE_ACCOUNT_KEY secret
@@ -69,6 +77,7 @@ gcloud secrets add-iam-policy-binding FIREBASE_SERVICE_ACCOUNT_KEY \
 ```
 
 **Note**: Replace `YOUR_PROJECT_NUMBER` with your actual project number. You can get it with:
+
 ```bash
 gcloud projects describe tab-blaster-5k --format='value(projectNumber)'
 ```
@@ -106,6 +115,7 @@ gcloud run services update tab-blaster-5k \
 ## Useful Commands
 
 ### View Services
+
 ```bash
 # List all Cloud Run services
 gcloud run services list --project tab-blaster-5k
@@ -118,9 +128,13 @@ gcloud run services describe tab-blaster-5k \
 ```
 
 ### Manage Secrets
+
 ```bash
 # List all secrets
 gcloud secrets list --project tab-blaster-5k
+
+#create secret
+echo -n "your-jwt-secret-value" | gcloud secrets create jwt-secret --data-file=-
 
 # View secret metadata (not the actual value)
 gcloud secrets describe FIREBASE_API_KEY --project tab-blaster-5k
@@ -132,6 +146,7 @@ gcloud secrets get-iam-policy FIREBASE_SERVICE_ACCOUNT_KEY --project tab-blaster
 ```
 
 ### Update Secrets
+
 ```bash
 # Update a secret with new value
 echo "NEW_API_KEY_VALUE" | gcloud secrets versions add FIREBASE_API_KEY \
@@ -140,6 +155,7 @@ echo "NEW_API_KEY_VALUE" | gcloud secrets versions add FIREBASE_API_KEY \
 ```
 
 ### View Logs
+
 ```bash
 # View service logs
 gcloud run services logs read tab-blaster-5k \
@@ -177,6 +193,7 @@ curl https://YOUR_SERVICE_URL/api/firebase/testdb
 ## Troubleshooting
 
 ### Permission Denied on Secrets
+
 If you get permission errors, ensure the service account has the correct permissions:
 
 ```bash
@@ -191,6 +208,7 @@ gcloud secrets add-iam-policy-binding SECRET_NAME \
 ```
 
 ### Service Not Starting
+
 Check logs for initialization errors:
 
 ```bash
@@ -198,6 +216,7 @@ gcloud run services logs read tab-blaster-5k --project tab-blaster-5k --region u
 ```
 
 Common issues:
+
 - Missing environment variables
 - Invalid secret values
 - Network connectivity issues

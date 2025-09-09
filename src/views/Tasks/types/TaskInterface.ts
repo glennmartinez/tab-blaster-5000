@@ -1,5 +1,6 @@
-import { FocusSession } from "./FocusSession";
+import { FocusSession } from "../../../interfaces/FocusSession";
 
+ 
 export interface Task {
   id: string;
   title: string;

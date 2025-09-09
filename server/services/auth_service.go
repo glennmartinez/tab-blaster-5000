@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,6 +77,8 @@ func initializeAuthService() (*AuthService, error) {
 		}
 		jwtSecret = hex.EncodeToString(secretBytes)
 		log.Printf("Generated JWT secret: %s", jwtSecret)
+	} else {
+		log.Println("Using JWT_SECRET from environment")
 	}
 
 	service := &AuthService{
@@ -231,7 +234,8 @@ func (as *AuthService) getFirebaseAPIKey() string {
 		log.Println("ERROR: FIREBASE_API_KEY not set in environment")
 		return ""
 	}
-	return apiKey
+	// Trim whitespace and newlines that might come from secrets
+	return strings.TrimSpace(apiKey)
 }
 
 // Logout revokes all refresh tokens for a user (Firebase method)

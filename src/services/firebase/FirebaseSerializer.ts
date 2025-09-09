@@ -3,8 +3,8 @@
  * Handles proper serialization/deserialization of data for Firebase Firestore
  */
 
-import { Task } from "../../interfaces/TaskInterface";
 import { Session } from "../../models/Session";
+import { Task } from "../../views/Tasks/types/TaskInterface";
 
 /**
  * Clean object by removing undefined values and converting dates

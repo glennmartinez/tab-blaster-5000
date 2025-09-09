@@ -1,7 +1,10 @@
 // Example: How to integrate Firebase storage into your existing app
 
 import React, { useState, useEffect } from "react";
-import { StorageFactory, StorageType } from "../../services/StorageFactory";
+import {
+  StorageFactory,
+  StorageType,
+} from "../../services/factories/StorageFactory";
 import { FirebaseConfigService } from "../../services/firebase/FirebaseConfigService";
 import {
   FirebaseSetupForm,

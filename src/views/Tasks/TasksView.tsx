@@ -18,10 +18,10 @@ import {
   Check,
   Repeat,
 } from "lucide-react";
-import { Task } from "../interfaces/TaskInterface";
-import { useTasks } from "../hooks/useTasks";
-import { useFocusSession } from "../hooks/useFocusSession";
-import { useTaskView } from "../contexts/TaskViewContext";
+import { useTaskView } from "../../contexts/TaskViewContext";
+import { useFocusSession } from "./hooks/useFocusSession";
+import { useTasks } from "./hooks/useTasks";
+import { Task } from "./types/TaskInterface";
 
 // Modal Dialog Component for Task Editing
 interface TaskEditModalProps {

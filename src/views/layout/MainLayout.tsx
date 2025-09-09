@@ -13,7 +13,7 @@ import {
 } from "../../components";
 import SettingsView from "../settings/SettingsView";
 import FavouritesView from "../FavouritesView";
-import TasksView from "../TasksView";
+import TasksView from "../Tasks/TasksView";
 import { TaskViewProvider, useTaskView } from "../../contexts/TaskViewContext";
 import TasksSidebar from "../../components/tasks/TasksSidebar";
 

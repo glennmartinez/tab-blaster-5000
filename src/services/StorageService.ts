@@ -1,6 +1,6 @@
 import { SavedTab } from "../interfaces/TabInterface";
 import { Session } from "../models/Session";
-import { StorageFactory, StorageType } from "./StorageFactory";
+import { StorageFactory, StorageType } from "./factories/StorageFactory";
 
 // Storage provider types - kept for backward compatibility
 export type StorageProvider = "local" | "chrome" | "drive";

@@ -14,4 +14,9 @@ export const STORAGE_KEYS = {
   // Focus session keys
   CURRENT_FOCUS_SESSION: "currentFocusSession",
   TASK_FOCUS_DATA: "taskFocusData",
+  // Disruption keys
+  DISRUPTIONS: "disruptions",
+  DISRUPTION_IDS: "disruption_ids",
+  // Session analytics keys
+  SESSION_ANALYTICS: "sessionAnalytics",
 };

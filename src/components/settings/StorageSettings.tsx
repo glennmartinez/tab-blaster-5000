@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { StorageProvider, StorageService } from "../../services/StorageService";
-import { StorageFactory, StorageType } from "../../services/StorageFactory";
+import {
+  StorageFactory,
+  StorageType,
+} from "../../services/factories/StorageFactory";
 import { FirebaseConfigService } from "../../services/firebase/FirebaseConfigService";
 import { FirebaseSetupForm } from "./FirebaseSetupForm";
 import { FirebasePasswordPrompt } from "./FirebasePasswordPrompt";
@@ -168,7 +171,7 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
     // Save to settings
     saveProviderToSettings("auth");
 
-    // Note: Not calling onStorageChange for backwards compatibility 
+    // Note: Not calling onStorageChange for backwards compatibility
     // as it would interfere with the server storage setup
   };
 

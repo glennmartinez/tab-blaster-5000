@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  SessionAnalyticsService,
-  SessionTabAnalytics,
-} from "../services/SessionAnalyticsService";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { NewSessionAnalyticsService } from "../services/domain/NewSessionAnalyticsService";
+import { SessionTabAnalytics } from "../services/repositories/SessionAnalyticsRepository";
 
 export const useSessionAnalytics = () => {
   const [analytics, setAnalytics] = useState<SessionTabAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
-  const sessionAnalyticsService = SessionAnalyticsService.getInstance();
+  const sessionAnalyticsService = useMemo(
+    () => new NewSessionAnalyticsService(),
+    []
+  );
 
   // Load all session tab analytics
   const loadAnalytics = useCallback(async () => {

@@ -1,10 +1,10 @@
-import { STORAGE_KEYS } from "../constants/storageKeys";
-import { ChromeStorageService } from "./ChromeStorageService";
-import DriveStorageService from "./DriveStorageService";
-import { LocalStorageService } from "./LocalStorageService";
-import { SessionInterface } from "./SessionInterface";
-import { FirebaseStorageService } from "./firebase/FirebaseStorageService";
-import { ServerStorageService } from "./ServerStorageService";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
+import { ChromeStorageService } from "../ChromeStorageService";
+import DriveStorageService from "../DriveStorageService";
+import { LocalStorageService } from "../LocalStorageService";
+import { SessionInterface } from "../SessionInterface";
+import { FirebaseStorageService } from "../firebase/FirebaseStorageService";
+import { ServerStorageAdapter } from "../adapters/ServerStorageAdapter";
 
 export enum StorageType {
   LOCAL_STORAGE = "localStorage",
@@ -80,7 +80,7 @@ export class StorageFactory {
 
       case StorageType.SERVER:
         console.log("Creating ServerStorageService instance");
-        this.instance = new ServerStorageService();
+        this.instance = new ServerStorageAdapter();
         break;
 
       case StorageType.LOCAL_STORAGE:

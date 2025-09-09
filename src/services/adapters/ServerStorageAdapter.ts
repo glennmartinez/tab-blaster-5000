@@ -1,11 +1,11 @@
 // Server-based storage service that communicates with our Go server
-import { SessionInterface } from "./SessionInterface";
-import { Session } from "../models/Session";
-import { SavedTab } from "../interfaces/TabInterface";
-import { SimpleAuthService } from "./SimpleAuthService";
-import { ConfigService } from "../config/environment";
+import { SessionInterface } from "../SessionInterface";
+import { Session } from "../../models/Session";
+import { SavedTab } from "../../interfaces/TabInterface";
+import { SimpleAuthService } from "../SimpleAuthService";
+import { ConfigService } from "../../config/environment";
 
-export class ServerStorageService implements SessionInterface {
+export class ServerStorageAdapter implements SessionInterface {
   private authService: SimpleAuthService;
 
   constructor() {

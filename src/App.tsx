@@ -4,7 +4,8 @@ import { ViewType } from "./interfaces/ViewTypes";
 import MainLayout from "./views/layout/MainLayout";
 import { SessionsView } from "./components";
 import { useTabs } from "./hooks/useTabs";
-import { StorageFactory } from "./services/StorageFactory";
+import { StorageFactory } from "./services/factories/StorageFactory";
+import { ConfigService } from "./config/environment";
 
 /**
  * Main App component that serves as the router for different views
@@ -34,6 +35,17 @@ function App() {
       "Storage service initialized:",
       storageService.constructor.name
     );
+
+    // Load and log server configuration
+    ConfigService.loadConfig()
+      .then(() => {
+        const config = ConfigService.getConfig();
+        console.log("📡 Server URL:", config.serverUrl);
+        console.log("🔧 Full Config:", config);
+      })
+      .catch((error) => {
+        console.error("Failed to load config:", error);
+      });
   }, []);
 
   // Check URL parameters for view selection

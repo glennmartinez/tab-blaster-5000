@@ -10,6 +10,27 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+// Collection structure constants - NEW optimized pattern
+const (
+	// Main collection name for the new structure
+	COLLECTION_NAME = "tab-blaster-5k"
+)
+
+// Storage key to collection type mapping
+var STORAGE_KEY_TO_COLLECTION_TYPE = map[string]string{
+	"tasks":            "tasks",
+	"taskFocusData":    "task-focus-data",
+	"currentFocusSession": "focus-sessions",
+	"disruptions":      "disruptions",
+	"disruption_ids":   "disruption-ids",
+	"sessions":         "sessions",
+	"savedTabs":        "saved-tabs",
+	"favorites":        "favorites",
+	"settings":         "settings",
+	"metrics":          "metrics",
+	"sessionAnalytics": "session-analytics",
+}
+
 // Session represents a user session
 type Session struct {
 	ID          string            `json:"id" firestore:"id"`
@@ -59,6 +80,33 @@ var (
 	userDataErr     error
 )
 
+// Helper functions for new collection structure
+
+// getCollectionType maps storage keys to collection types
+func getCollectionType(storageKey string) string {
+	if collectionType, exists := STORAGE_KEY_TO_COLLECTION_TYPE[storageKey]; exists {
+		return collectionType
+	}
+	// Default to the key itself if no mapping exists
+	return storageKey
+}
+
+// getCollectionPath returns the full path for a collection
+func getCollectionPath(userID, storageKey string) string {
+	collectionType := getCollectionType(storageKey)
+	return fmt.Sprintf("%s/%s/%s", COLLECTION_NAME, userID, collectionType)
+}
+
+// getSessionsCollectionPath returns the path for sessions collection
+func getSessionsCollectionPath(userID string) string {
+	return fmt.Sprintf("%s/%s/sessions", COLLECTION_NAME, userID)
+}
+
+// getSavedTabsCollectionPath returns the path for saved-tabs collection  
+func getSavedTabsCollectionPath(userID string) string {
+	return fmt.Sprintf("%s/%s/saved-tabs", COLLECTION_NAME, userID)
+}
+
 // NewUserDataService creates a new user data service instance
 func NewUserDataService() (*UserDataService, error) {
 	userDataOnce.Do(func() {
@@ -88,7 +136,9 @@ func (uds *UserDataService) GetUserSessions(ctx context.Context, userID string) 
 	uds.mu.RLock()
 	defer uds.mu.RUnlock()
 
-	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions")
+	// NEW: Use optimized collection structure
+	collectionPath := getSessionsCollectionPath(userID)
+	collection := uds.firebaseService.firestore.Collection(collectionPath)
 	iter := collection.Documents(ctx)
 	defer iter.Stop()
 
@@ -119,7 +169,9 @@ func (uds *UserDataService) StoreUserSession(ctx context.Context, userID string,
 	uds.mu.Lock()
 	defer uds.mu.Unlock()
 
-	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions")
+	// NEW: Use optimized collection structure
+	collectionPath := getSessionsCollectionPath(userID)
+	collection := uds.firebaseService.firestore.Collection(collectionPath)
 
 	var docRef *firestore.DocumentRef
 	if session.ID != "" {
@@ -134,7 +186,7 @@ func (uds *UserDataService) StoreUserSession(ctx context.Context, userID string,
 		return fmt.Errorf("failed to store session: %w", err)
 	}
 
-	log.Printf("Stored session %s for user %s", session.ID, userID)
+	log.Printf("Stored session %s for user %s (NEW structure)", session.ID, userID)
 	return nil
 }
 
@@ -142,24 +194,32 @@ func (uds *UserDataService) DeleteUserSession(ctx context.Context, userID string
 	uds.mu.Lock()
 	defer uds.mu.Unlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions").Doc(sessionID)
+	// NEW: Use optimized collection structure
+	collectionPath := getSessionsCollectionPath(userID)
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc(sessionID)
 	_, err := docRef.Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
 
-	log.Printf("Deleted session %s for user %s", sessionID, userID)
+	log.Printf("Deleted session %s for user %s (NEW structure)", sessionID, userID)
 	return nil
 }
 
 func (uds *UserDataService) GetUserSession(ctx context.Context, userID string, sessionID string) (*Session, error) {
-	uds.mu.RLock()
-	defer uds.mu.RUnlock()
+	uds.mu.Lock()
+	defer uds.mu.Unlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("sessions").Doc(sessionID)
+	// NEW: Use optimized collection structure
+	collectionPath := getSessionsCollectionPath(userID)
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc(sessionID)
 	doc, err := docRef.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
+	}
+
+	if !doc.Exists() {
+		return nil, fmt.Errorf("session not found")
 	}
 
 	var session Session
@@ -176,7 +236,9 @@ func (uds *UserDataService) GetUserSavedTabs(ctx context.Context, userID string)
 	uds.mu.RLock()
 	defer uds.mu.RUnlock()
 
-	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("saved_tabs")
+	// NEW: Use optimized collection structure
+	collectionPath := getSavedTabsCollectionPath(userID)
+	collection := uds.firebaseService.firestore.Collection(collectionPath)
 	iter := collection.Documents(ctx)
 	defer iter.Stop()
 
@@ -199,7 +261,7 @@ func (uds *UserDataService) GetUserSavedTabs(ctx context.Context, userID string)
 		tabs = append(tabs, &tab)
 	}
 
-	log.Printf("Retrieved %d saved tabs for user %s", len(tabs), userID)
+	log.Printf("Retrieved %d saved tabs for user %s (NEW structure)", len(tabs), userID)
 	return tabs, nil
 }
 
@@ -208,7 +270,9 @@ func (uds *UserDataService) StoreSavedTabs(ctx context.Context, userID string, t
 	defer uds.mu.Unlock()
 
 	batch := uds.firebaseService.firestore.Batch()
-	collection := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("saved_tabs")
+	// NEW: Use optimized collection structure
+	collectionPath := getSavedTabsCollectionPath(userID)
+	collection := uds.firebaseService.firestore.Collection(collectionPath)
 
 	for _, tab := range tabs {
 		var docRef *firestore.DocumentRef
@@ -226,7 +290,7 @@ func (uds *UserDataService) StoreSavedTabs(ctx context.Context, userID string, t
 		return fmt.Errorf("failed to store saved tabs: %w", err)
 	}
 
-	log.Printf("Stored %d saved tabs for user %s", len(tabs), userID)
+	log.Printf("Stored %d saved tabs for user %s (NEW structure)", len(tabs), userID)
 	return nil
 }
 
@@ -236,7 +300,9 @@ func (uds *UserDataService) GetUserSettings(ctx context.Context, userID string) 
 	uds.mu.RLock()
 	defer uds.mu.RUnlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc("settings")
+	// NEW: Use optimized collection structure
+	collectionPath := getCollectionPath(userID, "settings")
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc("settings")
 	doc, err := docRef.Get(ctx)
 	if err != nil {
 		// Return empty settings if document doesn't exist
@@ -244,7 +310,7 @@ func (uds *UserDataService) GetUserSettings(ctx context.Context, userID string) 
 	}
 
 	settings := doc.Data()
-	log.Printf("Retrieved settings for user %s", userID)
+	log.Printf("Retrieved settings for user %s (NEW structure)", userID)
 	return settings, nil
 }
 
@@ -252,13 +318,15 @@ func (uds *UserDataService) SaveUserSettings(ctx context.Context, userID string,
 	uds.mu.Lock()
 	defer uds.mu.Unlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc("settings")
+	// NEW: Use optimized collection structure
+	collectionPath := getCollectionPath(userID, "settings")
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc("settings")
 	_, err := docRef.Set(ctx, settings)
 	if err != nil {
 		return fmt.Errorf("failed to save settings: %w", err)
 	}
 
-	log.Printf("Saved settings for user %s", userID)
+	log.Printf("Saved settings for user %s (NEW structure)", userID)
 	return nil
 }
 
@@ -268,7 +336,9 @@ func (uds *UserDataService) GetUserData(ctx context.Context, userID string, key 
 	uds.mu.RLock()
 	defer uds.mu.RUnlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	// NEW: Use optimized collection structure
+	collectionPath := getCollectionPath(userID, key)
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc(key)
 	doc, err := docRef.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get data for key %s: %w", key, err)
@@ -286,7 +356,9 @@ func (uds *UserDataService) SetUserData(ctx context.Context, userID string, key 
 	uds.mu.Lock()
 	defer uds.mu.Unlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	// NEW: Use optimized collection structure
+	collectionPath := getCollectionPath(userID, key)
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc(key)
 	_, err := docRef.Set(ctx, map[string]interface{}{
 		"value":     value,
 		"timestamp": firestore.ServerTimestamp,
@@ -295,7 +367,7 @@ func (uds *UserDataService) SetUserData(ctx context.Context, userID string, key 
 		return fmt.Errorf("failed to set data for key %s: %w", key, err)
 	}
 
-	log.Printf("Saved data for key %s for user %s", key, userID)
+	log.Printf("Saved data for key %s for user %s (NEW structure)", key, userID)
 	return nil
 }
 
@@ -303,13 +375,15 @@ func (uds *UserDataService) DeleteUserData(ctx context.Context, userID string, k
 	uds.mu.Lock()
 	defer uds.mu.Unlock()
 
-	docRef := uds.firebaseService.firestore.Collection("users").Doc(userID).Collection("data").Doc(key)
+	// NEW: Use optimized collection structure
+	collectionPath := getCollectionPath(userID, key)
+	docRef := uds.firebaseService.firestore.Collection(collectionPath).Doc(key)
 	_, err := docRef.Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete data for key %s: %w", key, err)
 	}
 
-	log.Printf("Deleted data for key %s for user %s", key, userID)
+	log.Printf("Deleted data for key %s for user %s (NEW structure)", key, userID)
 	return nil
 }
 

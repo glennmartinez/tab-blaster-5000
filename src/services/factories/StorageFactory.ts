@@ -3,7 +3,6 @@ import { ChromeStorageService } from "../ChromeStorageService";
 import DriveStorageService from "../DriveStorageService";
 import { LocalStorageService } from "../LocalStorageService";
 import { SessionInterface } from "../SessionInterface";
-import { FirebaseStorageService } from "../firebase/FirebaseStorageService";
 import { ServerStorageAdapter } from "../adapters/ServerStorageAdapter";
 
 export enum StorageType {
@@ -11,7 +10,6 @@ export enum StorageType {
   CHROME_STORAGE = "chromeStorage",
   CHROME_SYNC = "sync",
   DRIVE = "drive",
-  FIREBASE = "firebase",
   SERVER = "server",
 }
 
@@ -73,11 +71,6 @@ export class StorageFactory {
         this.instance = new DriveStorageService();
         break;
 
-      case StorageType.FIREBASE:
-        console.log("Creating FirebaseStorageService instance");
-        this.instance = new FirebaseStorageService();
-        break;
-
       case StorageType.SERVER:
         console.log("Creating ServerStorageService instance");
         this.instance = new ServerStorageAdapter();
@@ -132,9 +125,6 @@ export class StorageFactory {
           break;
         case StorageType.DRIVE:
           storageProvider = "drive";
-          break;
-        case StorageType.FIREBASE:
-          storageProvider = "firebase";
           break;
         case StorageType.SERVER:
           storageProvider = "auth";
@@ -191,8 +181,6 @@ export class StorageFactory {
                 return StorageType.CHROME_STORAGE;
               case "drive":
                 return StorageType.DRIVE;
-              case "firebase":
-                return StorageType.FIREBASE;
               case "auth":
                 return StorageType.SERVER;
               case "local":
@@ -217,7 +205,7 @@ export class StorageFactory {
         if (typeString === StorageType.CHROME_STORAGE)
           return StorageType.CHROME_STORAGE;
         if (typeString === StorageType.DRIVE) return StorageType.DRIVE;
-        if (typeString === StorageType.FIREBASE) return StorageType.FIREBASE;
+        if (typeString === StorageType.SERVER) return StorageType.SERVER;
         if (typeString === StorageType.LOCAL_STORAGE)
           return StorageType.LOCAL_STORAGE;
       }

@@ -13,9 +13,7 @@ export const SimpleAuthSetup: React.FC<SimpleAuthSetupProps> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [serverUrl, setServerUrl] = useState(
-    "https://tab-blaster-5k-19786549408.us-central1.run.app"
-  );
+  const [serverUrl, setServerUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

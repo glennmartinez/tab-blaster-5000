@@ -18,54 +18,64 @@ const (
 
 // Storage key to collection type mapping
 var STORAGE_KEY_TO_COLLECTION_TYPE = map[string]string{
-	"tasks":            "tasks",
-	"taskFocusData":    "task-focus-data",
+	"tasks":               "tasks",
+	"taskFocusData":       "task-focus-data",
 	"currentFocusSession": "focus-sessions",
-	"disruptions":      "disruptions",
-	"disruption_ids":   "disruption-ids",
-	"sessions":         "sessions",
-	"savedTabs":        "saved-tabs",
-	"favorites":        "favorites",
-	"settings":         "settings",
-	"metrics":          "metrics",
-	"sessionAnalytics": "session-analytics",
+	"disruptions":         "disruptions",
+	"disruption_ids":      "disruption-ids",
+	"sessions":            "sessions",
+	"savedTabs":           "saved-tabs",
+	"favorites":           "favorites",
+	"settings":            "settings",
+	"metrics":             "metrics",
+	"sessionAnalytics":    "session-analytics",
 }
 
 // Session represents a user session
 type Session struct {
-	ID          string            `json:"id" firestore:"id"`
-	Name        string            `json:"name" firestore:"name"`
-	CreatedAt   int64             `json:"created_at" firestore:"created_at"`
-	UpdatedAt   int64             `json:"updated_at" firestore:"updated_at"`
-	Tabs        []Tab             `json:"tabs" firestore:"tabs"`
-	WindowCount int               `json:"window_count" firestore:"window_count"`
-	TabCount    int               `json:"tab_count" firestore:"tab_count"`
-	Tags        []string          `json:"tags" firestore:"tags"`
-	Metadata    map[string]string `json:"metadata" firestore:"metadata"`
+	ID           string            `json:"id" firestore:"id"`
+	Name         string            `json:"name" firestore:"name"`
+	Description  string            `json:"description,omitempty" firestore:"description,omitempty"`
+	CreatedAt    string            `json:"createdAt" firestore:"createdAt"`
+	LastModified string            `json:"lastModified" firestore:"lastModified"`
+	Tabs         []Tab             `json:"tabs" firestore:"tabs"`
+	WindowCount  int               `json:"window_count,omitempty" firestore:"window_count,omitempty"`
+	TabCount     int               `json:"tab_count,omitempty" firestore:"tab_count,omitempty"`
+	Tags         []string          `json:"tags,omitempty" firestore:"tags,omitempty"`
+	Metadata     map[string]string `json:"metadata,omitempty" firestore:"metadata,omitempty"`
 }
 
 // Tab represents a browser tab
 type Tab struct {
-	ID         string `json:"id" firestore:"id"`
-	URL        string `json:"url" firestore:"url"`
-	Title      string `json:"title" firestore:"title"`
-	WindowID   int    `json:"window_id" firestore:"window_id"`
+	ID         int    `json:"id" firestore:"id"`
+	URL        string `json:"url,omitempty" firestore:"url,omitempty"`
+	Title      string `json:"title,omitempty" firestore:"title,omitempty"`
+	WindowId   int    `json:"windowId" firestore:"windowId"`
 	Index      int    `json:"index" firestore:"index"`
-	Active     bool   `json:"active" firestore:"active"`
-	Pinned     bool   `json:"pinned" firestore:"pinned"`
-	FaviconURL string `json:"favicon_url,omitempty" firestore:"favicon_url,omitempty"`
+	Active     bool   `json:"active,omitempty" firestore:"active,omitempty"`
+	Pinned     bool   `json:"pinned,omitempty" firestore:"pinned,omitempty"`
+	FavIconUrl string `json:"favIconUrl,omitempty" firestore:"favIconUrl,omitempty"`
+	Usage      *Usage `json:"usage,omitempty" firestore:"usage,omitempty"`
+}
+
+// Usage represents tab usage statistics
+type Usage struct {
+	VisitCount int    `json:"visitCount" firestore:"visitCount"`
+	LastAccess string `json:"lastAccess,omitempty" firestore:"lastAccess,omitempty"` // ISO string or null
 }
 
 // SavedTab represents a saved tab
 type SavedTab struct {
-	ID         string            `json:"id" firestore:"id"`
-	URL        string            `json:"url" firestore:"url"`
-	Title      string            `json:"title" firestore:"title"`
-	SavedAt    int64             `json:"saved_at" firestore:"saved_at"`
-	Tags       []string          `json:"tags" firestore:"tags"`
-	Notes      string            `json:"notes" firestore:"notes"`
-	FaviconURL string            `json:"favicon_url,omitempty" firestore:"favicon_url,omitempty"`
-	Metadata   map[string]string `json:"metadata" firestore:"metadata"`
+	ID         int               `json:"id" firestore:"id"`
+	URL        string            `json:"url,omitempty" firestore:"url,omitempty"`
+	Title      string            `json:"title,omitempty" firestore:"title,omitempty"`
+	WindowId   int               `json:"windowId" firestore:"windowId"`
+	Index      int               `json:"index" firestore:"index"`
+	FavIconUrl string            `json:"favIconUrl,omitempty" firestore:"favIconUrl,omitempty"`
+	SavedAt    string            `json:"savedAt" firestore:"savedAt"` // ISO string to match frontend
+	Tags       []string          `json:"tags,omitempty" firestore:"tags,omitempty"`
+	Notes      string            `json:"notes,omitempty" firestore:"notes,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty" firestore:"metadata,omitempty"`
 }
 
 // UserDataService handles user data operations
@@ -102,7 +112,7 @@ func getSessionsCollectionPath(userID string) string {
 	return fmt.Sprintf("%s/%s/sessions", COLLECTION_NAME, userID)
 }
 
-// getSavedTabsCollectionPath returns the path for saved-tabs collection  
+// getSavedTabsCollectionPath returns the path for saved-tabs collection
 func getSavedTabsCollectionPath(userID string) string {
 	return fmt.Sprintf("%s/%s/saved-tabs", COLLECTION_NAME, userID)
 }
@@ -276,11 +286,24 @@ func (uds *UserDataService) StoreSavedTabs(ctx context.Context, userID string, t
 
 	for _, tab := range tabs {
 		var docRef *firestore.DocumentRef
-		if tab.ID != "" {
-			docRef = collection.Doc(tab.ID)
+		// Use tab ID as string for document ID, or generate new one
+		tabIDStr := fmt.Sprintf("%d", tab.ID)
+		if tab.ID != 0 {
+			docRef = collection.Doc(tabIDStr)
 		} else {
 			docRef = collection.NewDoc()
-			tab.ID = docRef.ID
+			// Parse document ID back to int for the tab
+			if docID := docRef.ID; len(docID) > 0 {
+				// For new docs, use a hash of the document ID as integer
+				hash := 0
+				for _, c := range docID {
+					hash = int(c) + (hash << 6) + (hash << 16) - hash
+				}
+				if hash < 0 {
+					hash = -hash
+				}
+				tab.ID = hash
+			}
 		}
 		batch.Set(docRef, tab)
 	}

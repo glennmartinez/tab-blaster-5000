@@ -1,6 +1,6 @@
 import { Tab, SavedTab, WindowInfo } from "../interfaces/TabInterface";
 import { ChromeService } from "../services/ChromeService";
-import { StorageService } from "../services/StorageService";
+import { StorageFactory } from "../services/factories/StorageFactory";
 
 /**
  * Controller for tab-related operations
@@ -49,7 +49,7 @@ export class TabController {
   }
 
   /**
-   * Save a tab to storage
+   * Save a tab for later access
    */
   static async saveTab(tab: Tab): Promise<void> {
     const savedTab: SavedTab = {
@@ -57,26 +57,31 @@ export class TabController {
       savedAt: new Date().toISOString(),
     };
 
-    const existingSavedTabs = await StorageService.getSavedTabs();
-    await StorageService.saveTabs([...existingSavedTabs, savedTab]);
+    const existingSavedTabs =
+      await StorageFactory.getStorageService().getSavedTabs();
+    await StorageFactory.getStorageService().saveTabs([
+      ...existingSavedTabs,
+      savedTab,
+    ]);
   }
 
   /**
    * Get all saved tabs
    */
   static async getSavedTabs(): Promise<SavedTab[]> {
-    return await StorageService.getSavedTabs();
+    return await StorageFactory.getStorageService().getSavedTabs();
   }
 
   /**
    * Delete a saved tab
    */
   static async deleteSavedTab(tabId: number): Promise<void> {
-    const savedTabs = await StorageService.getSavedTabs();
-    const updatedSavedTabs = savedTabs.filter((tab) => tab.id !== tabId);
-    await StorageService.saveTabs(updatedSavedTabs);
+    const savedTabs = await StorageFactory.getStorageService().getSavedTabs();
+    const updatedSavedTabs = savedTabs.filter(
+      (tab: SavedTab) => tab.id !== tabId
+    );
+    await StorageFactory.getStorageService().saveTabs(updatedSavedTabs);
   }
-
   /**
    * Search tabs by query
    */

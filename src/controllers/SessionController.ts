@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { Session, SessionSummary } from "../models/Session";
-import { StorageService } from "../services/StorageService";
+import { StorageFactory } from "../services/factories/StorageFactory";
 import { ChromeService } from "../services/ChromeService";
 import { Tab, WindowInfo } from "../interfaces/TabInterface";
 
@@ -52,7 +52,7 @@ export class SessionController {
       tabs,
     };
 
-    await StorageService.saveSession(session);
+    await StorageFactory.getStorageService().storeSession(session);
     return session;
   }
 
@@ -60,10 +60,12 @@ export class SessionController {
    * Get all saved sessions
    */
   static async getSessions(): Promise<Session[]> {
-    const sessions = await StorageService.getSessions();
+    const sessions = await StorageFactory.getStorageService().fetchSessions();
 
     // Transform any sessions in the windows format to tabs format
-    return sessions.map((session) => this.normalizeSessionFormat(session));
+    return sessions.map((session: SessionFormat) =>
+      this.normalizeSessionFormat(session)
+    );
   }
 
   /**
@@ -118,11 +120,12 @@ export class SessionController {
    * Get a specific session by ID
    */
   static async getSession(sessionId: string): Promise<Session | undefined> {
-    const sessions = await StorageService.getSessions();
-    const session = sessions.find((session) => session.id === sessionId);
+    const session = await StorageFactory.getStorageService().fetchSessionById(
+      sessionId
+    );
 
     if (session) {
-      return this.normalizeSessionFormat(session);
+      return this.normalizeSessionFormat(session as SessionFormat);
     }
 
     return undefined;
@@ -132,7 +135,7 @@ export class SessionController {
    * Delete a session
    */
   static async deleteSession(sessionId: string): Promise<void> {
-    await StorageService.deleteSession(sessionId);
+    await StorageFactory.getStorageService().deleteSession(sessionId);
   }
 
   /**
@@ -207,7 +210,7 @@ export class SessionController {
 
     // Update lastModified timestamp
     session.lastModified = new Date().toISOString();
-    await StorageService.saveSession(session);
+    await StorageFactory.getStorageService().storeSession(session);
   }
 
   /**
@@ -239,6 +242,6 @@ export class SessionController {
     }
 
     updatedSession.lastModified = new Date().toISOString();
-    await StorageService.saveSession(updatedSession);
+    await StorageFactory.getStorageService().storeSession(updatedSession);
   }
 }

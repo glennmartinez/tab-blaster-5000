@@ -112,8 +112,6 @@ export const useTasks = () => {
       return {
         total: 0,
         inbox: 0,
-        signal: 0,
-        noise: 0,
         done: 0,
         overdue: 0,
         dueToday: 0,
@@ -171,8 +169,6 @@ export const useTasks = () => {
     stats: {
       total: tasks.length,
       inbox: getTasksByStatus("inbox").length,
-      signal: getTasksByStatus("signal").length,
-      noise: getTasksByStatus("noise").length,
       done: getTasksByStatus("done").length,
       overdue: getOverdueTasks().length,
       dueToday: getTasksDueToday().length,

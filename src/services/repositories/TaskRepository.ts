@@ -107,7 +107,7 @@ export class TaskRepository extends BaseRepository<Task, TaskCreateDto> {
       }
 
       // Validate required enums based on TaskInterface.ts
-      const validStatuses = ["inbox", "signal", "noise", "done"];
+      const validStatuses = ["inbox", "done"];
       if (!validStatuses.includes(task.status)) {
         console.warn("Task validation failed: invalid status");
         return false;

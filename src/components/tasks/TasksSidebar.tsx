@@ -526,27 +526,6 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
         </h3>
       </div>
 
-      {/* 80/20 Ratio Display */}
-      <div className="mb-6">
-        <div className="bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 rounded-lg p-3 mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-300 text-sm font-medium">
-              Signal vs Noise
-            </span>
-            <Target className="h-4 w-4 text-cyan-400" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-slate-800/50 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-cyan-400 to-cyan-500 h-full rounded-full"
-                style={{ width: "75%" }}
-              ></div>
-            </div>
-            <span className="text-xs text-slate-400">75/25</span>
-          </div>
-        </div>
-      </div>
-
       {/* Task Statistics */}
       <div className="space-y-3 mb-6">
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
@@ -558,15 +537,15 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
 
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Signal Tasks</span>
-            <span className="text-green-400 font-medium">9</span>
+            <span className="text-slate-400 text-sm">Inbox Tasks</span>
+            <span className="text-yellow-400 font-medium">9</span>
           </div>
         </div>
 
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm">Noise Tasks</span>
-            <span className="text-red-400 font-medium">3</span>
+            <span className="text-slate-400 text-sm">Done Tasks</span>
+            <span className="text-green-400 font-medium">3</span>
           </div>
         </div>
       </div>
@@ -658,18 +637,18 @@ const TasksSidebar: React.FC<TasksSidebarProps> = ({ viewMode = "triage" }) => {
         </div>
       </div>
 
-      {/* Signal Focus Reminder */}
+      {/* Focus Reminder */}
       <div className="mt-4 bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/30 rounded-lg p-3">
         <div className="flex items-center mb-2">
           <Zap className="mr-2 h-4 w-4 text-green-400" />
           <span className="text-green-400 text-sm font-medium">
-            Signal Focus
+            Stay Focused
           </span>
         </div>
         <p className="text-slate-400 text-xs">
           Prioritize high-impact tasks that align with your core objectives.
         </p>
-        <p className="text-slate-500 text-xs mt-1">Focus on Signal tasks</p>
+        <p className="text-slate-500 text-xs mt-1">Focus on important tasks</p>
       </div>
     </div>
   );

@@ -923,15 +923,20 @@ const TaskPool: React.FC<{
       low: "text-blue-500",
     };
 
-    const handleDragStart = (e: React.DragEvent) => {
-      e.dataTransfer.setData("taskId", task.id);
-    };
+    const isDragging = draggedTask?.id === task.id;
 
     return (
       <div
-        className="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2 mb-2 hover:bg-slate-800/80 transition-colors cursor-pointer group"
+        className={`
+          bg-slate-800/60 border rounded-lg p-2 mb-2 hover:bg-slate-800/80 transition-colors cursor-pointer group
+          ${
+            isDragging
+              ? "border-purple-500 border-2 border-dashed animate-pulse shadow-lg shadow-purple-500/30"
+              : "border-slate-700/50"
+          }
+        `}
         draggable
-        onDragStart={handleDragStart}
+        onDragStart={(e) => handleDragStart(e, task)}
         onClick={() => onTaskEdit(task)}
       >
         <div className="flex items-start justify-between mb-1">
@@ -1286,7 +1291,7 @@ const TasksView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Get tasks for today (due today or no due date but status is not noise)
+  // Get tasks for today (due today or no due date)
   const getTodaysTasks = useCallback(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1294,12 +1299,12 @@ const TasksView: React.FC = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return tasks.filter((task: Task) => {
-      // Include tasks due today or tasks with no due date that are not noise
+      // Include tasks due today or tasks with no due date
       return (
         ((task.dueDate &&
           new Date(task.dueDate) >= today &&
           new Date(task.dueDate) < tomorrow) ||
-          (!task.dueDate && task.status !== "noise")) &&
+          !task.dueDate) &&
         task.status !== "done"
       );
     });
@@ -1317,7 +1322,6 @@ const TasksView: React.FC = () => {
       // Update the task with the new schedule
       await updateTask(taskId, {
         schedule: timeSlotId as "morning" | "midday" | "evening",
-        status: "signal", // Move to signal when scheduled
         dueDate: task.dueDate || new Date(), // Set today if no due date
       });
 
@@ -1348,12 +1352,12 @@ const TasksView: React.FC = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const allTodaysTasks = tasks.filter((task: Task) => {
-      // Include tasks due today or tasks with no due date that are not noise
+      // Include tasks due today or tasks with no due date
       return (
         (task.dueDate &&
           new Date(task.dueDate) >= today &&
           new Date(task.dueDate) < tomorrow) ||
-        (!task.dueDate && task.status !== "noise")
+        !task.dueDate
       );
     });
 
@@ -1575,9 +1579,18 @@ const TasksView: React.FC = () => {
 
   // Simple Task Card Component that opens modal for editing
   const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
+    const isDragging = draggedTask?.id === task.id;
+
     return (
       <div
-        className="bg-slate-800/40 border border-slate-700/50 rounded p-2 mb-1 hover:bg-slate-800/60 transition-colors cursor-move group"
+        className={`
+          bg-slate-800/40 border rounded p-2 mb-1 hover:bg-slate-800/60 transition-colors cursor-move group
+          ${
+            isDragging
+              ? "border-purple-500 border-2 border-dashed animate-pulse shadow-lg shadow-purple-500/30"
+              : "border-slate-700/50"
+          }
+        `}
         draggable
         onDragStart={(e) => handleDragStart(e, task)}
       >
@@ -1694,7 +1707,7 @@ const TasksView: React.FC = () => {
     return { currentWeek, nextWeek, future };
   };
 
-  // Weekly Task Column Component (for Signal and Noise)
+  // Weekly Task Column Component (for Planning)
   const WeeklyTaskColumn: React.FC<{
     title: string;
     tasks: Task[];
@@ -1901,10 +1914,9 @@ const TasksView: React.FC = () => {
 
     return tasks.filter((task: Task) => {
       if (!task.dueDate) {
-        // Include tasks with no due date that are not noise (for today only)
+        // Include tasks with no due date (for today only)
         return (
           targetDay.toDateString() === today.toDateString() &&
-          task.status !== "noise" &&
           task.status !== "done"
         );
       }
@@ -1912,8 +1924,7 @@ const TasksView: React.FC = () => {
       const taskDate = new Date(task.dueDate);
       return (
         taskDate.toDateString() === targetDay.toDateString() &&
-        task.status !== "done" &&
-        (task.status === "signal" || task.status === "inbox")
+        task.status === "inbox"
       );
     });
   }, [tasks, selectedDay]);
@@ -1947,7 +1958,7 @@ const TasksView: React.FC = () => {
         const taskDate = new Date(task.dueDate);
         return (
           taskDate.toDateString() === date.toDateString() &&
-          (task.status === "signal" || task.status === "inbox")
+          task.status === "inbox"
         );
       }).length;
 
@@ -1963,16 +1974,14 @@ const TasksView: React.FC = () => {
   };
 
   const getUnscheduledWeekTasks = (): Task[] => {
-    // Get Signal and Inbox tasks that don't have a due date or are scheduled for this week but not yet assigned to time slots
+    // Get Inbox tasks that don't have a due date or are scheduled for this week but not yet assigned to time slots
     const weekStart = getCurrentWeekStart();
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
     return tasks.filter((task) => {
-      const isSignalOrInbox =
-        task.status === "signal" || task.status === "inbox";
-      if (!isSignalOrInbox) return false;
+      if (task.status !== "inbox") return false;
 
       // Exclude tasks that already have a schedule (are assigned to time slots)
       if (task.schedule) return false;
@@ -1992,7 +2001,7 @@ const TasksView: React.FC = () => {
       const taskDate = new Date(task.dueDate);
       return (
         taskDate.toDateString() === selectedDay.toDateString() &&
-        (task.status === "signal" || task.status === "inbox")
+        task.status === "inbox"
       );
     });
   };
@@ -2072,7 +2081,6 @@ const TasksView: React.FC = () => {
       await updateTask(taskId, {
         dueDate,
         schedule: timeSlotId as "morning" | "midday" | "evening", // Set the schedule field
-        status: "signal", // Move to signal when planned
       });
     } catch (error) {
       console.error("Failed to schedule task:", error);
@@ -2155,7 +2163,7 @@ const TasksView: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-slate-100 flex items-center font-medium text-sm">
             <CheckSquare className="mr-2 h-4 w-4 text-cyan-400" />
-            Task Manager - 80/20 Signal vs Noise
+            Task Manager - Planning & Execution
           </h2>
 
           {/* View Toggle */}
@@ -2217,30 +2225,22 @@ const TasksView: React.FC = () => {
       {/* Content */}
       <div className="p-2 flex-1 overflow-hidden">
         {currentView === "triage" ? (
-          // Triage View - Three Columns
+          // Triage View - Two Columns
           <div className="flex gap-1 h-full">
             <TaskColumn
               title="Inbox"
-              tasks={getTasksByStatus("inbox")}
+              tasks={getTasksByStatus("inbox").filter((task) => !task.dueDate)}
               icon={<CheckSquare className="mr-1 h-3 w-3 text-slate-400" />}
               accent="border-slate-700/50"
               status="inbox"
             />
 
             <WeeklyTaskColumn
-              title="Signal (80%)"
-              tasks={getTasksByStatus("signal")}
+              title="Planning"
+              tasks={getTasksByStatus("inbox").filter((task) => task.dueDate)}
               icon={<Target className="mr-1 h-3 w-3 text-cyan-400" />}
               accent="border-cyan-500/50"
-              status="signal"
-            />
-
-            <WeeklyTaskColumn
-              title="Noise (20%)"
-              tasks={getTasksByStatus("noise")}
-              icon={<Clock className="mr-1 h-3 w-3 text-purple-400" />}
-              accent="border-purple-500/30"
-              status="noise"
+              status="inbox"
             />
           </div>
         ) : currentView === "weekly" ? (

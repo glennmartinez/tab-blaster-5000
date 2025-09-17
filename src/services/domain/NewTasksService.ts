@@ -171,8 +171,6 @@ export class NewTasksService {
       const stats: TaskStats = {
         total: tasks.length,
         inbox: 0,
-        signal: 0,
-        noise: 0,
         done: 0,
         overdue: 0,
         dueToday: 0,
@@ -184,12 +182,6 @@ export class NewTasksService {
         switch (task.status) {
           case "inbox":
             stats.inbox++;
-            break;
-          case "signal":
-            stats.signal++;
-            break;
-          case "noise":
-            stats.noise++;
             break;
           case "done":
             stats.done++;
@@ -215,8 +207,6 @@ export class NewTasksService {
       return {
         total: 0,
         inbox: 0,
-        signal: 0,
-        noise: 0,
         done: 0,
         overdue: 0,
         dueToday: 0,

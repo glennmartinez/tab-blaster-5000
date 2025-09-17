@@ -1,6 +1,5 @@
 import { FocusSession } from "../../../interfaces/FocusSession";
 
- 
 export interface Task {
   id: string;
   title: string;
@@ -8,7 +7,7 @@ export interface Task {
   category: "development" | "design" | "research" | "meeting" | "other";
   size: "S" | "M" | "L" | "XL";
   priority: "low" | "medium" | "high";
-  status: "inbox" | "signal" | "noise" | "done";
+  status: "inbox" | "done";
   dueDate?: Date;
   schedule?: "morning" | "midday" | "evening";
   createdAt: Date;
@@ -32,8 +31,6 @@ export interface TaskFilters {
 export interface TaskStats {
   total: number;
   inbox: number;
-  signal: number;
-  noise: number;
   done: number;
   overdue: number;
   dueToday: number;

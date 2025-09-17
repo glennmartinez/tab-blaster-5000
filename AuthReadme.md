@@ -55,7 +55,7 @@ await chrome.storage.local.set({
 
 #### Frontend Request Flow
 
-1. `ServerStorageService.makeAuthenticatedRequest()` is called for any API operation
+1. `ServerStorageAdapter.makeAuthenticatedRequest()` is called for any API operation
 2. Service retrieves JWT token from `SimpleAuthService.getToken()`
 3. Token is added to Authorization header: `Bearer <jwt_token>`
 4. Request is sent to the Go server
@@ -81,7 +81,7 @@ await chrome.storage.local.set({
   - `logout()`: Clears authentication data
   - `getCurrentUser()`: Returns current user information
 
-#### ServerStorageService (`src/services/ServerStorageService.ts`)
+#### ServerStorageAdapter (`src/services/adapters/ServerStorageAdapter.ts`)
 
 - **Purpose**: Handles authenticated API requests to server
 - **Key Methods**:

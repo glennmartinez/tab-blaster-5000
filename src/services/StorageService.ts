@@ -3,7 +3,7 @@ import { Session } from "../models/Session";
 import { StorageFactory, StorageType } from "./factories/StorageFactory";
 
 // Storage provider types - kept for backward compatibility
-export type StorageProvider = "local" | "chrome" | "drive";
+export type StorageProvider = "local" | "chrome";
 
 /**
  * @deprecated Use StorageFactory.getStorageService() instead.
@@ -22,8 +22,6 @@ export class StorageService {
         return StorageType.LOCAL_STORAGE;
       case "chrome":
         return StorageType.CHROME_STORAGE;
-      case "drive":
-        return StorageType.DRIVE;
       default:
         return StorageType.LOCAL_STORAGE;
     }
@@ -60,8 +58,6 @@ export class StorageService {
         return "local";
       case StorageType.CHROME_STORAGE:
         return "chrome";
-      case StorageType.DRIVE:
-        return "drive";
       default:
         return "local";
     }

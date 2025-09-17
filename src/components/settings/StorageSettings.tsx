@@ -18,9 +18,6 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
   const [storageProvider, setStorageProvider] = useState<
     StorageProvider | "auth"
   >("local");
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Simple Auth states
   const [showAuthSetup, setShowAuthSetup] = useState(false);
@@ -40,9 +37,6 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
         switch (currentType) {
           case StorageType.CHROME_STORAGE:
             provider = "chrome";
-            break;
-          case StorageType.DRIVE:
-            provider = "drive";
             break;
           case StorageType.SERVER:
             provider = "auth";
@@ -122,114 +116,6 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
     }
   };
 
-  // Check Google Drive authentication status when provider is 'drive'
-  useEffect(() => {
-    if (storageProvider === "drive") {
-      checkDriveAuth();
-    }
-  }, [storageProvider]);
-
-  const checkDriveAuth = async () => {
-    setIsLoading(true);
-    setAuthError(null);
-
-    try {
-      if (!chrome?.identity) {
-        throw new Error("Chrome identity API not available");
-      }
-
-      // Try to get token non-interactively first
-      chrome.identity.getAuthToken({ interactive: false }, (token) => {
-        setIsLoading(false);
-
-        if (chrome.runtime.lastError) {
-          setAuthError(
-            chrome.runtime.lastError.message || "Authentication failed"
-          );
-          setIsAuthenticated(false);
-          return;
-        }
-
-        if (token) {
-          setIsAuthenticated(true);
-          console.log("Successfully authenticated with Google");
-        } else {
-          setAuthError("No token received");
-          setIsAuthenticated(false);
-        }
-      });
-    } catch (error) {
-      setIsLoading(false);
-      setIsAuthenticated(false);
-      console.error("Error checking authentication:", error);
-    }
-  };
-
-  const authenticateWithGoogle = () => {
-    setIsLoading(true);
-    setAuthError(null);
-
-    try {
-      if (!chrome?.identity) {
-        throw new Error("Chrome identity API not available");
-      }
-
-      chrome.identity.getAuthToken({ interactive: true }, (token) => {
-        setIsLoading(false);
-
-        if (chrome.runtime.lastError) {
-          setAuthError(
-            chrome.runtime.lastError.message || "Authentication failed"
-          );
-          setIsAuthenticated(false);
-          return;
-        }
-
-        if (token) {
-          setIsAuthenticated(true);
-          console.log("Successfully authenticated with Google Drive");
-        } else {
-          setAuthError("No token received");
-          setIsAuthenticated(false);
-        }
-      });
-    } catch (error) {
-      setIsLoading(false);
-      setIsAuthenticated(false);
-      setAuthError(error instanceof Error ? error.message : "Unknown error");
-      console.error("Error authenticating:", error);
-    }
-  };
-
-  const signOut = () => {
-    if (!chrome?.identity) {
-      console.error("Chrome identity API not available");
-      return;
-    }
-
-    chrome.identity.getAuthToken({ interactive: false }, (token) => {
-      if (!token) {
-        setIsAuthenticated(false);
-        return;
-      }
-
-      // Revoke the token
-      chrome.identity.removeCachedAuthToken({ token: token as string }, () => {
-        // Clear Google's token cache
-        const revokeUrl = `https://accounts.google.com/o/oauth2/revoke?token=${token}`;
-        fetch(revokeUrl)
-          .then(() => {
-            setIsAuthenticated(false);
-            console.log("Successfully signed out from Google");
-          })
-          .catch((err) => {
-            console.error("Error revoking token:", err);
-            setIsAuthenticated(false);
-          });
-      });
-    });
-  };
-
   const handleStorageChange = async (provider: StorageProvider | "auth") => {
     // Handle Simple Auth selection
     if (provider === "auth") {
@@ -303,22 +189,6 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
           <label className="inline-flex items-center mb-2">
             <input
               type="radio"
-              className="form-radio h-4 w-4 text-yellow-600"
-              name="storage-provider"
-              value="drive"
-              checked={storageProvider === "drive"}
-              onChange={() => handleStorageChange("drive")}
-            />
-            <span className="ml-2 text-gray-200">Google Drive ☁️</span>
-          </label>
-          <p className="text-xs text-gray-400 ml-6 mb-3">
-            Store data in your Google Drive. Requires Google authentication.
-            Cross-browser compatible.
-          </p>
-
-          <label className="inline-flex items-center mb-2">
-            <input
-              type="radio"
               className="form-radio h-4 w-4 text-purple-600"
               name="storage-provider"
               value="auth"
@@ -335,40 +205,6 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({
             Professional grade storage.
           </p>
         </div>
-
-        {storageProvider === "drive" && (
-          <div className="p-4 bg-gray-700 rounded border">
-            <h4 className="text-white font-medium mb-3">Google Drive Setup</h4>
-            {!isAuthenticated ? (
-              <div className="space-y-3">
-                {authError && (
-                  <div className="text-red-400 text-sm bg-red-900/20 p-2 rounded">
-                    {authError}
-                  </div>
-                )}
-                <button
-                  onClick={authenticateWithGoogle}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
-                >
-                  {isLoading ? "Connecting..." : "Connect to Google Drive"}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="text-green-400 text-sm">
-                  ✓ Connected to Google Drive
-                </div>
-                <button
-                  onClick={signOut}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
-                >
-                  Disconnect
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         {storageProvider === "auth" && (
           <div className="p-4 bg-gray-700 rounded border">

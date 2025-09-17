@@ -36,7 +36,7 @@ export class ServerStorageAdapter implements SessionInterface {
       if (response.status === 401) {
         // Token expired, try to refresh or logout
         console.error(
-          "ServerStorageService: 401 response received, logging out user"
+          "ServerStorageAdapter: 401 response received, logging out user"
         );
         console.error("Request was:", endpoint, options);
         console.error("Token was:", token ? "present" : "missing");
@@ -207,7 +207,7 @@ export class ServerStorageAdapter implements SessionInterface {
     try {
       const currentUser = await this.authService.getCurrentUser();
       return !!currentUser;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

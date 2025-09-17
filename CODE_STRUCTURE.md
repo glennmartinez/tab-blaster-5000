@@ -59,8 +59,7 @@ StorageFactory (Singleton)
 ├── LocalStorageService
 ├── ChromeStorageService
 ├── FirebaseStorageService
-├── DriveStorageService
-└── ServerStorageService
+└── ServerStorageAdapter
      └── SessionInterface (Common Interface)
 ```
 
@@ -134,8 +133,7 @@ export class FeatureController {
    - `LocalStorageService`
    - `ChromeStorageService`
    - `FirebaseStorageService`
-   - `DriveStorageService`
-   - `ServerStorageService`
+   - `ServerStorageAdapter`
 
 2. **Business Services**
 

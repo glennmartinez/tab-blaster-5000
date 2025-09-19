@@ -1,0 +1,210 @@
+{
+    "nodes": {
+        "Build - Development - Win64 - Editor": [
+            "Symbold Upload - Development - Win64 - Editor",
+            "Content Catalog",
+            "Python Automation",
+            "Cook - Development - Win64 - Server",
+            "Cook - Development - Win64 - Client",
+            "Cook - Shipping - Linux - Server",
+            "Cook - Shipping - Win64 - Server",
+            "Cook - Shipping - Win64 - Client",
+            "Cook - Development - Linux - Server"
+        ],
+        "Symbold Upload - Development - Win64 - Editor": [
+            "Meta - ShippingMetadata",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Content Catalog": [
+            "Meta - ShippingMetadata",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Tools - UnrealPak": [
+            "Cook - Development - Win64 - Server",
+            "Cook - Development - Win64 - Client",
+            "Cook - Shipping - Linux - Server",
+            "Cook - Shipping - Win64 - Server",
+            "Cook - Shipping - Win64 - Client",
+            "Cook - Development - Linux - Server"
+        ],
+        "Tools - Win64CrashReportClientEditor": [
+            "Cook - Development - Win64 - Server",
+            "Cook - Development - Win64 - Client",
+            "Cook - Shipping - Win64 - Server",
+            "Cook - Shipping - Win64 - Client"
+        ],
+        "Tools - Win64CrashReportClient": [
+            "Cook - Development - Win64 - Server",
+            "Cook - Development - Win64 - Client",
+            "Cook - Shipping - Win64 - Server",
+            "Cook - Shipping - Win64 - Client"
+        ],
+        "Tools - ShaderCompileWorker": [
+            "Cook - Development - Win64 - Client",
+            "Cook - Shipping - Win64 - Client"
+        ],
+        "Tools - LinuxCrashReportClient": [
+            "Cook - Shipping - Linux - Server",
+            "Cook - Development - Linux - Server"
+        ],
+        "Build - Development - Win64 - Client": [
+            "Symbold Upload - Development - Win64 - Client",
+            "Cook - Development - Win64 - Client"
+        ],
+        "Symbold Upload - Development - Win64 - Client": [
+            "BvsTest - BuildVerificationJenkins10",
+            "BvsTest - BuildVerificationJenkins09",
+            "BvsTest - BuildVerificationJenkins08",
+            "BvsTest - BuildVerificationJenkins07",
+            "BvsTest - BuildVerificationJenkins06",
+            "BvsTest - BuildVerificationJenkins05",
+            "BvsTest - BuildVerificationJenkins04",
+            "BvsTest - BuildVerificationJenkins03",
+            "BvsTest - BuildVerificationJenkins02",
+            "BvsTest - BuildVerificationJenkins01",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Cook - Development - Win64 - Client": [
+            "BvsTest - BuildVerificationJenkins10",
+            "BvsTest - BuildVerificationJenkins09",
+            "BvsTest - BuildVerificationJenkins08",
+            "BvsTest - BuildVerificationJenkins07",
+            "BvsTest - BuildVerificationJenkins06",
+            "BvsTest - BuildVerificationJenkins05",
+            "BvsTest - BuildVerificationJenkins04",
+            "BvsTest - BuildVerificationJenkins03",
+            "BvsTest - BuildVerificationJenkins02",
+            "BvsTest - BuildVerificationJenkins01",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Build - Development - Win64 - Server": [
+            "Symbold Upload - Development - Win64 - Server",
+            "Cook - Development - Win64 - Server"
+        ],
+        "Cook - Development - Win64 - Server": [
+            "BvsTest - BuildVerificationJenkins10",
+            "BvsTest - BuildVerificationJenkins09",
+            "BvsTest - BuildVerificationJenkins08",
+            "BvsTest - BuildVerificationJenkins07",
+            "BvsTest - BuildVerificationJenkins06",
+            "BvsTest - BuildVerificationJenkins05",
+            "BvsTest - BuildVerificationJenkins04",
+            "BvsTest - BuildVerificationJenkins03",
+            "BvsTest - BuildVerificationJenkins02",
+            "BvsTest - BuildVerificationJenkins01",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Symbold Upload - Development - Win64 - Server": [
+            "BvsTest - BuildVerificationJenkins10",
+            "BvsTest - BuildVerificationJenkins09",
+            "BvsTest - BuildVerificationJenkins08",
+            "BvsTest - BuildVerificationJenkins07",
+            "BvsTest - BuildVerificationJenkins06",
+            "BvsTest - BuildVerificationJenkins05",
+            "BvsTest - BuildVerificationJenkins04",
+            "BvsTest - BuildVerificationJenkins03",
+            "BvsTest - BuildVerificationJenkins02",
+            "BvsTest - BuildVerificationJenkins01",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Python Automation": [
+            "BvsTest - BuildVerificationJenkins10",
+            "BvsTest - BuildVerificationJenkins09",
+            "BvsTest - BuildVerificationJenkins08",
+            "BvsTest - BuildVerificationJenkins07",
+            "BvsTest - BuildVerificationJenkins06",
+            "BvsTest - BuildVerificationJenkins05",
+            "BvsTest - BuildVerificationJenkins04",
+            "BvsTest - BuildVerificationJenkins03",
+            "BvsTest - BuildVerificationJenkins02",
+            "BvsTest - BuildVerificationJenkins01"
+        ],
+        "Build - Development - Linux - Server": [
+            "Symbold Upload - Development - Linux - Server",
+            "Cook - Development - Linux - Server"
+        ],
+        "Symbold Upload - Development - Linux - Server": [
+            "Meta - DevelopmentMetadata"
+        ],
+        "Cook - Development - Linux - Server": [
+            "Meta - DevelopmentMetadata"
+        ],
+        "Build - Shipping - Linux - Server": [
+            "Symbold Upload - Shipping - Linux - Server",
+            "Cook - Shipping - Linux - Server"
+        ],
+        "Cook - Shipping - Linux - Server": [
+            "Meta - ShippingMetadata"
+        ],
+        "Symbold Upload - Shipping - Linux - Server": [
+            "Meta - ShippingMetadata"
+        ],
+        "Build - Shipping - Win64 - Server": [
+            "Symbold Upload - Shipping - Win64 - Server",
+            "Cook - Shipping - Win64 - Server"
+        ],
+        "Cook - Shipping - Win64 - Server": [
+            "Meta - ShippingMetadata"
+        ],
+        "Symbold Upload - Shipping - Win64 - Server": [
+            "Meta - ShippingMetadata"
+        ],
+        "Build - Shipping - Win64 - Client": [
+            "Symbold Upload - Shipping - Win64 - Client",
+            "Cook - Shipping - Win64 - Client"
+        ],
+        "Symbold Upload - Shipping - Win64 - Client": [
+            "Meta - ShippingMetadata"
+        ],
+        "Cook - Shipping - Win64 - Client": [
+            "Meta - ShippingMetadata"
+        ],
+        "BvsTest - BuildVerificationJenkins01": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins08": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins09": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins06": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins07": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins04": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins05": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins02": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins03": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "BvsTest - BuildVerificationJenkins10": [
+            "DevelopmentWin64ClientWin64ServerTest"
+        ],
+        "DevelopmentWin64ClientWin64ServerTest": [
+            "Meta - ShippingMetadata",
+            "Meta - DevelopmentMetadata"
+        ],
+        "Meta - ShippingMetadata": [
+            "Meta - ShippingWin64"
+        ],
+        "Meta - DevelopmentMetadata": [
+            "Meta - DevelopmentWin64"
+        ],
+        "Meta - ShippingWin64": [
+            "Meta - Win64"
+        ],
+        "Meta - DevelopmentWin64": [
+            "Meta - Win64"
+        ],
+        "Meta - Win64": []
+    }
+}
